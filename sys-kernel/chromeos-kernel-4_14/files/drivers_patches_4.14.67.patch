@@ -1,0 +1,519 @@
+diff --git a/drivers/gpu/drm/amd/display/dc/calcs/dcn_calc_auto.c b/drivers/gpu/drm/amd/display/dc/calcs/dcn_calc_auto.c
+index 5e2ea12..93ef4e0 100644
+--- a/drivers/gpu/drm/amd/display/dc/calcs/dcn_calc_auto.c
++++ b/drivers/gpu/drm/amd/display/dc/calcs/dcn_calc_auto.c
+@@ -63,7 +63,7 @@ void scaler_settings_calculation(struct dcn_bw_internal_vars *v)
+ 		if (v->interlace_output[k] == 1.0) {
+ 			v->v_ratio[k] = 2.0 * v->v_ratio[k];
+ 		}
+-		if ((v->underscan_output[k] == 1.0)) {
++		if (v->underscan_output[k] == 1.0) {
+ 			v->h_ratio[k] = v->h_ratio[k] * v->under_scan_factor;
+ 			v->v_ratio[k] = v->v_ratio[k] * v->under_scan_factor;
+ 		}
+diff --git a/drivers/net/wireless/intel/ipw2x00/ipw2200.c b/drivers/net/wireless/intel/ipw2x00/ipw2200.c
+index 8da8749..41cae21 100644
+--- a/drivers/net/wireless/intel/ipw2x00/ipw2200.c
++++ b/drivers/net/wireless/intel/ipw2x00/ipw2200.c
+@@ -5659,7 +5659,7 @@ static void ipw_merge_adhoc_network(struct work_struct *work)
+ 		}
+ 
+ 		mutex_lock(&priv->mutex);
+-		if ((priv->ieee->iw_mode == IW_MODE_ADHOC)) {
++		if (priv->ieee->iw_mode == IW_MODE_ADHOC) {
+ 			IPW_DEBUG_MERGE("remove network %*pE\n",
+ 					priv->essid_len, priv->essid);
+ 			ipw_remove_current_network(priv);
+diff --git a/drivers/platform/x86/sony-laptop.c b/drivers/platform/x86/sony-laptop.c
+index a16cea2be..b798393 100644
+--- a/drivers/platform/x86/sony-laptop.c
++++ b/drivers/platform/x86/sony-laptop.c
+@@ -3311,17 +3311,12 @@ static int sony_nc_remove(struct acpi_device *device)
+ 	return 0;
+ }
+ 
+-static const struct acpi_device_id sony_device_ids[] = {
+-	{SONY_NC_HID, 0},
+-	{SONY_PIC_HID, 0},
+-	{"", 0},
+-};
+-MODULE_DEVICE_TABLE(acpi, sony_device_ids);
+-
+ static const struct acpi_device_id sony_nc_device_ids[] = {
+ 	{SONY_NC_HID, 0},
++	{SONY_PIC_HID, 0},
+ 	{"", 0},
+ };
++MODULE_DEVICE_TABLE(acpi, sony_nc_device_ids);
+ 
+ static struct acpi_driver sony_nc_driver = {
+ 	.name = SONY_NC_DRIVER_NAME,
+diff --git a/drivers/staging/media/atomisp/pci/atomisp2/atomisp_compat_css20.c b/drivers/staging/media/atomisp/pci/atomisp2/atomisp_compat_css20.c
+index 05897b7..ebb0704 100644
+--- a/drivers/staging/media/atomisp/pci/atomisp2/atomisp_compat_css20.c
++++ b/drivers/staging/media/atomisp/pci/atomisp2/atomisp_compat_css20.c
+@@ -46,6 +46,7 @@
+ #include "ia_css_isys.h"
+ 
+ #include <linux/pm_runtime.h>
++#include "css2400/ia_css_input_port.h"
+ 
+ /* Assume max number of ACC stages */
+ #define MAX_ACC_STAGES	20
+@@ -1023,7 +1024,7 @@ void atomisp_css_rx_get_irq_info(enum ia_css_csi2_port port,
+ 					unsigned int *infos)
+ {
+ #ifndef ISP2401_NEW_INPUT_SYSTEM
+-	ia_css_isys_rx_get_irq_info(port, infos);
++	ia_css_isys_rx_get_irq_info((mipi_port_ID_t)port, infos);
+ #else
+ 	*infos = 0;
+ #endif
+@@ -1033,7 +1034,7 @@ void atomisp_css_rx_clear_irq_info(enum ia_css_csi2_port port,
+ 					unsigned int infos)
+ {
+ #ifndef ISP2401_NEW_INPUT_SYSTEM
+-	ia_css_isys_rx_clear_irq_info(port, infos);
++	ia_css_isys_rx_clear_irq_info((mipi_port_ID_t)port, infos);
+ #endif
+ }
+ 
+@@ -2164,7 +2165,7 @@ int atomisp_css_input_configure_port(
+ 
+ 	for (i = 0; i < ATOMISP_INPUT_STREAM_NUM; i++) {
+ 		stream_env = &asd->stream_env[i];
+-		stream_env->stream_config.source.port.port = port;
++		stream_env->stream_config.source.port.port = (int) port;
+ 		stream_env->stream_config.source.port.num_lanes = num_lanes;
+ 		stream_env->stream_config.source.port.timeout = timeout;
+ 		if (mipi_freq)
+diff --git a/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.c b/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.c
+index 744ab6e..b95a5a5 100644
+--- a/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.c
++++ b/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.c
+@@ -49,11 +49,11 @@ const struct atomisp_in_fmt_conv atomisp_in_fmt_conv[] = {
+ 	{ MEDIA_BUS_FMT_SRGGB12_1X12, 12, 12, ATOMISP_INPUT_FORMAT_RAW_12, CSS_BAYER_ORDER_RGGB, CSS_FORMAT_RAW_12 },
+ 	{ MEDIA_BUS_FMT_UYVY8_1X16, 8, 8, ATOMISP_INPUT_FORMAT_YUV422_8, 0, IA_CSS_STREAM_FORMAT_YUV422_8 },
+ 	{ MEDIA_BUS_FMT_YUYV8_1X16, 8, 8, ATOMISP_INPUT_FORMAT_YUV422_8, 0, IA_CSS_STREAM_FORMAT_YUV422_8 },
+-	{ MEDIA_BUS_FMT_JPEG_1X8, 8, 8, CSS_FRAME_FORMAT_BINARY_8, 0, IA_CSS_STREAM_FORMAT_BINARY_8 },
+-	{ V4L2_MBUS_FMT_CUSTOM_NV12, 12, 12, CSS_FRAME_FORMAT_NV12, 0, CSS_FRAME_FORMAT_NV12 },
+-	{ V4L2_MBUS_FMT_CUSTOM_NV21, 12, 12, CSS_FRAME_FORMAT_NV21, 0, CSS_FRAME_FORMAT_NV21 },
++	{ MEDIA_BUS_FMT_JPEG_1X8, 8, 8, ATOMISP_INPUT_FORMAT_BINARY_8, 0, IA_CSS_STREAM_FORMAT_BINARY_8 },
++	{ V4L2_MBUS_FMT_CUSTOM_NV12, 12, 12, ATOMISP_INPUT_FORMAT_RAW_12, 0, CSS_FORMAT_RAW_12},
++	{ V4L2_MBUS_FMT_CUSTOM_NV21, 12, 12, ATOMISP_INPUT_FORMAT_RAW_12, 0, CSS_FORMAT_RAW_12},
+ 	{ V4L2_MBUS_FMT_CUSTOM_YUV420, 12, 12, ATOMISP_INPUT_FORMAT_YUV420_8_LEGACY, 0, IA_CSS_STREAM_FORMAT_YUV420_8_LEGACY },
+-	{ V4L2_MBUS_FMT_CUSTOM_M10MO_RAW, 8, 8, CSS_FRAME_FORMAT_BINARY_8, 0, IA_CSS_STREAM_FORMAT_BINARY_8 },
++	{ V4L2_MBUS_FMT_CUSTOM_M10MO_RAW, 8, 8, ATOMISP_INPUT_FORMAT_BINARY_8, 0, IA_CSS_STREAM_FORMAT_BINARY_8 },
+ 	/* no valid V4L2 MBUS code for metadata format, so leave it 0. */
+ 	{ 0, 0, 0, ATOMISP_INPUT_FORMAT_EMBEDDED, 0, IA_CSS_STREAM_FORMAT_EMBEDDED },
+ 	{}
+@@ -104,7 +104,7 @@ const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv(u32 code)
+ }
+ 
+ const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
+-	enum atomisp_css_stream_format atomisp_in_fmt)
++	enum atomisp_input_format atomisp_in_fmt)
+ {
+ 	int i;
+ 
+diff --git a/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.h b/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.h
+index ba5c2ab..acd9f22 100644
+--- a/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.h
++++ b/drivers/staging/media/atomisp/pci/atomisp2/atomisp_subdev.h
+@@ -62,7 +62,7 @@ struct atomisp_in_fmt_conv {
+ 	u32     code;
+ 	uint8_t bpp; /* bits per pixel */
+ 	uint8_t depth; /* uncompressed */
+-	enum atomisp_css_stream_format atomisp_in_fmt;
++	enum atomisp_input_format atomisp_in_fmt;
+ 	enum atomisp_css_bayer_order bayer_order;
+ 	enum ia_css_stream_format css_stream_fmt;
+ };
+@@ -428,10 +428,10 @@ bool atomisp_subdev_is_compressed(u32 code);
+ const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv(u32 code);
+ #ifndef ISP2401
+ const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv_by_atomisp_in_fmt(
+-	enum atomisp_css_stream_format atomisp_in_fmt);
++	enum atomisp_input_format tomisp_in_fmt);
+ #else
+ const struct atomisp_in_fmt_conv
+-    *atomisp_find_in_fmt_conv_by_atomisp_in_fmt(enum atomisp_css_stream_format
++    *atomisp_find_in_fmt_conv_by_atomisp_in_fmt(enum atomisp_input_format 
+ 						atomisp_in_fmt);
+ #endif
+ const struct atomisp_in_fmt_conv *atomisp_find_in_fmt_conv_compressed(u32 code);
+diff --git a/drivers/staging/media/atomisp/pci/atomisp2/css2400/css_2400_system/hrt/input_formatter_subsystem_defs.h b/drivers/staging/media/atomisp/pci/atomisp2/css2400/css_2400_system/hrt/input_formatter_subsystem_defs.h
+index 16bfe1d..7766f78 100644
+--- a/drivers/staging/media/atomisp/pci/atomisp2/css2400/css_2400_system/hrt/input_formatter_subsystem_defs.h
++++ b/drivers/staging/media/atomisp/pci/atomisp2/css2400/css_2400_system/hrt/input_formatter_subsystem_defs.h
+@@ -12,7 +12,7 @@
+  * more details.
+  */
+ 
+-#ifndef _if_subsystem_defs_h
++#ifndef _if_subsystem_defs_h__
+ #define _if_subsystem_defs_h__
+ 
+ #define HIVE_IFMT_GP_REGS_INPUT_SWITCH_LUT_REG_0            0
+diff --git a/drivers/staging/media/atomisp/pci/atomisp2/css2400/hive_isp_css_common/host/input_system.c b/drivers/staging/media/atomisp/pci/atomisp2/css2400/hive_isp_css_common/host/input_system.c
+index f35e189..dea7fb5 100644
+--- a/drivers/staging/media/atomisp/pci/atomisp2/css2400/hive_isp_css_common/host/input_system.c
++++ b/drivers/staging/media/atomisp/pci/atomisp2/css2400/hive_isp_css_common/host/input_system.c
+@@ -840,9 +840,9 @@ input_system_error_t input_system_configuration_reset(void)
+ 
+ 	input_system_network_rst(INPUT_SYSTEM0_ID);
+ 
+-	gp_device_rst(INPUT_SYSTEM0_ID);
++	gp_device_rst(GP_DEVICE0_ID);
+ 
+-	input_switch_rst(INPUT_SYSTEM0_ID);
++	input_switch_rst(GP_DEVICE0_ID);
+ 
+ 	//target_rst();
+ 
+@@ -858,7 +858,7 @@ input_system_error_t input_system_configuration_reset(void)
+ 
+ 	for (i = 0; i < N_CSI_PORTS; i++ ) {
+ 		config.csi_buffer_flags[i]	 = INPUT_SYSTEM_CFG_FLAG_RESET;
+-		config.multicast[i]		 = INPUT_SYSTEM_CFG_FLAG_RESET;
++		config.multicast[i]		 = N_INPUT_SYSTEM_CONNECTION;
+ 	}
+ 
+ 	config.source_type_flags				 = INPUT_SYSTEM_CFG_FLAG_RESET;
+@@ -1286,10 +1286,10 @@ static input_system_error_t configuration_to_registers(void)
+ 	} // end of switch (source_type)
+ 
+ 	// Set input selector.
+-	input_selector_cfg_for_sensor(INPUT_SYSTEM0_ID);
++	input_selector_cfg_for_sensor(GP_DEVICE0_ID);
+ 
+ 	// Set input switch.
+-	input_switch_cfg(INPUT_SYSTEM0_ID, &config.input_switch_cfg);
++	input_switch_cfg(GP_DEVICE0_ID, &config.input_switch_cfg);
+ 
+ 	// Set input formatters.
+ 	// AM: IF are set dynamically.
+diff --git a/drivers/staging/media/atomisp/pci/atomisp2/css2400/sh_css.c b/drivers/staging/media/atomisp/pci/atomisp2/css2400/sh_css.c
+index e882b55..4342ab3 100644
+--- a/drivers/staging/media/atomisp/pci/atomisp2/css2400/sh_css.c
++++ b/drivers/staging/media/atomisp/pci/atomisp2/css2400/sh_css.c
+@@ -1459,7 +1459,7 @@ static void start_pipe(
+ #if !defined(HAS_NO_INPUT_SYSTEM)
+ 				,(input_mode==IA_CSS_INPUT_MODE_MEMORY) ?
+ 					(mipi_port_ID_t)0 :
+-					me->stream->config.source.port.port
++					(mipi_port_ID_t)me->stream->config.source.port.port
+ #endif
+ #ifdef ISP2401
+ 				,&me->config.internal_frame_origin_bqs_on_sctbl,
+@@ -4048,7 +4048,7 @@ preview_start(struct ia_css_pipe *pipe)
+ #endif
+ #if !defined(HAS_NO_INPUT_SYSTEM)
+ #ifndef ISP2401
+-			, pipe->stream->config.source.port.port
++			, (mipi_port_ID_t)pipe->stream->config.source.port.port
+ #else
+ 			pipe->stream->config.source.port.port,
+ #endif
+@@ -5921,7 +5921,7 @@ static enum ia_css_err video_start(struct ia_css_pipe *pipe)
+ #endif
+ #if !defined(HAS_NO_INPUT_SYSTEM)
+ #ifndef ISP2401
+-			, pipe->stream->config.source.port.port
++			,(mipi_port_ID_t) pipe->stream->config.source.port.port
+ #else
+ 			pipe->stream->config.source.port.port,
+ #endif
+diff --git a/drivers/staging/rtl8188eu/core/rtw_ieee80211.c b/drivers/staging/rtl8188eu/core/rtw_ieee80211.c
+index bb867a9..8b404c6 100644
+--- a/drivers/staging/rtl8188eu/core/rtw_ieee80211.c
++++ b/drivers/staging/rtl8188eu/core/rtw_ieee80211.c
+@@ -306,7 +306,7 @@ unsigned char *rtw_get_wpa_ie(unsigned char *pie, uint *wpa_ie_len, int limit)
+ 
+ 		if (pbuf) {
+ 			/* check if oui matches... */
+-			if (!memcmp((pbuf + 2), wpa_oui_type, sizeof(wpa_oui_type)) == false)
++			if (memcmp((pbuf + 2), wpa_oui_type, sizeof(wpa_oui_type)) != 0)
+ 				goto check_next_ie;
+ 
+ 			/* check version... */
+diff --git a/drivers/staging/rtl8188eu/core/rtw_mlme.c b/drivers/staging/rtl8188eu/core/rtw_mlme.c
+index f6d7158..d4f3e3d 100644
+--- a/drivers/staging/rtl8188eu/core/rtw_mlme.c
++++ b/drivers/staging/rtl8188eu/core/rtw_mlme.c
+@@ -1447,7 +1447,7 @@ static int rtw_check_join_candidate(struct mlme_priv *pmlmepriv
+ 	/* check ssid, if needed */
+ 	if (pmlmepriv->assoc_ssid.SsidLength) {
+ 		if (competitor->network.Ssid.SsidLength != pmlmepriv->assoc_ssid.SsidLength ||
+-		    !memcmp(competitor->network.Ssid.Ssid, pmlmepriv->assoc_ssid.Ssid, pmlmepriv->assoc_ssid.SsidLength) == false)
++		    memcmp(competitor->network.Ssid.Ssid, pmlmepriv->assoc_ssid.Ssid, pmlmepriv->assoc_ssid.SsidLength) != 0)
+ 			goto exit;
+ 	}
+ 
+diff --git a/drivers/staging/rtl8188eu/core/rtw_pwrctrl.c b/drivers/staging/rtl8188eu/core/rtw_pwrctrl.c
+index f86c9ce..180215a 100644
+--- a/drivers/staging/rtl8188eu/core/rtw_pwrctrl.c
++++ b/drivers/staging/rtl8188eu/core/rtw_pwrctrl.c
+@@ -302,7 +302,7 @@ void rtw_set_rpwm(struct adapter *padapter, u8 pslv)
+ 			pslv = PS_STATE_S3;
+ 	}
+ 
+-	if ((pwrpriv->rpwm == pslv)) {
++	if (pwrpriv->rpwm == pslv) {
+ 		RT_TRACE(_module_rtl871x_pwrctrl_c_, _drv_err_,
+ 			 ("%s: Already set rpwm[0x%02X], new=0x%02X!\n", __func__, pwrpriv->rpwm, pslv));
+ 		return;
+diff --git a/drivers/staging/rtl8188eu/core/rtw_recv.c b/drivers/staging/rtl8188eu/core/rtw_recv.c
+index afb9dad..75f7c89 100644
+--- a/drivers/staging/rtl8188eu/core/rtw_recv.c
++++ b/drivers/staging/rtl8188eu/core/rtw_recv.c
+@@ -1289,8 +1289,8 @@ static int wlanhdr_to_ethhdr(struct recv_frame *precvframe)
+ 	psnap_type = ptr+pattrib->hdrlen + pattrib->iv_len+SNAP_SIZE;
+ 	/* convert hdr + possible LLC headers into Ethernet header */
+ 	if ((!memcmp(psnap, rtw_rfc1042_header, SNAP_SIZE) &&
+-	     (!memcmp(psnap_type, SNAP_ETH_TYPE_IPX, 2) == false) &&
+-	     (!memcmp(psnap_type, SNAP_ETH_TYPE_APPLETALK_AARP, 2) == false)) ||
++	     (memcmp(psnap_type, SNAP_ETH_TYPE_IPX, 2) != 0 ) &&
++	     (memcmp(psnap_type, SNAP_ETH_TYPE_APPLETALK_AARP, 2) != 0)) ||
+ 	     !memcmp(psnap, rtw_bridge_tunnel_header, SNAP_SIZE)) {
+ 		/* remove RFC1042 or Bridge-Tunnel encapsulation and replace EtherType */
+ 		bsnaphdr = true;
+diff --git a/drivers/staging/rtl8188eu/core/rtw_wlan_util.c b/drivers/staging/rtl8188eu/core/rtw_wlan_util.c
+index 2db8a5d..2d043a3 100644
+--- a/drivers/staging/rtl8188eu/core/rtw_wlan_util.c
++++ b/drivers/staging/rtl8188eu/core/rtw_wlan_util.c
+@@ -879,7 +879,7 @@ int rtw_check_bcn_info(struct adapter  *Adapter, u8 *pframe, u32 packet_len)
+ 		return _FAIL;
+ 	}
+ 
+-	if (!memcmp(cur_network->network.MacAddress, pbssid, 6) == false) {
++	if (memcmp(cur_network->network.MacAddress, pbssid, 6) != 0) {
+ 		DBG_88E("Oops: rtw_check_network_encrypt linked but recv other bssid bcn\n%pM %pM\n",
+ 			(pbssid), (cur_network->network.MacAddress));
+ 		return true;
+diff --git a/drivers/staging/rtl8188eu/hal/odm.c b/drivers/staging/rtl8188eu/hal/odm.c
+index ec8aae7..ea7eadb 100644
+--- a/drivers/staging/rtl8188eu/hal/odm.c
++++ b/drivers/staging/rtl8188eu/hal/odm.c
+@@ -1093,7 +1093,7 @@ void odm_EdcaTurboCheckCE(struct odm_dm_struct *pDM_Odm)
+ 	struct mlme_ext_priv	*pmlmeext = &(Adapter->mlmeextpriv);
+ 	struct mlme_ext_info	*pmlmeinfo = &(pmlmeext->mlmext_info);
+ 
+-	if ((pregpriv->wifi_spec == 1))/*  (pmlmeinfo->HT_enable == 0)) */
++	if (pregpriv->wifi_spec == 1)/*  (pmlmeinfo->HT_enable == 0)) */
+ 		goto dm_CheckEdcaTurbo_EXIT;
+ 
+ 	if (pmlmeinfo->assoc_AP_vendor >=  HT_IOT_PEER_MAX)
+diff --git a/drivers/staging/rtl8188eu/hal/rf_cfg.c b/drivers/staging/rtl8188eu/hal/rf_cfg.c
+index 9712d7b..31952c9 100644
+--- a/drivers/staging/rtl8188eu/hal/rf_cfg.c
++++ b/drivers/staging/rtl8188eu/hal/rf_cfg.c
+@@ -185,7 +185,7 @@ static void rtl8188e_config_rf_reg(struct adapter *adapt,
+ 	u32 content = 0x1000; /*RF Content: radio_a_txt*/
+ 	u32 maskforphyset = content & 0xE000;
+ 
+-	rtl_rfreg_delay(adapt, RF90_PATH_A, addr | maskforphyset,
++	rtl_rfreg_delay(adapt, RF_PATH_A, addr | maskforphyset,
+ 			RFREG_OFFSET_MASK,
+ 			data);
+ }
+diff --git a/drivers/staging/rtl8723bs/core/rtw_security.c b/drivers/staging/rtl8723bs/core/rtw_security.c
+index 06a7e40..836d01a 100644
+--- a/drivers/staging/rtl8723bs/core/rtw_security.c
++++ b/drivers/staging/rtl8723bs/core/rtw_security.c
+@@ -1552,7 +1552,7 @@ u32 rtw_aes_encrypt(struct adapter *padapter, u8 *pxmitframe)
+ 	pframe = ((struct xmit_frame *)pxmitframe)->buf_addr + hw_hdr_offset;
+ 
+ 	/* 4 start to encrypt each fragment */
+-	if ((pattrib->encrypt == _AES_)) {
++	if (pattrib->encrypt == _AES_) {
+ 		RT_TRACE(_module_rtl871x_security_c_, _drv_err_, ("rtw_aes_encrypt: stainfo!= NULL!!!\n"));
+ 
+ 		if (IS_MCAST(pattrib->ra))
+@@ -1875,7 +1875,7 @@ u32 rtw_aes_decrypt(struct adapter *padapter, u8 *precvframe)
+ 
+ 	pframe = (unsigned char *)((union recv_frame *)precvframe)->u.hdr.rx_data;
+ 	/* 4 start to encrypt each fragment */
+-	if ((prxattrib->encrypt == _AES_)) {
++	if (prxattrib->encrypt == _AES_) {
+ 
+ 		stainfo = rtw_get_stainfo(&padapter->stapriv, &prxattrib->ta[0]);
+ 		if (stainfo != NULL) {
+diff --git a/drivers/staging/rtl8723bs/hal/odm_EdcaTurboCheck.c b/drivers/staging/rtl8723bs/hal/odm_EdcaTurboCheck.c
+index 8d53cb7..d95e226 100644
+--- a/drivers/staging/rtl8723bs/hal/odm_EdcaTurboCheck.c
++++ b/drivers/staging/rtl8723bs/hal/odm_EdcaTurboCheck.c
+@@ -105,7 +105,7 @@ void odm_EdcaTurboCheckCE(void *pDM_VOID)
+ 		return;
+ 	}
+ 
+-	if ((pregpriv->wifi_spec == 1)) {
++	if (pregpriv->wifi_spec == 1) {
+ 		precvpriv->bIsAnyNonBEPkts = false;
+ 		return;
+ 	}
+diff --git a/drivers/staging/rtl8723bs/hal/rtl8723b_hal_init.c b/drivers/staging/rtl8723bs/hal/rtl8723b_hal_init.c
+index 1565f2d..ac14aea 100644
+--- a/drivers/staging/rtl8723bs/hal/rtl8723b_hal_init.c
++++ b/drivers/staging/rtl8723bs/hal/rtl8723b_hal_init.c
+@@ -3357,7 +3357,7 @@ static void hw_var_set_opmode(struct adapter *padapter, u8 variable, u8 *val)
+ 			/*  disable atim wnd */
+ 			rtw_write8(padapter, REG_BCN_CTRL, DIS_TSF_UDT|EN_BCN_FUNCTION|DIS_ATIM);
+ 			/* rtw_write8(padapter, REG_BCN_CTRL, 0x18); */
+-		} else if ((mode == _HW_STATE_ADHOC_) /*|| (mode == _HW_STATE_AP_)*/) {
++		} else if (mode == _HW_STATE_ADHOC_ /*|| (mode == _HW_STATE_AP_)*/) {
+ 			ResumeTxBeacon(padapter);
+ 			rtw_write8(padapter, REG_BCN_CTRL, DIS_TSF_UDT|EN_BCN_FUNCTION|DIS_BCNQ_SUB);
+ 		} else if (mode == _HW_STATE_AP_) {
+diff --git a/drivers/staging/rtl8723bs/include/ieee80211.h b/drivers/staging/rtl8723bs/include/ieee80211.h
+index 73ce637..2126e0b 100644
+--- a/drivers/staging/rtl8723bs/include/ieee80211.h
++++ b/drivers/staging/rtl8723bs/include/ieee80211.h
+@@ -1013,13 +1013,13 @@ extern __inline int is_multicast_mac_addr(const u8 *addr)
+         return ((addr[0] != 0xff) && (0x01 & addr[0]));
+ }
+ 
+-extern __inline int is_broadcast_mac_addr(const u8 *addr)
++static inline int is_broadcast_mac_addr(const u8 *addr)
+ {
+ 	return ((addr[0] == 0xff) && (addr[1] == 0xff) && (addr[2] == 0xff) &&   \
+ 		(addr[3] == 0xff) && (addr[4] == 0xff) && (addr[5] == 0xff));
+ }
+ 
+-extern __inline int is_zero_mac_addr(const u8 *addr)
++static inline int is_zero_mac_addr(const u8 *addr)
+ {
+ 	return ((addr[0] == 0x00) && (addr[1] == 0x00) && (addr[2] == 0x00) &&   \
+ 		(addr[3] == 0x00) && (addr[4] == 0x00) && (addr[5] == 0x00));
+diff --git a/drivers/staging/rtl8723bs/os_dep/sdio_intf.c b/drivers/staging/rtl8723bs/os_dep/sdio_intf.c
+index 94332487..91505782d 100644
+--- a/drivers/staging/rtl8723bs/os_dep/sdio_intf.c
++++ b/drivers/staging/rtl8723bs/os_dep/sdio_intf.c
+@@ -30,13 +30,14 @@ static const struct sdio_device_id sdio_ids[] =
+ 	{ SDIO_DEVICE(0x024c, 0xb723), },
+ 	{ /* end: all zeroes */				},
+ };
++/*
+ static const struct acpi_device_id acpi_ids[] = {
+ 	{"OBDA8723", 0x0000},
+ 	{}
+ };
+-
++*/
+ MODULE_DEVICE_TABLE(sdio, sdio_ids);
+-MODULE_DEVICE_TABLE(acpi, acpi_ids);
++//MODULE_DEVICE_TABLE(acpi, acpi_ids);
+ 
+ static int rtw_drv_init(struct sdio_func *func, const struct sdio_device_id *id);
+ static void rtw_dev_remove(struct sdio_func *func);
+diff --git a/drivers/staging/rtlwifi/btcoexist/halbtcoutsrc.c b/drivers/staging/rtlwifi/btcoexist/halbtcoutsrc.c
+index 52620b7..5e2c7dd 100644
+--- a/drivers/staging/rtlwifi/btcoexist/halbtcoutsrc.c
++++ b/drivers/staging/rtlwifi/btcoexist/halbtcoutsrc.c
+@@ -1273,13 +1273,13 @@ bool exhalbtc_initlize_variables_wifi_only(struct rtl_priv *rtlpriv)
+ 
+ 	switch (rtlpriv->rtlhal.interface) {
+ 	case INTF_PCI:
+-		wifionly_cfg->chip_interface = BTC_INTF_PCI;
++		wifionly_cfg->chip_interface = WIFIONLY_INTF_PCI;
+ 		break;
+ 	case INTF_USB:
+-		wifionly_cfg->chip_interface = BTC_INTF_USB;
++		wifionly_cfg->chip_interface = WIFIONLY_INTF_USB;
+ 		break;
+ 	default:
+-		wifionly_cfg->chip_interface = BTC_INTF_UNKNOWN;
++		wifionly_cfg->chip_interface = WIFIONLY_INTF_UNKNOWN;
+ 		break;
+ 	}
+ 
+diff --git a/drivers/staging/rtlwifi/phydm/phydm_adc_sampling.c b/drivers/staging/rtlwifi/phydm/phydm_adc_sampling.c
+index 158dd5d..1f64015 100644
+--- a/drivers/staging/rtlwifi/phydm/phydm_adc_sampling.c
++++ b/drivers/staging/rtlwifi/phydm/phydm_adc_sampling.c
+@@ -566,7 +566,7 @@ void phydm_lamode_trigger_setting(void *dm_void, char input[][16], u32 *_used,
+ 				output + used, out_len - used,
+ 				"{En} {0:BB,1:BB_MAC,2:RF0,3:RF1,4:MAC}\n {BB:dbg_port[bit],BB_MAC:0-ok/1-fail/2-cca,MAC:ref} {DMA type} {TrigTime}\n {polling_time/ref_mask} {dbg_port} {0:P_Edge, 1:N_Edge} {SpRate:0-80M,1-40M,2-20M} {Capture num}\n");
+ 			/**/
+-		} else if ((is_enable_la_mode == 1)) {
++		} else if (is_enable_la_mode == 1) {
+ 			PHYDM_SSCANF(input[2], DCMD_DECIMAL, &var1[1]);
+ 
+ 			trig_mode = (u8)var1[1];
+diff --git a/drivers/staging/rtlwifi/phydm/phydm_features.h b/drivers/staging/rtlwifi/phydm/phydm_features.h
+index 37f6f0c..a12361c 100644
+--- a/drivers/staging/rtlwifi/phydm/phydm_features.h
++++ b/drivers/staging/rtlwifi/phydm/phydm_features.h
+@@ -24,7 +24,7 @@
+  *****************************************************************************/
+ 
+ #ifndef __PHYDM_FEATURES_H__
+-#define __PHYDM_FEATURES
++#define __PHYDM_FEATURES_H__
+ 
+ /*phydm debyg report & tools*/
+ 
+diff --git a/drivers/staging/rtlwifi/phydm/phydm_kfree.h b/drivers/staging/rtlwifi/phydm/phydm_kfree.h
+index 1ee6005..fa1627e 100644
+--- a/drivers/staging/rtlwifi/phydm/phydm_kfree.h
++++ b/drivers/staging/rtlwifi/phydm/phydm_kfree.h
+@@ -24,7 +24,7 @@
+  *****************************************************************************/
+ 
+ #ifndef __PHYDMKFREE_H__
+-#define __PHYDKFREE_H__
++#define __PHYDMKFREE_H__
+ 
+ #define KFREE_VERSION "1.0"
+ 
+diff --git a/drivers/staging/rtlwifi/regd.c b/drivers/staging/rtlwifi/regd.c
+index e0a3ff8..39e1e0d 100644
+--- a/drivers/staging/rtlwifi/regd.c
++++ b/drivers/staging/rtlwifi/regd.c
+@@ -421,7 +421,7 @@ int rtl_regd_init(struct ieee80211_hw *hw,
+ 	struct wiphy *wiphy = hw->wiphy;
+ 	struct country_code_to_enum_rd *country = NULL;
+ 
+-	if (!wiphy || !&rtlpriv->regd)
++	if (!wiphy || !rtlpriv)
+ 		return -EINVAL;
+ 
+ 	/* init country_code from efuse channel plan */
+diff --git a/drivers/video/backlight/lm3639_bl.c b/drivers/video/backlight/lm3639_bl.c
+index cd50df5..cb75e66 100644
+--- a/drivers/video/backlight/lm3639_bl.c
++++ b/drivers/video/backlight/lm3639_bl.c
+@@ -400,9 +400,9 @@ static int lm3639_remove(struct i2c_client *client)
+ 
+ 	regmap_write(pchip->regmap, REG_ENABLE, 0x00);
+ 
+-	if (&pchip->cdev_torch)
++	if (pchip->cdev_torch->name)
+ 		led_classdev_unregister(&pchip->cdev_torch);
+-	if (&pchip->cdev_flash)
++	if (pchip->cdev_flash->name)
+ 		led_classdev_unregister(&pchip->cdev_flash);
+ 	if (pchip->bled)
+ 		device_remove_file(&(pchip->bled->dev), &dev_attr_bled_mode);
+diff --git a/sound/pci/ctxfi/ctmixer.c b/sound/pci/ctxfi/ctmixer.c
+index 4f4a2a5..da4b133 100644
+--- a/sound/pci/ctxfi/ctmixer.c
++++ b/sound/pci/ctxfi/ctmixer.c
+@@ -941,7 +941,7 @@ static int ct_mixer_topology_build(struct ct_mixer *mixer)
+ 	/* Build topology from destination to source */
+ 
+ 	/* Set up Master mixer */
+-	for (i = AMIXER_MASTER_F, j = SUM_IN_F;
++	for (i = AMIXER_MASTER_F, j = (int) SUM_IN_F;
+ 					i <= AMIXER_MASTER_S; i++, j++) {
+ 		amix_d = mixer->amixers[i*CHN_NUM];
+ 		sum = mixer->sums[j*CHN_NUM];
+@@ -971,7 +971,7 @@ static int ct_mixer_topology_build(struct ct_mixer *mixer)
+ 	amix_d->ops->setup(amix_d, &amix_s->rsc, INIT_VOL, NULL);
+ 
+ 	/* Set up PCM-in mixer */
+-	for (i = AMIXER_PCM_F, j = SUM_IN_F; i <= AMIXER_PCM_S; i++, j++) {
++	for (i = AMIXER_PCM_F, j = (int) SUM_IN_F; i <= AMIXER_PCM_S; i++, j++) {
+ 		amix_d = mixer->amixers[i*CHN_NUM];
+ 		sum = mixer->sums[j*CHN_NUM];
+ 		amix_d->ops->setup(amix_d, NULL, INIT_VOL, sum);
