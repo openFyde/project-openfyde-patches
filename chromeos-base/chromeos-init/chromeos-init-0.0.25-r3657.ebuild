@@ -101,7 +101,7 @@ src_install_upstart() {
 		fi
 	else
 		doins upstart/*.conf
-
+        doins ${FILESDIR}/cgroups.conf
 		dosbin chromeos-disk-metrics
 		dosbin chromeos-send-kernel-errors
 		dosbin display_low_battery_alert
