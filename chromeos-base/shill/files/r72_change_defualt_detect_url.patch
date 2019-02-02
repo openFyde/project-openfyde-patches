@@ -1,0 +1,16 @@
+diff --git a/shill/portal_detector.cc b/shill/portal_detector.cc
+index 6fb82287b..934dcce25 100644
+--- a/shill/portal_detector.cc
++++ b/shill/portal_detector.cc
+@@ -64,9 +64,9 @@ const int PortalDetector::kRequestTimeoutSeconds = 10;
+ const int PortalDetector::kMaxFailuresInContentPhase = 2;
+ 
+ const char PortalDetector::kDefaultHttpUrl[] =
+-    "http://www.gstatic.com/generate_204";
++      "http://store.fydeos.com/204";
+ const char PortalDetector::kDefaultHttpsUrl[] =
+-    "https://www.google.com/generate_204";
++      "https://store.fydeos.com/204";
+ 
+ PortalDetector::PortalDetector(
+     ConnectionRefPtr connection,

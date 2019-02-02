@@ -1,0 +1,17 @@
+diff --git a/crash-reporter/BUILD.gn b/crash-reporter/BUILD.gn
+index e53ce7f6f..1b63c4644 100644
+--- a/crash-reporter/BUILD.gn
++++ b/crash-reporter/BUILD.gn
+@@ -185,9 +185,9 @@ if (use.cheets) {
+     # This condition matches the "use_i686" helper in the "cros-i686"
+     # eclass. The "amd64" check allows the "cros_i686" USE flag to be
+     # enabled for an overlay inherited by non-x86 boards.
+-    if (use.cros_i686 && use.amd64) {
+-      configs -= [ "//common-mk:pie" ]
+-    }
++    #if (use.cros_i686 && use.amd64) {
++    #  configs -= [ "//common-mk:pie" ]
++    #}
+   }
+ }
+ 
