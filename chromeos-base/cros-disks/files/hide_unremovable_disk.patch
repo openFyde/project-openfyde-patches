@@ -1,0 +1,13 @@
+diff --git a/cros-disks/udev_device.cc b/cros-disks/udev_device.cc
+index ef2111461..243262116 100644
+--- a/cros-disks/udev_device.cc
++++ b/cros-disks/udev_device.cc
+@@ -278,7 +278,7 @@ bool UdevDevice::IsMobileBroadbandDevice() const {
+ bool UdevDevice::IsAutoMountable() const {
+   // TODO(benchan): Find a reliable way to detect if a device is a removable
+   // storage as the removable attribute in sysfs does not always tell the truth.
+-  return !IsOnBootDevice() && !IsVirtual();
++  return !IsOnBootDevice() && !IsVirtual() && IsOnRemovableDevice();
+ }
+ 
+ bool UdevDevice::IsHidden() {
