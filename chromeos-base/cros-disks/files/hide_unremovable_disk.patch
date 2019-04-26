@@ -1,13 +1,28 @@
 diff --git a/cros-disks/udev_device.cc b/cros-disks/udev_device.cc
-index ef2111461..243262116 100644
+index ef2111461..11b83924d 100644
 --- a/cros-disks/udev_device.cc
 +++ b/cros-disks/udev_device.cc
-@@ -278,7 +278,7 @@ bool UdevDevice::IsMobileBroadbandDevice() const {
+@@ -42,6 +42,8 @@ const char kPropertyCDROMMedia[] = "ID_CDROM_MEDIA";
+ const char kPropertyCDROMMediaTrackCountData[] =
+     "ID_CDROM_MEDIA_TRACK_COUNT_DATA";
+ const char kPropertyDeviceType[] = "DEVTYPE";
++const char kPropertyBusType[] = "ID_BUS";
++const char kBusTypeUSB[] = "usb";
+ const char kPropertyDeviceTypeUSBDevice[] = "usb_device";
+ const char kPropertyFilesystemUsage[] = "ID_FS_USAGE";
+ const char kPropertyMistSupportedDevice[] = "MIST_SUPPORTED_DEVICE";
+@@ -278,7 +280,13 @@ bool UdevDevice::IsMobileBroadbandDevice() const {
  bool UdevDevice::IsAutoMountable() const {
    // TODO(benchan): Find a reliable way to detect if a device is a removable
    // storage as the removable attribute in sysfs does not always tell the truth.
 -  return !IsOnBootDevice() && !IsVirtual();
-+  return !IsOnBootDevice() && !IsVirtual() && IsOnRemovableDevice();
++  const char* value = udev_device_get_property_value (dev_, kPropertyBusType);
++  bool isUsbDisk = false;
++  if (IsOnSdDevice())
++     return true;
++  if (value && strcmp(value, kBusTypeUSB) == 0)
++  	isUsbDisk = true;
++  return isUsbDisk && !IsOnBootDevice() && !IsVirtual() && IsOnRemovableDevice();
  }
  
  bool UdevDevice::IsHidden() {
