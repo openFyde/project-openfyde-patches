@@ -1,1 +1,0 @@
-cros-disks-0.0.1-r2653.ebuild

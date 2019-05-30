@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=5
+CROS_WORKON_COMMIT="fadba088eff4c4bcdc8f8a4cea02cce7ba08bccc"
+CROS_WORKON_TREE=("01ff687fb16fa973568009bb8676ccfda32b65bd" "7c2672e7fd88678931ee5c3ebbcc5e20699264c1" "351d92d7016b5c6eabac887e13c6ceb4105f576c" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -20,7 +22,7 @@ SRC_URI="gs://chromeos-localmirror/distfiles/${CREDITS_SRC}"
 
 LICENSE="BSD-Google"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="*"
 # The crosvm-wl-dmabuf USE flag is used when preprocessing concierge source.
 IUSE="+kvm_host +seccomp +crosvm-wl-dmabuf fuzzer workaround_crbug_909793"
 REQUIRED_USE="kvm_host"

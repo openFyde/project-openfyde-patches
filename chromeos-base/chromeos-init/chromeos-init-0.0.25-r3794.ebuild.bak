@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="5"
+CROS_WORKON_COMMIT="f5d9eff2f1ada99e0f4a1bd0bb15ee08d0ea4266"
+CROS_WORKON_TREE=("7c2672e7fd88678931ee5c3ebbcc5e20699264c1" "678a4eb66a16aca40de3a8896e92b437b280c4b0" "4b46a612f38c049072fb2356f8b1d2110d211b10" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -20,7 +22,7 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="
 	cros_embedded +debugd +encrypted_stateful frecon
 	kernel-3_8 kernel-3_10 kernel-3_14 kernel-3_18 +midi
@@ -103,7 +105,7 @@ src_install_upstart() {
 			doins upstart/log-rotate.conf upstart/syslog.conf upstart/journald.conf
 		fi
 		if use !systemd; then
-			doins upstart/cgroups.conf
+			doins ${FILESDIR}/cgroups.conf
 			doins upstart/dbus.conf
 			if use udev; then
 				doins upstart/udev.conf upstart/udev-trigger.conf
@@ -115,7 +117,7 @@ src_install_upstart() {
 		fi
 	else
 		doins upstart/*.conf
-
+        doins ${FILESDIR}/cgroups.conf
 		dosbin chromeos-disk-metrics
 		dosbin chromeos-send-kernel-errors
 		dosbin display_low_battery_alert

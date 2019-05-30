@@ -3,6 +3,8 @@
 
 EAPI="6"
 
+CROS_WORKON_COMMIT="f5d9eff2f1ada99e0f4a1bd0bb15ee08d0ea4266"
+CROS_WORKON_TREE=("7c2672e7fd88678931ee5c3ebbcc5e20699264c1" "c4305380bbf07bef229bad88f1c74e9f7d7a1ad7" "4b46a612f38c049072fb2356f8b1d2110d211b10" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -19,7 +21,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-
 
 LICENSE="BSD-Google"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="cheets chromeless_tty cros_embedded -direncryption systemd"
 
 RDEPEND="
@@ -42,6 +44,11 @@ DEPEND="
 RDEPEND+="
 	chromeos-base/chromeos-ca-certificates
 "
+
+src_prepare() {
+    epatch "${FILESDIR}/cros_i686_issue.patch"
+    default
+}
 
 src_configure() {
 	platform_src_configure
