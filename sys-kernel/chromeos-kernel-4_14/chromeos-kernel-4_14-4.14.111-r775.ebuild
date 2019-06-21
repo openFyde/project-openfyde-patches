@@ -1,0 +1,1 @@
+chromeos-kernel-4_14-4.14.111-r774.ebuild

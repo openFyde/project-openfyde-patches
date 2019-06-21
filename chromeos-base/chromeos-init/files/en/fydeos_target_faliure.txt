@@ -1,0 +1,7 @@
+*Critical ERROR*
+
+Can not find target disk, check the list below:
+1. Assigned wrong target disk at kernel command line.
+2. Target disk failure.
+
+System halt, press any key to reboot.

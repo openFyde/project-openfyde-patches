@@ -1,0 +1,5 @@
+Everything seems fine.
+
+System will reboot in 3 seconds.
+
+Cross the finger and waiting the OOBE screen.

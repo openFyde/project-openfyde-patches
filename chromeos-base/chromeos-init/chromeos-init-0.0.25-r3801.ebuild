@@ -1,0 +1,1 @@
+chromeos-init-0.0.25-r3799.ebuild

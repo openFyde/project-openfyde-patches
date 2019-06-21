@@ -11,7 +11,7 @@ if [[ ${PV} == 99999999* ]]; then
 else
 	GIT_COMMIT="260cb35b11a968e7896f911565b75e411636ad69"
 	SRC_URI="https://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git/snapshot/linux-firmware-${GIT_COMMIT}.tar.gz -> ${P}.tar.gz"
-	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
+	KEYWORDS="~alpha amd64 arm arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
 fi
 
 DESCRIPTION="Linux firmware files"
@@ -60,7 +60,9 @@ RDEPEND="!savedconfig? (
 		!sys-firmware/iwl7265-ucode
 		!sys-firmware/iwl3160-7260-bt-ucode
 		!sys-firmware/radeon-ucode
-	)"
+	)
+  savedconfig? ( sys-firmware/linux-firmware-config )
+"
 #add anything else that collides to this
 
 RESTRICT="binchecks strip"

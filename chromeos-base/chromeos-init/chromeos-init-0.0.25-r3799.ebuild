@@ -2,8 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="5"
-CROS_WORKON_COMMIT="f5d9eff2f1ada99e0f4a1bd0bb15ee08d0ea4266"
-CROS_WORKON_TREE=("7c2672e7fd88678931ee5c3ebbcc5e20699264c1" "678a4eb66a16aca40de3a8896e92b437b280c4b0" "4b46a612f38c049072fb2356f8b1d2110d211b10" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
+CROS_WORKON_COMMIT="d78631ed69dfb70cd913c8686cce32084c232cbc"
+CROS_WORKON_TREE=("7c2672e7fd88678931ee5c3ebbcc5e20699264c1" "6c0403a4e6d03bb70e3a027aa9dce3372039ee19" "4b46a612f38c049072fb2356f8b1d2110d211b10" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -26,7 +26,7 @@ KEYWORDS="*"
 IUSE="
 	cros_embedded +debugd +encrypted_stateful frecon
 	kernel-3_8 kernel-3_10 kernel-3_14 kernel-3_18 +midi
-	-s3halt +syslog systemd +udev vivid vtconsole"
+	-s3halt +syslog systemd +udev vivid vtconsole fydeos_factory_install"
 
 # shunit2 should be a dependency only if USE=test, but cros_run_unit_test
 # doesn't calculate dependencies when emerging packages.
@@ -105,7 +105,7 @@ src_install_upstart() {
 			doins upstart/log-rotate.conf upstart/syslog.conf upstart/journald.conf
 		fi
 		if use !systemd; then
-			doins ${FILESDIR}/cgroups.conf
+			doins upstart/cgroups.conf
 			doins upstart/dbus.conf
 			if use udev; then
 				doins upstart/udev.conf upstart/udev-trigger.conf
@@ -117,7 +117,7 @@ src_install_upstart() {
 		fi
 	else
 		doins upstart/*.conf
-        doins ${FILESDIR}/cgroups.conf
+
 		dosbin chromeos-disk-metrics
 		dosbin chromeos-send-kernel-errors
 		dosbin display_low_battery_alert
@@ -191,6 +191,12 @@ src_install() {
 	insinto /usr/share/cros
 	doins $(usex encrypted_stateful encrypted_stateful \
 		unencrypted_stateful)/startup_utils.sh
+  if use fydeos_factory_install; then
+    doins ${FILESDIR}/fydeos_factory_install.sh
+    insinto /usr/share/chromeos-assets/text/boot_messages
+    doins -r ${FILESDIR}/zh-CN
+    doins -r ${FILESDIR}/en
+  fi
 }
 
 pkg_preinst() {
@@ -203,4 +209,11 @@ pkg_preinst() {
 	# by bootstat and ureadahead.
 	enewuser "debugfs-access"
 	enewgroup "debugfs-access"
+}
+
+src_prepare() {
+  if use fydeos_factory_install; then
+    epatch ${FILESDIR}/insert_factory_install_script.patch 
+    epatch ${FILESDIR}/set_default_language_to_zh.patch
+  fi
 }
