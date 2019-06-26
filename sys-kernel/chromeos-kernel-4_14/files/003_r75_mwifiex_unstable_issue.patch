@@ -1,0 +1,25 @@
+diff --git a/drivers/net/wireless/marvell/mwifiex/pcie.c b/drivers/net/wireless/marvell/mwifiex/pcie.c
+index 9511f5fe62f4..efd44bfd300b 100644
+--- a/drivers/net/wireless/marvell/mwifiex/pcie.c
++++ b/drivers/net/wireless/marvell/mwifiex/pcie.c
+@@ -1913,7 +1913,6 @@ static int mwifiex_pcie_event_complete(struct mwifiex_adapter *adapter,
+ {
+ 	struct pcie_service_card *card = adapter->card;
+ 	const struct mwifiex_pcie_card_reg *reg = card->pcie.reg;
+-	int ret = 0;
+ 	u32 rdptr = card->evtbd_rdptr & MWIFIEX_EVTBD_MASK;
+ 	u32 wrptr;
+ 	struct mwifiex_evt_buf_desc *desc;
+@@ -1972,11 +1971,7 @@ static int mwifiex_pcie_event_complete(struct mwifiex_adapter *adapter,
+ 		return -1;
+ 	}
+ 
+-	mwifiex_dbg(adapter, EVENT,
+-		    "info: Check Events Again\n");
+-	ret = mwifiex_pcie_process_event_ready(adapter);
+-
+-	return ret;
++  return 0;
+ }
+ 
+ /* Combo firmware image is a combination of

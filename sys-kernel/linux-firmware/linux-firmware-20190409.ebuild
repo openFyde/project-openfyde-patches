@@ -61,7 +61,7 @@ RDEPEND="!savedconfig? (
 		!sys-firmware/iwl3160-7260-bt-ucode
 		!sys-firmware/radeon-ucode
 	)
-  savedconfig? ( sys-firmware/linux-firmware-config )
+  savedconfig? ( sys-kernel/linux-firmware-config )
 "
 #add anything else that collides to this
 
