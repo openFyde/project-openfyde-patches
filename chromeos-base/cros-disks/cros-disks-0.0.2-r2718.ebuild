@@ -1,1 +1,1 @@
-cros-disks-0.0.1-r2718.ebuild
+cros-disks-0.0.1-r1.ebuild

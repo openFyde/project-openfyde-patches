@@ -1,0 +1,25 @@
+diff --git a/drivers/hid/hid-ids.h b/drivers/hid/hid-ids.h
+index adf1ee590233..4dd73c519617 100644
+--- a/drivers/hid/hid-ids.h
++++ b/drivers/hid/hid-ids.h
+@@ -1180,4 +1180,7 @@
+ #define USB_VENDOR_ID_UGTIZER			0x2179
+ #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
+ 
++#define USB_VENDOR_ID_1018  0x1018
++#define USB_DEVICE_ID_1018_MUTITOUCH 0x1006
++
+ #endif
+diff --git a/drivers/hid/hid-microsoft.c b/drivers/hid/hid-microsoft.c
+index 96e7d3231d2f..81557ef876b2 100644
+--- a/drivers/hid/hid-microsoft.c
++++ b/drivers/hid/hid-microsoft.c
+@@ -278,6 +278,8 @@ static const struct hid_device_id ms_devices[] = {
+ 		.driver_data = MS_HIDINPUT },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_COMFORT_KEYBOARD),
+ 		.driver_data = MS_ERGONOMY},
++    { HID_USB_DEVICE(USB_VENDOR_ID_1018, USB_DEVICE_ID_1018_MUTITOUCH),
++        .driver_data = MS_HIDINPUT },
+ 
+ 	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_PRESENTER_8K_BT),
+ 		.driver_data = MS_PRESENTER },

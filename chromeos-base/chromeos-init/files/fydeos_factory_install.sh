@@ -25,7 +25,7 @@ fydeos_post_install() {
   do
     sed -i "s#${sp_str}##g" $cfg
   done
-  sed -i "s/timeout=2/timeout=0/g" $grub_cfg
+  sed -i "s/timeout=.*$/timeout=0/g" $grub_cfg
   umount $mp
 }
 
