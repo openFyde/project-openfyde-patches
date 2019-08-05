@@ -26,7 +26,7 @@ KEYWORDS="*"
 IUSE="
 	cros_embedded +debugd +encrypted_stateful frecon
 	kernel-3_8 kernel-3_10 kernel-3_14 kernel-3_18 +midi
-	-s3halt +syslog systemd +udev vivid vtconsole fydeos_factory_install"
+	-s3halt +syslog systemd +udev vivid vtconsole fydeos_factory_install fixcgroup"
 
 # shunit2 should be a dependency only if USE=test, but cros_run_unit_test
 # doesn't calculate dependencies when emerging packages.
@@ -105,7 +105,11 @@ src_install_upstart() {
 			doins upstart/log-rotate.conf upstart/syslog.conf upstart/journald.conf
 		fi
 		if use !systemd; then
-			doins upstart/cgroups.conf
+      if use fixcgroup; then
+        doins ${FILESDIR}/cgroups.conf
+      else
+			 doins upstart/cgroups.conf
+      fi
 			doins upstart/dbus.conf
 			if use udev; then
 				doins upstart/udev.conf upstart/udev-trigger.conf
