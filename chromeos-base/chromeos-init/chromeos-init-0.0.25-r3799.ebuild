@@ -105,11 +105,7 @@ src_install_upstart() {
 			doins upstart/log-rotate.conf upstart/syslog.conf upstart/journald.conf
 		fi
 		if use !systemd; then
-      if use fixcgroup; then
-        doins ${FILESDIR}/cgroups.conf
-      else
-			 doins upstart/cgroups.conf
-      fi
+			doins upstart/cgroups.conf
 			doins upstart/dbus.conf
 			if use udev; then
 				doins upstart/udev.conf upstart/udev-trigger.conf
@@ -219,5 +215,8 @@ src_prepare() {
   if use fydeos_factory_install; then
     epatch ${FILESDIR}/insert_factory_install_script.patch 
     epatch ${FILESDIR}/set_default_language_to_zh.patch
+  fi
+  if use fixcgroup; then
+    epatch ${FILESDIR}/cgroups_cpuset.patch
   fi
 }
