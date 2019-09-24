@@ -1,76 +1,76 @@
 #!/bin/bash
-INSTALL_TARGET_DEV=""
-KERN_ARG="fydeos_factory_install"
+SELF_OEM="/usr/share/oem"
+TARGET_FILE=".fydeos_factory_install"
+LOG_FILE="/var/log/fydeos_factory_install.log"
 
 log_install() {
-  echo $@ >>/tmp/fydeos_factory_install.log
+  echo $(date +%F:%T) $@ >> $LOG_FILE
 }
 
-get_efi_dev() {
-    /usr/bin/cgpt find -t efi $INSTALL_TARGET_DEV
+get_oem_dev() {
+  /usr/bin/cgpt find -l OEM $1
 }
 
-mount_efi() {
+mount_oem() {
   local mp=$1
+  local target=$2
   [ -d $mp ] || mkdir -p $mp
-  mount $(get_efi_dev) $mp
+  mount $(get_oem_dev $target) $mp
+}
+
+wait_for_key_to_reboot() {
+  local input_char=""
+  while [ -z "$input_char" ]; do
+    read -n 1 input_char
+    sleep 1
+  done
+  reboot
 }
 
 fydeos_post_install() {
-  local mp="/tmp/efi_mnt"
-  local sp_str="$KERN_ARG=$INSTALL_TARGET_DEV"
-  local grub_cfg="${mp}/efi/boot/grub.cfg"
-  mount_efi $mp
-  for cfg in $(find $mp -name \*.cfg);
-  do
-    sed -i "s#${sp_str}##g" $cfg
-  done
-  sed -i "s/timeout=.*$/timeout=0/g" $grub_cfg
+  local mp="/tmp/oem_mnt"
+  local target=$1
+  mount_oem $mp $target
+  if [ $? -ne 0 ]; then
+    log_install "mount oem error"
+    return
+  fi
+  rm ${mp}/${TARGET_FILE}
   umount $mp
 }
 
 check_and_install() {
-for karg in $(cat /proc/cmdline);
-do
-  log_install "\"${karg%%=*}\":\"${karg#*=}\""
-  if [ -n "$(echo $karg | grep $KERN_ARG)" ]; then
-    INSTALL_TARGET_DEV="${karg#*=}"
-    log_install "find target disk information:$INSTALL_TARGET_DEV"
-    break
-  else
-    log_install "$KERN_ARG:${karg%%=*}"
+  local target_devs=""
+  local oem_target="${SELF_OEM}/${TARGET_FILE}"
+  if [ -f $oem_target ]; then
+    target_devs=$(cat $oem_target)
   fi
-done
-if [ -n "${INSTALL_TARGET_DEV}" ]; then
-  log_install "command line flag detected:$INSTALL_TARGET_DRV"
-  if [ -n "$(rootdev -d | grep $INSTALL_TARGET_DEV)" ]; then
-  # system is running on target disk;
-    return 0
-  fi
-  if [ ! -w "${INSTALL_TARGET_DEV}" ]; then
+  if [ -n "${target_devs}" ]; then
+    for target_disk in $target_devs ; do
+      if [ ! -w "${target_disk}" ]; then
+        continue
+      fi
+      log_install "target file detected:$target_disk"
+      chromeos-boot-alert update_firmware
+      log_install "begin install"
+      /usr/sbin/chromeos-install --dst ${target_disk} --yes >> $LOG_FILE
+      if [ $? -ne 0 ]; then
+         log_install "error occured" 
+         display_boot_message fydeos_install_failure 'zh-CN en'
+         wait_for_key_to_reboot
+         exit 1
+      fi    
+      log_install "end install"
+      fydeos_post_install ${target_disk} 
+      display_boot_message fydeos_install_success 'zh-CN en'
+      wait_for_key_to_reboot
+      exit 0
+    done
     log_install "can't find the target disk"
     display_boot_message fydeos_target_failure 'zh-CN en'
-    read -n 1 man_input
-    reboot
+    wait_for_key_to_reboot
     exit 1
   fi
-  chromeos-boot-alert update_firmware
-  log_install "begin install"
-  /usr/sbin/chromeos-install --dst ${INSTALL_TARGET_DEV} --yes >> /tmp/fydeos_factory_install.log
-  log_install "end install"
-  if [ $? -ne 0 ]; then
-     log_install "error occured" 
-     display_boot_message fydeos_install_failure 'zh-CN en'
-     read -n 1 man_input
-     reboot
-     exit 1
-  fi    
-  fydeos_post_install 
-  display_boot_message fydeos_install_success 'zh-CN en'
-  sleep 3
-  reboot
-  exit 0
-fi
 }
 
 log_install "check and install"

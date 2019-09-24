@@ -21,7 +21,9 @@ LICENSE="linux-firmware ( BSD ISC MIT no-source-code ) GPL-2 GPL-2+"
 SLOT="0"
 IUSE="savedconfig"
 
-DEPEND=""
+DEPEND="
+  savedconfig? ( sys-kernel/linux-firmware-config )
+"
 RDEPEND="!savedconfig? (
 		!sys-firmware/alsa-firmware[alsa_cards_ca0132]
 		!sys-firmware/alsa-firmware[alsa_cards_korg1212]
@@ -61,7 +63,6 @@ RDEPEND="!savedconfig? (
 		!sys-firmware/iwl3160-7260-bt-ucode
 		!sys-firmware/radeon-ucode
 	)
-  savedconfig? ( sys-kernel/linux-firmware-config )
 "
 #add anything else that collides to this
 

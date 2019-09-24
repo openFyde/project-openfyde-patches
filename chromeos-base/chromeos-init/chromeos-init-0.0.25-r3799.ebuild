@@ -62,6 +62,7 @@ RDEPEND="${DEPEND}
 		sys-process/psmisc
 	)
 "
+FYDEOS_INSTALL_FILE=".fydeos_factory_install"
 
 platform_pkg_test() {
 	local shell_tests=(
@@ -196,6 +197,10 @@ src_install() {
     insinto /usr/share/chromeos-assets/text/boot_messages
     doins -r ${FILESDIR}/zh-CN
     doins -r ${FILESDIR}/en
+    if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
+      insinto /usr/share/oem
+      doins $FYDEOS_INSTALL_FILE
+    fi
   fi
 }
 
@@ -215,6 +220,9 @@ src_prepare() {
   if use fydeos_factory_install; then
     epatch ${FILESDIR}/insert_factory_install_script.patch 
     epatch ${FILESDIR}/set_default_language_to_zh.patch
+    if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
+      echo $FYDEOS_FACTORY_INSTALL > $FYDEOS_INSTALL_FILE
+    fi
   fi
   if use fixcgroup; then
     epatch ${FILESDIR}/cgroups_cpuset.patch
