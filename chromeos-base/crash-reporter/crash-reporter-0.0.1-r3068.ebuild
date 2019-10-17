@@ -3,8 +3,8 @@
 
 EAPI="6"
 
-CROS_WORKON_COMMIT="d6d06df3c622ec163d95b2bd404b884a0f8d323f"
-CROS_WORKON_TREE=("310a710d6c1f02a93504b35b3d8371875f253b6a" "6fde19cd79bac9d977790bd596a9a538d07f2fa3" "c459546a3fca6f1687b5b18184a715bfa9270731" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
+CROS_WORKON_COMMIT="8d55c2520a35331e9d06682424c7dc9ad0cbdaed"
+CROS_WORKON_TREE=("f577121f2538fbe78584b4fe59c478a26bf80df4" "1aeb131d785cbd9add9d8ba27c2ec669159dd2e8" "11f6aaa2391d33bf71589db668ed50eeacfcb461" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -14,7 +14,7 @@ CROS_WORKON_SUBTREE="common-mk crash-reporter metrics .gn"
 
 PLATFORM_SUBDIR="crash-reporter"
 
-inherit cros-i686 cros-workon platform systemd udev
+inherit cros-i686 cros-workon platform systemd udev user
 
 DESCRIPTION="Crash reporting service that uploads crash reports with debug information"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-reporter/"
@@ -22,7 +22,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-
 LICENSE="BSD-Google"
 SLOT="0"
 KEYWORDS="*"
-IUSE="cheets cros_embedded -direncryption systemd"
+IUSE="cheets chromeless_tty cros_embedded -direncryption systemd"
 
 RDEPEND="
 	chromeos-base/minijail
@@ -31,23 +31,22 @@ RDEPEND="
 	chromeos-base/metrics
 	dev-libs/libpcre
 	net-misc/curl
+	sys-libs/zlib
 	direncryption? ( sys-apps/keyutils )
+	test? ( app-arch/gzip )
 "
 DEPEND="
 	${RDEPEND}
 	chromeos-base/debugd-client
 	chromeos-base/session_manager-client
+	chromeos-base/shill-client
 	chromeos-base/system_api
+	chromeos-base/vboot_reference
 	sys-devel/flex
 "
 RDEPEND+="
 	chromeos-base/chromeos-ca-certificates
 "
-
-src_prepare() {
-    epatch "${FILESDIR}/cros_i686_issue.patch"
-    eapply_user
-}
 
 src_configure() {
 	platform_src_configure
@@ -59,15 +58,24 @@ src_compile() {
 	use cheets && use_i686 && platform_src_compile_i686 "core_collector"
 }
 
+pkg_setup() {
+	# Has to be done in pkg_setup() instead of pkg_preinst() since
+	# src_install() will need the crash user and group.
+	enewuser "crash"
+	enewgroup "crash"
+	# A group to manage file permissions for files that crash reporter
+	# components need to access.
+	enewgroup "crash-access"
+	cros-workon_pkg_setup
+}
+
 src_install() {
 	into /
 	dosbin "${OUT}"/crash_reporter
 	dosbin "${OUT}"/crash_sender
-	dosbin crash_sender.sh
 
 	into /usr
-	use cros_embedded || dobin "${OUT}"/list_proxies
-	use cros_embedded || dobin "${OUT}"/anomaly_collector
+	use cros_embedded || dobin "${OUT}"/anomaly_detector
 	dosbin kernel_log_collector.sh
 
 	if use cheets; then
@@ -85,15 +93,16 @@ src_install() {
 		systemd_dounit init/crash-sender.timer
 		systemd_enable_service timers.target crash-sender.timer
 		if ! use cros_embedded; then
-			systemd_dounit init/anomaly-collector.service
-			systemd_enable_service multi-user.target anomaly-collector.service
+			systemd_dounit init/anomaly-detector.service
+			systemd_enable_service multi-user.target anomaly-detector.service
 		fi
 	else
 		insinto /etc/init
 		doins init/crash-reporter.conf
+		doins init/crash-reporter-early-init.conf
 		doins init/crash-boot-collect.conf
 		doins init/crash-sender.conf
-		use cros_embedded || doins init/anomaly-collector.conf
+		use cros_embedded || doins init/anomaly-detector.conf
 	fi
 
 	insinto /etc
@@ -103,6 +112,17 @@ src_install() {
 }
 
 platform_pkg_test() {
-	platform_test "run" "${OUT}/crash_reporter_test"
-	platform_test "run" "${OUT}/anomaly_collector_test.sh"
+	local gtest_filter_user_tests="-*.RunAsRoot*:"
+	local gtest_filter_root_tests="*.RunAsRoot*-"
+
+	platform_test "run" "${OUT}/crash_reporter_test" "0" \
+		"${gtest_filter_user_tests}"
+	platform_test "run" "${OUT}/crash_reporter_test" "1" \
+		"${gtest_filter_root_tests}"
+	platform_test "run" "${OUT}/anomaly_detector_test.sh"
+}
+
+src_prepare() {
+    epatch "${FILESDIR}/cros_i686_issue.patch"
+      default
 }

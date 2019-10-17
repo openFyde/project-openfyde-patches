@@ -2,8 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-CROS_WORKON_COMMIT="45c009ca92e71fc1e73e3e40b5b3afdbfbe9d486"
-CROS_WORKON_TREE=("7c2672e7fd88678931ee5c3ebbcc5e20699264c1" "e78388c0fbd654370c456d30aa549595dcdd318e" "4b46a612f38c049072fb2356f8b1d2110d211b10" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
+CROS_WORKON_COMMIT="0a857fbb74d3dd8a9066ba7e5e892172334b3d3b"
+CROS_WORKON_TREE=("f577121f2538fbe78584b4fe59c478a26bf80df4" "bafe306c7fec6e579febf8c9e9a01487858b171f" "11f6aaa2391d33bf71589db668ed50eeacfcb461" "dc1506ef7c8cfd2c5ffd1809dac05596ec18773c")
 CROS_WORKON_INCREMENTAL_BUILD="1"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
@@ -62,11 +62,6 @@ pkg_preinst() {
 	enewgroup "fuse-drivefs"
 }
 
-src_prepare() {
-    default
-    epatch ${FILESDIR}/hide_unremovable_disk.patch
-}
-
 src_install() {
 	dobin "${OUT}"/cros-disks
 
@@ -122,4 +117,9 @@ platform_pkg_test() {
 		"${gtest_filter_root_tests}"
 	platform_test "run" "${OUT}/disks_testrunner" "0" \
 		"${gtest_filter_user_tests}"
+}
+
+src_prepare() {
+  epatch ${FILESDIR}/hide_unremovable_disk.patch
+  default  
 }

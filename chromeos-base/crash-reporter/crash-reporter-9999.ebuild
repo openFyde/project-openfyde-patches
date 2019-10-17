@@ -12,7 +12,7 @@ CROS_WORKON_SUBTREE="common-mk crash-reporter metrics .gn"
 
 PLATFORM_SUBDIR="crash-reporter"
 
-inherit cros-i686 cros-workon platform systemd udev
+inherit cros-i686 cros-workon platform systemd udev user
 
 DESCRIPTION="Crash reporting service that uploads crash reports with debug information"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-reporter/"
@@ -29,6 +29,7 @@ RDEPEND="
 	chromeos-base/metrics
 	dev-libs/libpcre
 	net-misc/curl
+	sys-libs/zlib
 	direncryption? ( sys-apps/keyutils )
 	test? ( app-arch/gzip )
 "
@@ -36,7 +37,9 @@ DEPEND="
 	${RDEPEND}
 	chromeos-base/debugd-client
 	chromeos-base/session_manager-client
+	chromeos-base/shill-client
 	chromeos-base/system_api
+	chromeos-base/vboot_reference
 	sys-devel/flex
 "
 RDEPEND+="
@@ -53,11 +56,21 @@ src_compile() {
 	use cheets && use_i686 && platform_src_compile_i686 "core_collector"
 }
 
+pkg_setup() {
+	# Has to be done in pkg_setup() instead of pkg_preinst() since
+	# src_install() will need the crash user and group.
+	enewuser "crash"
+	enewgroup "crash"
+	# A group to manage file permissions for files that crash reporter
+	# components need to access.
+	enewgroup "crash-access"
+	cros-workon_pkg_setup
+}
+
 src_install() {
 	into /
 	dosbin "${OUT}"/crash_reporter
 	dosbin "${OUT}"/crash_sender
-	dosbin crash_sender.sh
 
 	into /usr
 	use cros_embedded || dobin "${OUT}"/anomaly_detector
@@ -84,6 +97,7 @@ src_install() {
 	else
 		insinto /etc/init
 		doins init/crash-reporter.conf
+		doins init/crash-reporter-early-init.conf
 		doins init/crash-boot-collect.conf
 		doins init/crash-sender.conf
 		use cros_embedded || doins init/anomaly-detector.conf
@@ -96,6 +110,12 @@ src_install() {
 }
 
 platform_pkg_test() {
-	platform_test "run" "${OUT}/crash_reporter_test"
+	local gtest_filter_user_tests="-*.RunAsRoot*:"
+	local gtest_filter_root_tests="*.RunAsRoot*-"
+
+	platform_test "run" "${OUT}/crash_reporter_test" "0" \
+		"${gtest_filter_user_tests}"
+	platform_test "run" "${OUT}/crash_reporter_test" "1" \
+		"${gtest_filter_root_tests}"
 	platform_test "run" "${OUT}/anomaly_detector_test.sh"
 }
