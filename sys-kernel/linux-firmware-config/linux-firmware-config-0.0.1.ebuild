@@ -18,7 +18,7 @@ DEPEND="${RDEPEND}"
 S=${WORKDIR}
 
 src_install() {
-  insinto /etc/portage/savedconfig/sys-kernel
+  insinto /usr/local/etc/portage/savedconfig/sys-kernel
   if use intel-common; then
     newins ${FILESDIR}/intel-common-config linux-firmware    
   fi  
