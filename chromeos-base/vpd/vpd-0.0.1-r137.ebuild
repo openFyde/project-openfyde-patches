@@ -1,9 +1,9 @@
 # Copyright (c) 2012 The Chromium OS Authors. All rights reserved.
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="4"
-CROS_WORKON_COMMIT="fabe3f4cc2204755d26ff611a1631fd51c8b0fa6"
-CROS_WORKON_TREE="e5239bf292c078381e7d19833a31752f0f72f5df"
+EAPI=7
+CROS_WORKON_COMMIT="127c5e645a90adbfca7f7a080ace19d9b992eee4"
+CROS_WORKON_TREE="8de3bf11a8040efbd53dd06a2bc7cc7af01eed50"
 CROS_WORKON_PROJECT="chromiumos/platform/vpd"
 
 inherit cros-workon systemd
@@ -13,24 +13,22 @@ HOMEPAGE="http://www.chromium.org/"
 SRC_URI=""
 
 LICENSE="BSD-Google"
-SLOT="0"
 KEYWORDS="*"
 IUSE="static systemd"
 
 # util-linux is for libuuid.
-DEPEND="sys-apps/util-linux"
+DEPEND="sys-apps/util-linux:="
 # shflags for dump_vpd_log.
 # chromeos-activate-date for ActivateDate upstart and script.
 RDEPEND="
 	sys-apps/flashrom
 	dev-util/shflags
 	virtual/chromeos-activate-date
-  !chromeos-base/vpd-info-append
 	"
 
 FYDEOS_DEFAULT_LOCALE="zh-CN"
 FYDEOS_DEFAULT_TIMEZONE="Asia/Shanghai"
-FYDEOS_DEFAULT_REGION="zh-CN"
+FYDEOS_DEFAULT_REGION="zh_CN"
 VPD_TEMPLATE="oem_licence.tmp"
 
 src_prepare() {
@@ -39,12 +37,12 @@ src_prepare() {
   cp ${FILESDIR}/${VPD_TEMPLATE} ${S}
 }
 
-src_configure() {
-	cros-workon_src_configure
+count_chars() {
+  printf $1 | wc -c
 }
 
-count_chars() {
-  printf $1 | wc -c  
+src_configure() {
+	cros-workon_src_configure
 }
 
 src_compile() {

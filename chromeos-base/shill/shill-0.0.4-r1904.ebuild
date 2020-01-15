@@ -3,6 +3,8 @@
 
 EAPI=5
 
+CROS_WORKON_COMMIT="44e5c6adc65d7b33f9566f2b08d2de189cb85f06"
+CROS_WORKON_TREE=("2e487464bf8f7df9d7bea110f9c514bd1e56bf4f" "c73e1f37fdaafa35e9ffaf067aca34722c2144cd" "a77eac030d6b8d943f22b938bbb94a3547feb2c9" "7c96df65e0276e7f1f5905302dc04fee6739b855" "18fca5cb67d7667443bec2413d28605e83741e3e" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
@@ -19,7 +21,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/shill/
 
 LICENSE="BSD-Google"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="cellular dhcpv6 fuzzer kernel-3_8 kernel-3_10 pppoe +seccomp systemd +tpm +vpn wake_on_wifi +wifi +wired_8021x"
 
 # Sorted by the package we depend on. (Not by use flag!)
@@ -217,4 +219,9 @@ src_install() {
 
 platform_pkg_test() {
 	platform_test "run" "${OUT}/shill_unittest"
+}
+
+src_prepare() {
+  default
+  epatch ${FILESDIR}/r75_change_defualt_detect_url.patch
 }

@@ -1,1 +1,0 @@
-chromeos-kernel-4_14-4.14.134-r864.ebuild

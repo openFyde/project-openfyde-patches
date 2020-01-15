@@ -3,6 +3,8 @@
 
 EAPI="6"
 
+CROS_WORKON_COMMIT="948ab71e31bfa16eb0818cb1134b2f274dbd60a9"
+CROS_WORKON_TREE=("2e487464bf8f7df9d7bea110f9c514bd1e56bf4f" "0215a72a023d7cd87212db5cf84df18a3e03f6af" "a77eac030d6b8d943f22b938bbb94a3547feb2c9" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -19,7 +21,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-
 
 LICENSE="BSD-Google"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="cheets chromeless_tty cros_embedded -direncryption systemd fuzzer"
 
 RDEPEND="
@@ -128,4 +130,9 @@ platform_pkg_test() {
 	platform_test "run" "${OUT}/crash_reporter_test" "1" \
 		"${gtest_filter_root_tests}"
 	platform_test "run" "${OUT}/anomaly_detector_test"
+}
+
+src_prepare() {
+  epatch "${FILESDIR}/cros_i686_issue.patch"
+  default
 }

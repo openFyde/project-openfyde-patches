@@ -1,0 +1,28 @@
+From 4826ed8656b789422cc573f8da5c07607d4e4e10 Mon Sep 17 00:00:00 2001
+From: Gurchetan Singh <gurchetansingh@chromium.org>
+Date: Wed, 24 Jul 2019 17:44:02 -0700
+Subject: [PATCH] CHROMIUM: Adjust plane parameter
+
+gbm_bo_map(...) diverges from upstream.
+
+Change-Id: I40f4c0306b98d1a4a1d5ab09959d5733f19bb1e2
+---
+ src/virgl_gbm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/virgl_gbm.c b/src/virgl_gbm.c
+index 23db98e..a499273 100644
+--- a/src/virgl_gbm.c
++++ b/src/virgl_gbm.c
+@@ -308,7 +308,7 @@ int virgl_gbm_transfer(struct gbm_bo *bo, uint32_t direction, struct iovec *iove
+    host_plane_offset = guest_plane_offset = host_map_stride0 = guest_stride0 = 0;
+    uint32_t map_flags = (direction == VIRGL_TRANSFER_TO_HOST) ? GBM_BO_TRANSFER_WRITE :
+                                                                 GBM_BO_TRANSFER_READ;
+-   void *addr = gbm_bo_map(bo, 0, 0, width, height, map_flags, &host_map_stride0, &map_data);
++   void *addr = gbm_bo_map(bo, 0, 0, width, height, map_flags, &host_map_stride0, &map_data, 0);
+    if (!addr)
+       return -1;
+ 
+-- 
+2.20.1
+

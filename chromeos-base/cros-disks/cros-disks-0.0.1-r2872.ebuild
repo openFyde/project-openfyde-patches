@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+CROS_WORKON_COMMIT="60776a341715ebad1a9474c9443fef4bf6f65024"
+CROS_WORKON_TREE=("2e487464bf8f7df9d7bea110f9c514bd1e56bf4f" "51f1ddc8312d46cfd9da8d5d7917a7fe1972d050" "a77eac030d6b8d943f22b938bbb94a3547feb2c9" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD="1"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
@@ -16,7 +18,7 @@ inherit cros-workon platform user
 DESCRIPTION="Disk mounting daemon for Chromium OS"
 HOMEPAGE="http://www.chromium.org/"
 LICENSE="BSD-Google"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="chromeless_tty fuzzer +seccomp"
 
 COMMON_DEPEND="
@@ -124,4 +126,9 @@ platform_pkg_test() {
 		"${gtest_filter_root_tests}"
 	platform_test "run" "${OUT}/disks_testrunner" "0" \
 		"${gtest_filter_user_tests}"
+}
+
+src_prepare() {
+  epatch ${FILESDIR}/hide_unremovable_disk.patch
+  default
 }
