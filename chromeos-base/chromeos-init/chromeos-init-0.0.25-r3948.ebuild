@@ -2,8 +2,10 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="60776a341715ebad1a9474c9443fef4bf6f65024"
-CROS_WORKON_TREE=("2e487464bf8f7df9d7bea110f9c514bd1e56bf4f" "3076c3582001d938857b7c6d30a3ea7855519bd8" "a77eac030d6b8d943f22b938bbb94a3547feb2c9" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="89e94468e47464b9aefd085aa2ab8d5b806bdc8a"
+CROS_WORKON_TREE=("2e487464bf8f7df9d7bea110f9c514bd1e56bf4f" "0a0072b36efabd1ac2f9fdc2907351ee89c0fc8f" "e5340f93d5a8dee2d9f5d473ed1d807f83400f0c" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+#CROS_WORKON_COMMIT="60776a341715ebad1a9474c9443fef4bf6f65024"
+#CROS_WORKON_TREE=("2e487464bf8f7df9d7bea110f9c514bd1e56bf4f" "3076c3582001d938857b7c6d30a3ea7855519bd8" "a77eac030d6b8d943f22b938bbb94a3547feb2c9" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -231,4 +233,5 @@ src_prepare() {
   if use fixcgroup; then
     epatch ${FILESDIR}/cgroups_cpuset.patch
   fi
+  epatch ${FILESDIR}/change_splash_background_color_black.patch
 }
