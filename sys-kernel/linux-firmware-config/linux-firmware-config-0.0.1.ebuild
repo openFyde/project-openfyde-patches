@@ -9,7 +9,8 @@ HOMEPAGE="http://fydeos.com"
 LICENSE="BSD-Google"
 SLOT="0"
 KEYWORDS="*"
-IUSE="intel-common"
+IUSE="intel-common amd-common"
+REQUIRED_USE="^^ ( intel-common amd-common )"
 
 RDEPEND=""
 
@@ -22,4 +23,7 @@ src_install() {
   if use intel-common; then
     newins ${FILESDIR}/intel-common-config linux-firmware    
   fi  
+  if use amd-common; then
+    newins ${FILESDIR}/amd-config linux-firmware
+  fi
 }

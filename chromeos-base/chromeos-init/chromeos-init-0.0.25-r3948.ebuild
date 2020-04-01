@@ -28,7 +28,7 @@ KEYWORDS="*"
 IUSE="
 	cros_embedded +debugd +encrypted_stateful frecon
 	kernel-3_8 kernel-3_10 kernel-3_14 kernel-3_18 +midi
-	-s3halt +syslog systemd +udev vivid vtconsole fydeos_factory_install fixcgroup"
+	-s3halt +syslog systemd +udev vivid vtconsole fydeos_factory_install fixcgroup fixcgroup-memory"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 COMMON_DEPEND="
@@ -232,6 +232,9 @@ src_prepare() {
   fi
   if use fixcgroup; then
     epatch ${FILESDIR}/cgroups_cpuset.patch
+  fi
+  if use fixcgroup-memory; then
+    epatch ${FILESDIR}/fix_cgroup_memory.patch
   fi
   epatch ${FILESDIR}/change_splash_background_color_black.patch
 }

@@ -1,0 +1,13 @@
+diff --git a/net/bluetooth/hci_le_splitter.c b/net/bluetooth/hci_le_splitter.c
+index 330e22688374..44f04722095f 100644
+--- a/net/bluetooth/hci_le_splitter.c
++++ b/net/bluetooth/hci_le_splitter.c
+@@ -597,7 +597,7 @@ static void hci_le_splitter_enq_packet(struct sk_buff *skb)
+ 	mutex_lock(&usr_msg_q_lock);
+ 	if (MAX_RX_QUEUE_SZ - usr_msg_q_len < skb->len) {
+ 
+-		pr_err("enqueue failed - not enough space to enqueue %u bytes over %u\n",
++		pr_err("enqueue failed - not enough space to enqueue %u bytes over %lu\n",
+ 		     skb->len, usr_msg_q_len);
+ 		kfree_skb(skb);
+ 	} else {
