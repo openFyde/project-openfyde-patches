@@ -1,0 +1,13 @@
+diff --git a/vm_tools/concierge/service.cc b/vm_tools/concierge/service.cc
+index 680c08e..91d9393 100644
+--- a/vm_tools/concierge/service.cc
++++ b/vm_tools/concierge/service.cc
+@@ -166,7 +166,7 @@ constexpr base::TimeDelta kDiskOpReportInterval =
+ // The minimum kernel version of the host which supports untrusted VMs or a
+ // trusted VM with nested VM support.
+ constexpr KernelVersionAndMajorRevision kMinKernelVersionForUntrustedVM =
+-    std::make_pair(4, 14);
++    std::make_pair(5, 14);
+ 
+ // The minimum kernel version of the host which supports virtio-pmem.
+ constexpr KernelVersionAndMajorRevision kMinKernelVersionForVirtioPmem =

@@ -1,0 +1,18 @@
+diff --git a/shill/portal_detector.cc b/shill/portal_detector.cc
+index d62b8ba..079a628 100644
+--- a/shill/portal_detector.cc
++++ b/shill/portal_detector.cc
+@@ -49,10 +49,11 @@ const int PortalDetector::kMaxPortalCheckIntervalSeconds = 5 * 60;
+ const char PortalDetector::kDefaultCheckPortalList[] = "ethernet,wifi,cellular";
+ 
+ const char PortalDetector::kDefaultHttpUrl[] =
+-    "http://www.gstatic.com/generate_204";
++    "http://store.fydeos.com/204";
+ const char PortalDetector::kDefaultHttpsUrl[] =
+-    "https://www.google.com/generate_204";
++    "https://store.fydeos.com/204";
+ const std::vector<string> PortalDetector::kDefaultFallbackHttpUrls{
++    "store.fydeos.com/204",
+     "http://www.google.com/gen_204",
+     "http://play.googleapis.com/generate_204",
+ };

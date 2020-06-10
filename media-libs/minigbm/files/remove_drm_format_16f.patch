@@ -1,0 +1,47 @@
+diff --git a/helpers.c b/helpers.c
+index 22a6106..b16c0a9 100644
+--- a/helpers.c
++++ b/helpers.c
+@@ -52,14 +52,14 @@ static const struct planar_layout packed_4bpp_layout = {
+ 	.vertical_subsampling = { 1 },
+ 	.bytes_per_pixel = { 4 }
+ };
+-
++/*
+ static const struct planar_layout packed_8bpp_layout = {
+ 	.num_planes = 1,
+ 	.horizontal_subsampling = { 1 },
+ 	.vertical_subsampling = { 1 },
+ 	.bytes_per_pixel = { 8 }
+ };
+-
++*/
+ static const struct planar_layout biplanar_yuv_420_layout = {
+ 	.num_planes = 2,
+ 	.horizontal_subsampling = { 1, 2 },
+@@ -152,10 +152,10 @@ static const struct planar_layout *layout_from_format(uint32_t format)
+ 	case DRM_FORMAT_XRGB2101010:
+ 	case DRM_FORMAT_XRGB8888:
+ 		return &packed_4bpp_layout;
+-
++/*
+ 	case DRM_FORMAT_ABGR16161616F:
+ 		return &packed_8bpp_layout;
+-
++*/
+ 	default:
+ 		drv_log("UNKNOWN FORMAT %d\n", format);
+ 		return NULL;
+diff --git a/i915.c b/i915.c
+index 92fd5b1..91e7735 100644
+--- a/i915.c
++++ b/i915.c
+@@ -29,7 +29,7 @@ static const uint32_t scanout_render_formats[] = { DRM_FORMAT_ABGR2101010, DRM_F
+ 						   DRM_FORMAT_XBGR8888,	   DRM_FORMAT_XRGB2101010,
+ 						   DRM_FORMAT_XRGB8888 };
+ 
+-static const uint32_t render_formats[] = { DRM_FORMAT_ABGR16161616F };
++static const uint32_t render_formats[] = { DRM_FORMAT_ABGR2101010 };
+ 
+ static const uint32_t texture_only_formats[] = { DRM_FORMAT_R8, DRM_FORMAT_NV12, DRM_FORMAT_P010,
+ 						 DRM_FORMAT_YVU420, DRM_FORMAT_YVU420_ANDROID };

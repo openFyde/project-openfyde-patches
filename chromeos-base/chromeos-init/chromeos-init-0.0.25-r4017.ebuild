@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+CROS_WORKON_COMMIT="a0f172755fa87b358d1f913f3f898d8d9a25e001"
+CROS_WORKON_TREE=("dea48af07754556aac092c0830de0b1ab410077b" "92ad7a901a50086a46484711dfe4a7684c35a7a4" "c218b19793213fbc08daad20dce926cf44766c10" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -20,11 +22,12 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 SLOT="0/0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="
 	cros_embedded +debugd +encrypted_stateful frecon
 	kernel-3_8 kernel-3_10 kernel-3_14 kernel-3_18 +midi
-	-s3halt +syslog systemd +udev vivid vtconsole"
+	-s3halt +syslog systemd +udev vivid vtconsole
+  fydeos_factory_install fixcgroup fixcgroup-memory"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 COMMON_DEPEND="
@@ -62,6 +65,8 @@ RDEPEND="${COMMON_DEPEND}
 		sys-apps/frecon
 	)
 "
+
+FYDEOS_INSTALL_FILE=".fydeos_factory_install"
 
 platform_pkg_test() {
 	local shell_tests=(
@@ -193,6 +198,16 @@ src_install() {
 	insinto /usr/share/cros
 	doins $(usex encrypted_stateful encrypted_stateful \
 		unencrypted_stateful)/startup_utils.sh
+  if use fydeos_factory_install; then
+    doins ${FILESDIR}/fydeos_factory_install.sh
+    insinto /usr/share/chromeos-assets/text/boot_messages
+    doins -r ${FILESDIR}/zh-CN
+    doins -r ${FILESDIR}/en
+    if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
+      insinto /usr/share/oem
+      doins $FYDEOS_INSTALL_FILE
+    fi
+  fi
 }
 
 pkg_preinst() {
@@ -205,4 +220,22 @@ pkg_preinst() {
 	# by bootstat and ureadahead.
 	enewuser "debugfs-access"
 	enewgroup "debugfs-access"
+}
+
+src_prepare() {
+  default
+  if use fydeos_factory_install; then
+    epatch ${FILESDIR}/insert_factory_install_script.patch
+    epatch ${FILESDIR}/set_default_language_to_zh.patch
+    if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
+      echo $FYDEOS_FACTORY_INSTALL > $FYDEOS_INSTALL_FILE
+    fi
+  fi
+  if use fixcgroup; then
+    epatch ${FILESDIR}/cgroups_cpuset.patch
+  fi
+  if use fixcgroup-memory; then
+    epatch ${FILESDIR}/fix_cgroup_memory.patch
+  fi
+  epatch ${FILESDIR}/change_splash_background_color_black.patch
 }

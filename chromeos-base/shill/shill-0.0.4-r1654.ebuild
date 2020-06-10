@@ -1,1 +1,0 @@
-shill-0.0.4-r1652.ebuild

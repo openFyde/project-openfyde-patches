@@ -3,6 +3,8 @@
 
 EAPI=7
 
+CROS_WORKON_COMMIT="a0f172755fa87b358d1f913f3f898d8d9a25e001"
+CROS_WORKON_TREE=("dea48af07754556aac092c0830de0b1ab410077b" "fb0800ce12bfcbafea51e96bdbf923152ebe419a" "c218b19793213fbc08daad20dce926cf44766c10" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -18,7 +20,7 @@ DESCRIPTION="Crash reporting service that uploads crash reports with debug infor
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-reporter/"
 
 LICENSE="BSD-Google"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="cheets chromeless_tty cros_embedded -direncryption kvm_guest systemd fuzzer"
 
 COMMON_DEPEND="
@@ -135,4 +137,9 @@ platform_pkg_test() {
 	platform_test "run" "${OUT}/crash_reporter_test" "1" \
 		"${gtest_filter_root_tests}"
 	platform_test "run" "${OUT}/anomaly_detector_test"
+}
+
+src_prepare() {
+  epatch "${FILESDIR}/cros_i686_issue.patch"
+  default
 }
