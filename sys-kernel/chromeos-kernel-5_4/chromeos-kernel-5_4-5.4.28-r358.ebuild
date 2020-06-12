@@ -1,0 +1,1 @@
+chromeos-kernel-5_4-5.4.28-r352.ebuild

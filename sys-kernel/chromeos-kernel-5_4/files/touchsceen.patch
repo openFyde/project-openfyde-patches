@@ -50,7 +50,7 @@ index fb43aa708660..01e347971ec2 100644
  			       input_x, input_y, true);
  	input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, input_w);
  	input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, input_w);
-+  input_report_abs(dev, ABS_MT_PRESSURE, input_w);
++  input_report_abs(ts->input_dev, ABS_MT_PRESSURE, input_w);
 +  input_mt_sync_frame(ts->input_dev);
 +  input_sync(ts->input_dev);
  }
@@ -73,7 +73,7 @@ index fb43aa708660..01e347971ec2 100644
  			       input_x, input_y, true);
  	input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, input_w);
  	input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, input_w);
-+  input_report_abs(dev, ABS_MT_PRESSURE, input_w);
++  input_report_abs(ts->input_dev, ABS_MT_PRESSURE, input_w);
 +  input_mt_sync_frame(ts->input_dev);
 +  input_sync(ts->input_dev);
  }
@@ -109,8 +109,8 @@ index fb43aa708660..01e347971ec2 100644
 +  input_set_capability(dev, EV_KEY, BTN_STYLUS2);
 +  __set_bit(INPUT_PROP_DIRECT, dev->propbit);
 +
-+  input_set_abs_params(dev, ABS_X, 0, ts->abs_x_max, 0, 0);
-+  input_set_abs_params(dev, ABS_Y, 0, ts->abs_y_max, 0, 0);
++  input_set_abs_params(dev, ABS_X, 0, ts->prop.max_x, 0, 0);
++  input_set_abs_params(dev, ABS_Y, 0, ts->prop.max_y, 0, 0);
 +  input_set_abs_params(dev,  ABS_PRESSURE, 0,
 +            GOODIX_DEFAULT_MAX_PRESSURE, 0, 0);
 +  dev->name = "Goodix Capacitive Pen";

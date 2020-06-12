@@ -1,0 +1,13 @@
+diff --git a/drivers/gpu/drm/amd/display/dc/clk_mgr/dcn21/rn_clk_mgr.c b/drivers/gpu/drm/amd/display/dc/clk_mgr/dcn21/rn_clk_mgr.c
+index dcd5b8709e..cb4f7af192 100644
+--- a/drivers/gpu/drm/amd/display/dc/clk_mgr/dcn21/rn_clk_mgr.c
++++ b/drivers/gpu/drm/amd/display/dc/clk_mgr/dcn21/rn_clk_mgr.c
+@@ -586,7 +586,7 @@ void rn_clk_mgr_construct(
+ 		struct dccg *dccg)
+ {
+ 	struct dc_debug_options *debug = &ctx->dc->debug;
+-	struct dpm_clocks clock_table = { 0 };
++	struct dpm_clocks clock_table;
+ 	struct clk_state_registers_and_bypass s = { 0 };
+ 
+ 	clk_mgr->base.ctx = ctx;
