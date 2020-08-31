@@ -1,0 +1,1 @@
+linux-firmware-20200619.ebuild
