@@ -296,10 +296,10 @@ index 0000000..8677381
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
 diff --git a/fydeos_utils.cc b/fydeos_utils.cc
 new file mode 100644
-index 0000000..7cce957
+index 0000000..3961531
 --- /dev/null
 +++ b/fydeos_utils.cc
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,121 @@
 +#include "update_engine/fydeos_utils.h"
 +#include "update_engine/fydeos_license_checker.h"
 +#include "update_engine/omaha_request_params.h"
@@ -359,6 +359,7 @@ index 0000000..7cce957
 +}
 +
 +bool ValidateBoardName(const std::string& os_board, const OmahaResponse& response) {
++  if (os_board.empty()) return false;
 +  for (auto it = response.packages.begin(); it != response.packages.end(); ++it) {
 +    for (auto ii = it->payload_urls.begin(); ii != it->payload_urls.end(); ++ii) {
 +      const std::string url = *ii;
