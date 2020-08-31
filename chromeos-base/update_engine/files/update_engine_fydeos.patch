@@ -296,10 +296,10 @@ index 0000000..8677381
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
 diff --git a/fydeos_utils.cc b/fydeos_utils.cc
 new file mode 100644
-index 0000000..d94c17d
+index 0000000..7cce957
 --- /dev/null
 +++ b/fydeos_utils.cc
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,120 @@
 +#include "update_engine/fydeos_utils.h"
 +#include "update_engine/fydeos_license_checker.h"
 +#include "update_engine/omaha_request_params.h"
@@ -326,6 +326,9 @@ index 0000000..d94c17d
 +const std::string GetAlternativeName(const std::string& board) {
 +  if (board == kBoardNameForPC) {
 +    return std::string("FOR%20PC");
++  }
++  if (board == "link_fydeos") {
++    return std::string("LINK");
 +  }
 +  return std::string();
 +}
