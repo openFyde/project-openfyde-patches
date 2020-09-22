@@ -294,10 +294,10 @@ index 00000000..86773814
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
 diff --git a/fydeos_utils.cc b/fydeos_utils.cc
 new file mode 100644
-index 00000000..39615314
+index 00000000..f92ecf19
 --- /dev/null
 +++ b/fydeos_utils.cc
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,116 @@
 +#include "update_engine/fydeos_utils.h"
 +#include "update_engine/fydeos_license_checker.h"
 +#include "update_engine/omaha_request_params.h"
@@ -388,8 +388,6 @@ index 00000000..39615314
 +  return FydeLicenseChecker::Get().CheckLicenseAvailable();
 +}
 +
-+const int kFydeOSMagicNumber[] = { 0x210, 0x1eb, 0x43, 0x29 };
-+
 +}
 +
 +
@@ -400,9 +398,6 @@ index 00000000..39615314
 +  }
 +
 +  const std::string local_version = request_params->app_version();
-+  if (local_version == base::StringPrintf("%u.%u.%u.%u", kFydeOSMagicNumber[0], kFydeOSMagicNumber[1], kFydeOSMagicNumber[2], kFydeOSMagicNumber[3])) {
-+    return false;
-+  }
 +
 +  if (!ValidateBoardName(request_params->os_board(), response)) {
 +    LOG(WARNING) << "board name in response message is different with local os board";
