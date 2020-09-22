@@ -3,6 +3,8 @@
 
 EAPI=7
 
+CROS_WORKON_COMMIT=("cb11f42253db4dfbb9c556e16ff2ea2595646ca8" "612da762b2cee5cf942b22d63cb41598b3e8a65c")
+CROS_WORKON_TREE=("fe8d35af30ff1c2484e01cd6235a5d45c627d10d" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb" "6ed46b5da84ed5dc10b50ea6899ec33466eea713")
 CROS_WORKON_LOCALNAME=("platform2" "aosp/system/update_engine")
 CROS_WORKON_PROJECT=("chromiumos/platform2" "aosp/platform/system/update_engine")
 CROS_WORKON_DESTDIR=("${S}/platform2" "${S}/platform2/update_engine")
@@ -21,7 +23,7 @@ HOMEPAGE="https://chromium.googlesource.com/aosp/platform/system/update_engine/"
 SRC_URI=""
 
 LICENSE="Apache-2.0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="cfm cros_p2p +dbus dlc fuzzer -hwid_override +power_management systemd"
 
 COMMON_DEPEND="
@@ -134,4 +136,9 @@ src_install() {
 				--dict "${S}"/fuzz/xml.dict
 	platform_fuzzer_install "${S}"/OWNERS \
 				"${OUT}"/update_engine_delta_performer_fuzzer
+}
+
+src_prepare() {
+  default
+  epatch ${FILESDIR}/update_engine_fydeos.patch
 }

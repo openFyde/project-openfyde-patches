@@ -16,7 +16,7 @@ RDEPEND="
 	cnl_lpe? ( sys-kernel/linux-firmware[linux_firmware_adsp_cnl] )
 	glk_lpe? ( sys-kernel/linux-firmware[linux_firmware_adsp_glk] )
 	kbl_lpe? ( sys-kernel/linux-firmware[linux_firmware_adsp_kbl] )
-        media-libs/lpe-support-topology
+  media-libs/lpe-support-topology
 	skl_lpe? ( sys-kernel/linux-firmware[linux_firmware_adsp_skl] )
 "
 DEPEND="${RDEPEND}"

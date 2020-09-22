@@ -8,4 +8,4 @@
 # If it is necessary to add a new blocker or version dependency on this ebuild
 # at the same time as revving the ebuild to a known version value, editing this
 # version can be useful.
-echo 0.0.3
+echo 0.0.4

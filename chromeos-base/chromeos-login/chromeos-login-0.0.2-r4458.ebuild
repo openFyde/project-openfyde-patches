@@ -3,6 +3,8 @@
 
 EAPI=7
 
+CROS_WORKON_COMMIT="f0a8fa83760bd052e3c44f3fbca7ea9282e044d7"
+CROS_WORKON_TREE=("fe8d35af30ff1c2484e01cd6235a5d45c627d10d" "33d018aec398b4ca1124df857db8f89394d141be" "2b7ce260b7b9507551c3f54aa49bce999b7dd9bd" "377caa22e8416ce2388b9c099e85be393001947f" "44b2e929c70f42f8cd38948d475eb7b0f01ff2d4" "2834854981f88e2b81fefd49c590185a31f2b1f1" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -19,7 +21,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/chrome
 SRC_URI=""
 
 LICENSE="BSD-Google"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="arc_adb_sideloading cheets fuzzer generated_cros_config systemd unibuild user_session_isolation"
 
 COMMON_DEPEND="chromeos-base/bootstat:=
@@ -129,4 +131,9 @@ src_install() {
 	for fuzzer in "${fuzzers[@]}"; do
 		platform_fuzzer_install "${S}"/OWNERS "${OUT}/${fuzzer}"
 	done
+}
+
+src_prepare() {
+  epatch ${FILESDIR}/arc_sideload.patch
+  default
 }

@@ -1,0 +1,14 @@
+diff --git a/attestation/common/tpm_utility_common.cc b/attestation/common/tpm_utility_common.cc
+index 8424bbe26..4f586e325 100644
+--- a/attestation/common/tpm_utility_common.cc
++++ b/attestation/common/tpm_utility_common.cc
+@@ -101,7 +101,8 @@ bool TpmUtilityCommon::CacheTpmState() {
+   bool is_owned{false};
+   if (!tpm_manager_utility_->GetTpmStatus(&is_enabled, &is_owned,
+                                           &local_data)) {
+-    LOG(ERROR) << __func__ << ": Failed to get tpm status from tpm_manager.";
++    //LOG(ERROR) << __func__ << ": Failed to get tpm status from tpm_manager.";
++    VLOG(1) << __func__ << ": Failed to get tpm status from tpm_manager.";
+     return false;
+   }
+   is_ready_ = is_enabled && is_owned;

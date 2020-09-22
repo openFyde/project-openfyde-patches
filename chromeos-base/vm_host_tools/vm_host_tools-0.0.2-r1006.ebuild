@@ -3,6 +3,8 @@
 
 EAPI=7
 
+CROS_WORKON_COMMIT="cb11f42253db4dfbb9c556e16ff2ea2595646ca8"
+CROS_WORKON_TREE=("fe8d35af30ff1c2484e01cd6235a5d45c627d10d" "2834854981f88e2b81fefd49c590185a31f2b1f1" "cb16d1cfaf9321e778b6c91115a333f0624be0aa" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -17,7 +19,7 @@ DESCRIPTION="VM host tools for Chrome OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/vm_tools"
 
 LICENSE="BSD-Google"
-KEYWORDS="~*"
+KEYWORDS="*"
 # The crosvm-wl-dmabuf USE flag is used when preprocessing concierge source.
 IUSE="+kvm_host +seccomp +crosvm-wl-dmabuf fuzzer wilco"
 REQUIRED_USE="kvm_host"
@@ -170,4 +172,9 @@ pkg_preinst() {
 	enewgroup pluginvm
 
 	enewgroup virtaccess
+}
+
+src_prepare() {
+  default
+  epatch ${FILESDIR}/disable_smt.patch
 }

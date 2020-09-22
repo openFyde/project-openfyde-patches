@@ -1,5 +1,5 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index d416b94..efebea9 100644
+index 5d2e498b..fe7845a3 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -241,6 +241,8 @@ static_library("libupdate_engine") {
@@ -12,7 +12,7 @@ index d416b94..efebea9 100644
    configs += [ ":target_defaults" ]
    libs = [
 diff --git a/daemon_chromeos.cc b/daemon_chromeos.cc
-index 21740d8..013e6c6 100644
+index 21740d81..013e6c6c 100644
 --- a/daemon_chromeos.cc
 +++ b/daemon_chromeos.cc
 @@ -37,6 +37,10 @@ int DaemonChromeOS::OnInit() {
@@ -27,7 +27,7 @@ index 21740d8..013e6c6 100644
    if (exit_code != EX_OK)
      return exit_code;
 diff --git a/daemon_chromeos.h b/daemon_chromeos.h
-index 657e797..21502a5 100644
+index 657e7971..21502a5d 100644
 --- a/daemon_chromeos.h
 +++ b/daemon_chromeos.h
 @@ -23,6 +23,7 @@
@@ -51,10 +51,10 @@ index 657e797..21502a5 100644
    std::unique_ptr<DaemonStateInterface> daemon_state_;
 diff --git a/fydeos_license_checker.cc b/fydeos_license_checker.cc
 new file mode 100644
-index 0000000..16cfa4a
+index 00000000..d8d87984
 --- /dev/null
 +++ b/fydeos_license_checker.cc
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,190 @@
 +#include "update_engine/fydeos_license_checker.h"
 +
 +#include <base/logging.h>
@@ -174,16 +174,14 @@ index 0000000..16cfa4a
 +}
 +
 +std::unique_ptr<base::DictionaryValue> FydeLicenseChecker::ParseLicenseJSON(const std::string& str, std::string* out_expire_date) {
-+  std::unique_ptr<base::Value> json = base::JSONReader::Read(str);
++  base::Optional<base::Value> json = base::JSONReader::Read(str);
 +  base::DictionaryValue* license_dict = nullptr;
-+  if (!json || !json->GetAsDictionary(&license_dict)) {
++  if (!json || !json->is_dict() || !json->GetAsDictionary(&license_dict)) {
 +    LOG(ERROR) << "Parse license info in json format error";
 +    return nullptr;
 +  }
 +
 +  license_dict->GetString("expire_date", out_expire_date);
-+
-+  json.release(); // json release ownership. license_dict and json.get() actually is the same pointer.
 +
 +  return std::unique_ptr<base::DictionaryValue>(license_dict);
 +}
@@ -249,7 +247,7 @@ index 0000000..16cfa4a
 +} // namespace fydeos
 diff --git a/fydeos_license_checker.h b/fydeos_license_checker.h
 new file mode 100644
-index 0000000..8677381
+index 00000000..86773814
 --- /dev/null
 +++ b/fydeos_license_checker.h
 @@ -0,0 +1,41 @@
@@ -296,7 +294,7 @@ index 0000000..8677381
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
 diff --git a/fydeos_utils.cc b/fydeos_utils.cc
 new file mode 100644
-index 0000000..3961531
+index 00000000..39615314
 --- /dev/null
 +++ b/fydeos_utils.cc
 @@ -0,0 +1,121 @@
@@ -423,7 +421,7 @@ index 0000000..3961531
 +}
 diff --git a/fydeos_utils.h b/fydeos_utils.h
 new file mode 100644
-index 0000000..372f5ba
+index 00000000..372f5baf
 --- /dev/null
 +++ b/fydeos_utils.h
 @@ -0,0 +1,19 @@
@@ -447,19 +445,19 @@ index 0000000..372f5ba
 +
 +#endif /* ifndef FYDEOS_UTILS_H_ */
 diff --git a/omaha_request_action.cc b/omaha_request_action.cc
-index 50fe3cc..9131847 100644
+index 83ee5b22..df0f146c 100644
 --- a/omaha_request_action.cc
 +++ b/omaha_request_action.cc
-@@ -54,6 +54,7 @@
- #include "update_engine/omaha_request_params.h"
+@@ -56,6 +56,7 @@
  #include "update_engine/p2p_manager.h"
  #include "update_engine/payload_state_interface.h"
+ #include "update_engine/update_attempter.h"
 +#include "update_engine/fydeos_utils.h"
  
+ using base::Optional;
  using base::Time;
- using base::TimeDelta;
-@@ -1476,6 +1477,12 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(const OmahaResponse& response,
-     return true;
+@@ -1530,6 +1531,12 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(const OmahaResponse& response,
+     LOG(ERROR) << "All packages were excluded.";
    }
  
 +  if (fydeos::ShouldIgnoreUpdate(params_, response)) {
@@ -472,7 +470,7 @@ index 50fe3cc..9131847 100644
    // return true. If we do, it'll mean a device has to restart the
    // UpdateFirstSeenAt and thus help scattering take effect when the AU is
 diff --git a/omaha_request_builder_xml.cc b/omaha_request_builder_xml.cc
-index e2bf307..e52ce9a 100644
+index 8add89fe..0d7d921f 100644
 --- a/omaha_request_builder_xml.cc
 +++ b/omaha_request_builder_xml.cc
 @@ -31,6 +31,7 @@
@@ -483,7 +481,7 @@ index e2bf307..e52ce9a 100644
  
  using std::string;
  
-@@ -269,6 +270,11 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+@@ -283,6 +284,11 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
      app_channels += "from_track=\"" +
                      XmlEncodeWithDefault(params_->current_channel()) + "\" ";
    }
@@ -495,7 +493,7 @@ index e2bf307..e52ce9a 100644
  
    string delta_okay_str =
        params_->delta_okay() && !params_->is_install() ? "true" : "false";
-@@ -358,6 +364,9 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+@@ -372,6 +378,9 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
        "ec_version=\"" + XmlEncodeWithDefault(params_->ec_version()) + "\" " +
        requisition_arg) +
  
@@ -506,7 +504,7 @@ index e2bf307..e52ce9a 100644
           app_body +
        "    </app>\n";
 diff --git a/update_manager/official_build_check_policy_impl.cc b/update_manager/official_build_check_policy_impl.cc
-index 096f7bf..7decdda 100644
+index 096f7bf5..7decdda1 100644
 --- a/update_manager/official_build_check_policy_impl.cc
 +++ b/update_manager/official_build_check_policy_impl.cc
 @@ -24,6 +24,9 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::UpdateCheckAllowed(

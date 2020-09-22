@@ -3,6 +3,8 @@
 
 EAPI="6"
 
+CROS_WORKON_COMMIT="bba5d53609ab980bac95a70b378dd6fb29d375a8"
+CROS_WORKON_TREE="d716f9085d4bdb2f9277eff0a623787e89fed228"
 CROS_WORKON_PROJECT="chromiumos/platform/minigbm"
 CROS_WORKON_LOCALNAME="../platform/minigbm"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -14,7 +16,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform/minigbm"
 
 LICENSE="BSD-Google"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="*"
 VIDEO_CARDS="
 	amdgpu exynos intel marvell mediatek msm
 	radeon radeonsi rockchip tegra vc4 virgl
@@ -36,6 +38,7 @@ DEPEND="${RDEPEND}
 	)"
 
 src_prepare() {
+  epatch ${FILESDIR}/remove_drm_format_16f.patch
 	default
 	sanitizers-setup-env
 	cros-common.mk_src_prepare
