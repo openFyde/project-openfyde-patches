@@ -83,3 +83,4 @@ check_serial_number() {
 remount_oem_writable || die "Remount OEM partition failed"
 check_vpd || die "Cann't init vpd system"
 check_serial_number
+remount_oem_readonly

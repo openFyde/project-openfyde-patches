@@ -27,10 +27,12 @@ RDEPEND="
 	virtual/chromeos-activate-date
 	"
 
+VPD_TEMPLATE="oem_licence.tmp"
 src_compile() {
 	tc-export CC
 	use static && append-ldflags -static
 	emake all
+	cat ${VPD_TEMPLATE} | gzip > "vpd.gz"
 }
 
 src_install() {
@@ -48,7 +50,11 @@ src_install() {
 		insinto /etc/init
 		doins init/check-rw-vpd.conf
 		doins init/vpd-log.conf
+		doins ${FILESDIR}/check_serial_number.conf
 	fi
+	insinto /usr/share/cros/init
+	doins vpd.gz
+	doins ${FILESDIR}/check_serial_number.sh
 }
 
 src_test() {
