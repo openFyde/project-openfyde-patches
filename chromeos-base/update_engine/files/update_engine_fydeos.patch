@@ -51,7 +51,7 @@ index 657e7971..21502a5d 100644
    std::unique_ptr<DaemonStateInterface> daemon_state_;
 diff --git a/fydeos_license_checker.cc b/fydeos_license_checker.cc
 new file mode 100644
-index 00000000..d8d87984
+index 00000000..83d6d7fb
 --- /dev/null
 +++ b/fydeos_license_checker.cc
 @@ -0,0 +1,190 @@
@@ -176,14 +176,14 @@ index 00000000..d8d87984
 +std::unique_ptr<base::DictionaryValue> FydeLicenseChecker::ParseLicenseJSON(const std::string& str, std::string* out_expire_date) {
 +  base::Optional<base::Value> json = base::JSONReader::Read(str);
 +  base::DictionaryValue* license_dict = nullptr;
-+  if (!json || !json->is_dict() || !json->GetAsDictionary(&license_dict)) {
++  if (!json.has_value() || !json->is_dict() || !json->GetAsDictionary(&license_dict)) {
 +    LOG(ERROR) << "Parse license info in json format error";
 +    return nullptr;
 +  }
 +
 +  license_dict->GetString("expire_date", out_expire_date);
 +
-+  return std::unique_ptr<base::DictionaryValue>(license_dict);
++  return base::DictionaryValue::From(base::Value::ToUniquePtrValue(license_dict->Clone()));
 +}
 +
 +bool FydeLicenseChecker::VerifySignature(std::unique_ptr<base::DictionaryValue> license_dict) {
