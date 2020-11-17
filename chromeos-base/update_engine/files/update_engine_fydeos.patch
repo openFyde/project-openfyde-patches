@@ -1,13 +1,14 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index 5d2e498b..fe7845a3 100644
+index 5d2e498b..7ce83353 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -241,6 +241,8 @@ static_library("libupdate_engine") {
+@@ -241,6 +241,9 @@ static_library("libupdate_engine") {
      "update_manager/update_time_restrictions_policy_impl.cc",
      "update_manager/weekly_time.cc",
      "update_status_utils.cc",
 +    "fydeos_license_checker.cc",
 +    "fydeos_utils.cc",
++    "fydeos_toggle_ota.cc",
    ]
    configs += [ ":target_defaults" ]
    libs = [
@@ -292,6 +293,41 @@ index 00000000..86773814
 +
 +} // namespace fydeos
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
+diff --git a/fydeos_toggle_ota.cc b/fydeos_toggle_ota.cc
+new file mode 100644
+index 00000000..631a4ad6
+--- /dev/null
++++ b/fydeos_toggle_ota.cc
+@@ -0,0 +1,15 @@
++#include "update_engine/fydeos_toggle_ota.h"
++#include <base/files/file_util.h>
++
++namespace fydeos {
++namespace {
++  // keep it the same with chromium src fydeos/misc/fydeos_toggle_ota.cc
++  const char kFydeOSOTAIndicatorFile[] = "/mnt/stateful_partition/unencrypted/preserve/.disable_fydeos_ota";
++}
++
++bool OTAEnabled() {
++  const bool enabled = !base::PathExists(base::FilePath(kFydeOSOTAIndicatorFile));
++  return enabled;
++}
++
++} // fydeos
+diff --git a/fydeos_toggle_ota.h b/fydeos_toggle_ota.h
+new file mode 100644
+index 00000000..2c0fbb05
+--- /dev/null
++++ b/fydeos_toggle_ota.h
+@@ -0,0 +1,8 @@
++#ifndef FYDEOS_TOGGLE_OTA_H_
++#define FYDEOS_TOGGLE_OTA_H_
++
++namespace fydeos {
++  bool OTAEnabled();
++}
++
++#endif // ifndef FYDEOS_TOGGLE_OTA_H_
 diff --git a/fydeos_utils.cc b/fydeos_utils.cc
 new file mode 100644
 index 00000000..f92ecf19
@@ -440,21 +476,27 @@ index 00000000..372f5baf
 +
 +#endif /* ifndef FYDEOS_UTILS_H_ */
 diff --git a/omaha_request_action.cc b/omaha_request_action.cc
-index 83ee5b22..df0f146c 100644
+index 83ee5b22..08d2d133 100644
 --- a/omaha_request_action.cc
 +++ b/omaha_request_action.cc
-@@ -56,6 +56,7 @@
+@@ -56,6 +56,8 @@
  #include "update_engine/p2p_manager.h"
  #include "update_engine/payload_state_interface.h"
  #include "update_engine/update_attempter.h"
 +#include "update_engine/fydeos_utils.h"
++#include "update_engine/fydeos_toggle_ota.h"
  
  using base::Optional;
  using base::Time;
-@@ -1530,6 +1531,12 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(const OmahaResponse& response,
+@@ -1530,6 +1532,17 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(const OmahaResponse& response,
      LOG(ERROR) << "All packages were excluded.";
    }
  
++  if (!fydeos::OTAEnabled()) {
++    LOG(INFO) << "fydeos ota disabled, ignore update";
++    return true;
++  }
++
 +  if (fydeos::ShouldIgnoreUpdate(params_, response)) {
 +    LOG(WARNING) << "Update is forcibly ignored";
 +    *error = ErrorCode::kNoUpdate;
@@ -498,6 +540,42 @@ index 8add89fe..0d7d921f 100644
        ">\n" +
           app_body +
        "    </app>\n";
+diff --git a/update_attempter.cc b/update_attempter.cc
+index 0f0605d5..07b1f41d 100644
+--- a/update_attempter.cc
++++ b/update_attempter.cc
+@@ -72,6 +72,7 @@
+ #include "update_engine/update_manager/policy_utils.h"
+ #include "update_engine/update_manager/update_manager.h"
+ #include "update_engine/update_status_utils.h"
++#include "update_engine/fydeos_toggle_ota.h"
+ 
+ using base::Bind;
+ using base::Callback;
+@@ -164,6 +165,11 @@ bool UpdateAttempter::ScheduleUpdates() {
+   if (IsBusyOrUpdateScheduled())
+     return false;
+ 
++  if (!fydeos::OTAEnabled()) {
++    LOG(INFO) << "fydeos ota disabled, skip scheduling updates";
++    return false;
++  }
++
+   chromeos_update_manager::UpdateManager* const update_manager =
+       system_state_->update_manager();
+   CHECK(update_manager);
+@@ -959,6 +965,11 @@ bool UpdateAttempter::CheckForUpdate(const string& app_version,
+               << " already in progress.";
+     return false;
+   }
++  if (!fydeos::OTAEnabled()) {
++    LOG(INFO) << "fydeos ota disabled, refuse to check for update";
++    BroadcastStatus();
++    return false;
++  }
+ 
+   bool interactive = !(flags & UpdateAttemptFlags::kFlagNonInteractive);
+   is_install_ = false;
 diff --git a/update_manager/official_build_check_policy_impl.cc b/update_manager/official_build_check_policy_impl.cc
 index 096f7bf5..7decdda1 100644
 --- a/update_manager/official_build_check_policy_impl.cc
