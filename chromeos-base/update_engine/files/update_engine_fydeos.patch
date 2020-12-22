@@ -1,13 +1,12 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index 5d2e498b..7ce83353 100644
+index 5d2e498b..a360ffa9 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -241,6 +241,9 @@ static_library("libupdate_engine") {
+@@ -241,6 +241,8 @@ static_library("libupdate_engine") {
      "update_manager/update_time_restrictions_policy_impl.cc",
      "update_manager/weekly_time.cc",
      "update_status_utils.cc",
 +    "fydeos_license_checker.cc",
-+    "fydeos_utils.cc",
 +    "fydeos_toggle_ota.cc",
    ]
    configs += [ ":target_defaults" ]
@@ -52,10 +51,10 @@ index 657e7971..21502a5d 100644
    std::unique_ptr<DaemonStateInterface> daemon_state_;
 diff --git a/fydeos_license_checker.cc b/fydeos_license_checker.cc
 new file mode 100644
-index 00000000..83d6d7fb
+index 00000000..eeac8269
 --- /dev/null
 +++ b/fydeos_license_checker.cc
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,46 @@
 +#include "update_engine/fydeos_license_checker.h"
 +
 +#include <base/logging.h>
@@ -73,35 +72,6 @@ index 00000000..83d6d7fb
 +namespace {
 +  const char kShellCmd[] = "/usr/share/fydeos_shell/license-utils.sh";
 +  const char kParamId[] = "id";
-+  const char kParamReadLicense[] = "read";
-+
-+  const uint8_t kFydeOSVerificationKey[] = { // for fyde signed data
-+    0x30, 0x82, 0x01, 0x22, 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86,
-+    0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00, 0x03, 0x82, 0x01, 0x0F, 0x00,
-+    0x30, 0x82, 0x01, 0x0A, 0x02, 0x82, 0x01, 0x01, 0x00, 0xE3, 0xFC, 0x89,
-+    0x69, 0x5C, 0xEA, 0x11, 0x0C, 0x3E, 0xA1, 0xC1, 0x2A, 0xF2, 0x92, 0x81,
-+    0x68, 0xA8, 0xE8, 0x74, 0xDF, 0x7F, 0x98, 0x6F, 0xFD, 0x42, 0x07, 0x00,
-+    0x1A, 0x96, 0xBC, 0x7D, 0x24, 0xD1, 0x7A, 0x8B, 0x7E, 0x48, 0x5B, 0x5D,
-+    0xBA, 0xAD, 0xD0, 0x37, 0xD7, 0xDF, 0xCA, 0x9A, 0x2D, 0xBF, 0x2F, 0x17,
-+    0xC5, 0xD4, 0x3F, 0x24, 0xDD, 0xDE, 0x13, 0xBB, 0xCC, 0x0B, 0xDA, 0x85,
-+    0x41, 0x8E, 0xAB, 0x45, 0xB9, 0xC5, 0x00, 0x0D, 0x9A, 0xFA, 0x12, 0x32,
-+    0x58, 0x74, 0x54, 0xBA, 0x26, 0x85, 0x67, 0x45, 0xF0, 0xEB, 0x43, 0x67,
-+    0xA2, 0x3E, 0x6D, 0x98, 0xDB, 0x7F, 0xCA, 0x63, 0x8F, 0x3B, 0x9F, 0xFC,
-+    0xA8, 0x54, 0x71, 0xF1, 0x97, 0x71, 0xF0, 0xDA, 0x67, 0x29, 0xCD, 0xE9,
-+    0xC0, 0x4C, 0x8E, 0x48, 0x05, 0x1C, 0x9D, 0x86, 0xCC, 0xCD, 0x60, 0xD3,
-+    0xA8, 0xC1, 0x5F, 0x5E, 0xFA, 0x41, 0x44, 0x71, 0x2B, 0x5D, 0xCF, 0x51,
-+    0xF6, 0xF0, 0x61, 0x78, 0x18, 0x63, 0xF2, 0x1A, 0x5A, 0xC9, 0x54, 0xF8,
-+    0x62, 0x95, 0x46, 0x0A, 0x15, 0xA4, 0xA7, 0xDB, 0x2F, 0x8A, 0xC9, 0x45,
-+    0x5A, 0xC0, 0x49, 0xCF, 0x88, 0xF3, 0x1F, 0x6C, 0x1A, 0x62, 0xE0, 0x17,
-+    0x87, 0x01, 0x4A, 0xEC, 0x2F, 0x47, 0x76, 0xF6, 0x6B, 0x60, 0x34, 0x3E,
-+    0x0D, 0x8B, 0x3D, 0xE5, 0xBA, 0xA5, 0x3B, 0x7E, 0x91, 0xE5, 0xA0, 0xF4,
-+    0xE1, 0x4B, 0xB2, 0xC7, 0xAC, 0x1E, 0xFB, 0x95, 0x2D, 0xA7, 0x62, 0xC1,
-+    0xC9, 0xD0, 0x7F, 0x74, 0xBF, 0x59, 0x3A, 0x00, 0x9C, 0x3B, 0xB6, 0x5E,
-+    0x56, 0x80, 0x75, 0xB6, 0x59, 0xAA, 0xBE, 0x9B, 0x4E, 0x97, 0x45, 0xEC,
-+    0xFF, 0x21, 0xC8, 0x48, 0x21, 0x7D, 0x9F, 0xC7, 0xE4, 0x37, 0x9D, 0xB5,
-+    0x80, 0xEC, 0x69, 0x03, 0x01, 0xEB, 0x7B, 0x26, 0xE2, 0xA5, 0x69, 0x73,
-+    0xF1, 0x02, 0x03, 0x01, 0x00, 0x01};
-+
 +} // namespace
 +
 +FydeLicenseChecker::FydeLicenseChecker() = default;
@@ -128,146 +98,22 @@ index 00000000..83d6d7fb
 +  LOG(INFO) << "FydeOS license id: " << license_id_;
 +}
 +
-+bool FydeLicenseChecker::CheckLicenseAvailable() {
-+  bool ret = CheckLicenseAvailableInternal();
-+  LOG(INFO) << "FydeOS CheckLicenseAvailable: " << ret;
-+  return ret;
-+}
-+
-+bool FydeLicenseChecker::CheckLicenseAvailableInternal() {
-+  const std::string info = ReadLicenseInfo();
-+  if (info.empty()) {
-+    LOG(WARNING) << "FydeOS license info is empty";
-+    return false;
-+  }
-+
-+  std::string expire_date;
-+  auto dict = ParseLicenseJSON(info, &expire_date);
-+  if (!dict) {
-+    LOG(WARNING) << "Parse fydeos license json error";
-+    return false;
-+  }
-+
-+  const bool verified = VerifySignature(std::move(dict));
-+  if (!verified) {
-+    LOG(WARNING) << "Verify license info failed";
-+    return false;
-+  }
-+
-+  const bool expired = CheckExpireDate(expire_date);
-+  if (expired) {
-+    LOG(WARNING) << "FydeOS license is expired";
-+    return false;
-+  }
-+
-+  return true;
-+}
-+
-+std::string FydeLicenseChecker::ReadLicenseInfo() {
-+  int exit_code = 0;
-+  std::string value, error;
-+  std::vector<std::string> cmd = {kShellCmd, kParamReadLicense};
-+  if (!chromeos_update_engine::Subprocess::SynchronousExec(cmd, &exit_code, &value, &error) || exit_code) {
-+    LOG(WARNING) << "read fydeos license error, exit_code: " << exit_code;
-+    return std::string();
-+  }
-+  return value;
-+}
-+
-+std::unique_ptr<base::DictionaryValue> FydeLicenseChecker::ParseLicenseJSON(const std::string& str, std::string* out_expire_date) {
-+  base::Optional<base::Value> json = base::JSONReader::Read(str);
-+  base::DictionaryValue* license_dict = nullptr;
-+  if (!json.has_value() || !json->is_dict() || !json->GetAsDictionary(&license_dict)) {
-+    LOG(ERROR) << "Parse license info in json format error";
-+    return nullptr;
-+  }
-+
-+  license_dict->GetString("expire_date", out_expire_date);
-+
-+  return base::DictionaryValue::From(base::Value::ToUniquePtrValue(license_dict->Clone()));
-+}
-+
-+bool FydeLicenseChecker::VerifySignature(std::unique_ptr<base::DictionaryValue> license_dict) {
-+  if (!license_dict) {
-+    return false;
-+  }
-+  std::string signed_token;
-+  if (!license_dict->GetString("license", &signed_token)){
-+    return false;
-+  }
-+  std::string signature;
-+  if (!base::Base64Decode(signed_token, &signature)) {
-+    return false;
-+  }
-+  std::string license_type;
-+  if (!license_dict->GetString("license_type", &license_type)) {
-+    return false;
-+  }
-+  std::string expire_date;
-+  if (!license_dict->GetString("expire_date", &expire_date)) {
-+    return false;
-+  }
-+  std::string signed_data;
-+  crypto::SignatureVerifier signature_verifier;
-+  signed_data.append(license_id_).append(".").append(license_type).append(".").append(expire_date);
-+  if (!signature_verifier.VerifyInit(
-+        crypto::SignatureVerifier::RSA_PKCS1_SHA256,
-+        reinterpret_cast<const uint8_t*>(signature.c_str()),
-+        signature.size(),
-+        kFydeOSVerificationKey,
-+        sizeof(kFydeOSVerificationKey))) {
-+    return false;
-+  }
-+  signature_verifier.VerifyUpdate(reinterpret_cast<const uint8_t*>(signed_data.c_str()), signed_data.size());
-+  if (!signature_verifier.VerifyFinal()) {
-+    return false;
-+  }
-+
-+  return true;
-+}
-+
-+bool FydeLicenseChecker::CheckExpireDate(const std::string& expire_date) {
-+  if (expire_date.empty()) {
-+    LOG(WARNING) << "fydeos license expire_date is empty";
-+    return true;
-+  }
-+  base::Time license_expired_time;
-+  if (!base::Time::FromUTCString(expire_date.c_str(), &license_expired_time)) {
-+    LOG(WARNING) << "fydeos license expire_date is invalid";
-+    return true;
-+  }
-+  if (base::Time::NowFromSystemTime() > license_expired_time) {
-+    return true;
-+  }
-+
-+  return false;
-+}
-+
 +FydeLicenseChecker* FydeLicenseChecker::license_checker_singleton_ = nullptr;
 +
 +} // namespace fydeos
 diff --git a/fydeos_license_checker.h b/fydeos_license_checker.h
 new file mode 100644
-index 00000000..86773814
+index 00000000..110e47fe
 --- /dev/null
 +++ b/fydeos_license_checker.h
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,25 @@
 +#ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H
 +#define UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H
 +
 +#include <string>
 +#include <memory>
 +
-+namespace base {
-+  class DictionaryValue;
-+}
-+
-+namespace crypto {
-+  class SignatureVerifier;
-+}
-+
 +namespace fydeos {
-+
 +
 +class FydeLicenseChecker {
 +  public:
@@ -276,17 +122,10 @@ index 00000000..86773814
 +
 +    static FydeLicenseChecker& Get() { return *license_checker_singleton_; }
 +    void Init();
-+    bool CheckLicenseAvailable();
 +    std::string GetLicenseId() const { return license_id_; };
 +
 +  private:
 +    static FydeLicenseChecker* license_checker_singleton_;
-+
-+    bool CheckLicenseAvailableInternal();
-+    std::string ReadLicenseInfo();
-+    std::unique_ptr<base::DictionaryValue> ParseLicenseJSON(const std::string& json, std::string* out_expire_date);
-+    bool VerifySignature(std::unique_ptr<base::DictionaryValue> dict);
-+    bool CheckExpireDate(const std::string& expire_date);
 +
 +    std::string license_id_;
 +};
@@ -328,178 +167,24 @@ index 00000000..2c0fbb05
 +}
 +
 +#endif // ifndef FYDEOS_TOGGLE_OTA_H_
-diff --git a/fydeos_utils.cc b/fydeos_utils.cc
-new file mode 100644
-index 00000000..f92ecf19
---- /dev/null
-+++ b/fydeos_utils.cc
-@@ -0,0 +1,116 @@
-+#include "update_engine/fydeos_utils.h"
-+#include "update_engine/fydeos_license_checker.h"
-+#include "update_engine/omaha_request_params.h"
-+#include "update_engine/omaha_response.h"
-+#include <base/strings/string_split.h>
-+#include <base/strings/string_util.h>
-+#include <base/strings/stringprintf.h>
-+
-+namespace fydeos {
-+
-+const char kBoardNameForPC[] = "amd64-fydeos";
-+
-+namespace {
-+
-+const std::string GetFirstSegment(const std::string& str) {
-+  std::vector<std::string> tokens = base::SplitString(
-+      str, ".", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
-+  if (!tokens.size()) {
-+    return std::string();
-+  }
-+  return tokens[0];
-+}
-+
-+const std::string GetAlternativeName(const std::string& board) {
-+  if (board == kBoardNameForPC) {
-+    return std::string("FOR%20PC");
-+  }
-+  if (board == "link_fydeos") {
-+    return std::string("LINK");
-+  }
-+  return std::string();
-+}
-+
-+bool IsUrlContainBoardName(const std::string& url, const std::string& board) {
-+  const std::string uppercaseUrl = base::ToUpperASCII(url);
-+  std::string temp;
-+  const std::string removeChars = "-_";
-+  base::RemoveChars(board, removeChars, &temp);
-+  const std::string uppercaseBoard = base::ToUpperASCII(temp);
-+  const std::string alternativeName = GetAlternativeName(board);
-+  std::vector<std::string> tokens = base::SplitString(
-+      uppercaseUrl, "/", base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
-+  std::string part;
-+  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
-+    base::RemoveChars(*it, removeChars, &temp);
-+    if (temp.find("FYDEOS") == std::string::npos) {
-+      continue;
-+    }
-+    if (temp.find(uppercaseBoard) != std::string::npos) {
-+      return true;
-+    }
-+    if (!alternativeName.empty() && temp.find(alternativeName) != std::string::npos) {
-+      return true;
-+    }
-+  }
-+  return false;
-+}
-+
-+bool ValidateBoardName(const std::string& os_board, const OmahaResponse& response) {
-+  if (os_board.empty()) return false;
-+  for (auto it = response.packages.begin(); it != response.packages.end(); ++it) {
-+    for (auto ii = it->payload_urls.begin(); ii != it->payload_urls.end(); ++ii) {
-+      const std::string url = *ii;
-+      if (IsUrlContainBoardName(url, os_board)) {
-+        return true;
-+      }
-+    }
-+  }
-+
-+  return false;
-+}
-+
-+bool ValidateMajorVersion(const std::string& local_version, const std::string& remote_version) {
-+  LOG(INFO) << "Local version is " << local_version << ", remote version is " << remote_version;
-+
-+  const std::string local_first = GetFirstSegment(local_version);
-+  const std::string remote_first = GetFirstSegment(remote_version);
-+
-+  if (local_first.empty()) {
-+    LOG(WARNING) << "The format of local version number may be invalid";
-+    return false;
-+  }
-+
-+  return local_first == remote_first;
-+}
-+
-+bool ValidateLicenseStatus() {
-+  return FydeLicenseChecker::Get().CheckLicenseAvailable();
-+}
-+
-+}
-+
-+
-+bool ShouldIgnoreUpdate(OmahaRequestParams* request_params, const OmahaResponse& response) {
-+  if (!request_params) {
-+    LOG(ERROR) << "request_params is null pointer, should not happen";
-+    return true;
-+  }
-+
-+  const std::string local_version = request_params->app_version();
-+
-+  if (!ValidateBoardName(request_params->os_board(), response)) {
-+    LOG(WARNING) << "board name in response message is different with local os board";
-+    return true;
-+  }
-+
-+  if (request_params->os_board() != kBoardNameForPC) {
-+    LOG(INFO) << "Check license status for non " << kBoardNameForPC << " release";
-+    return !ValidateLicenseStatus();
-+  }
-+
-+  LOG(INFO) << "Compare major version for " << kBoardNameForPC << " release";
-+  return !ValidateMajorVersion(request_params->app_version(), response.version);
-+}
-+
-+}
-diff --git a/fydeos_utils.h b/fydeos_utils.h
-new file mode 100644
-index 00000000..372f5baf
---- /dev/null
-+++ b/fydeos_utils.h
-@@ -0,0 +1,19 @@
-+#ifndef UPDATE_ENGINE_FYDEOS_UTILS_H_
-+#define UPDATE_ENGINE_FYDEOS_UTILS_H_
-+
-+namespace chromeos_update_engine {
-+  class OmahaRequestParams;
-+  struct OmahaResponse;
-+}
-+
-+using namespace chromeos_update_engine;
-+
-+namespace fydeos {
-+
-+extern const char kBoardNameForPC[];
-+
-+bool ShouldIgnoreUpdate(OmahaRequestParams* request_params, const OmahaResponse& response);
-+
-+}
-+
-+#endif /* ifndef FYDEOS_UTILS_H_ */
 diff --git a/omaha_request_action.cc b/omaha_request_action.cc
-index 83ee5b22..08d2d133 100644
+index 83ee5b22..bd3d64f5 100644
 --- a/omaha_request_action.cc
 +++ b/omaha_request_action.cc
-@@ -56,6 +56,8 @@
+@@ -56,6 +56,7 @@
  #include "update_engine/p2p_manager.h"
  #include "update_engine/payload_state_interface.h"
  #include "update_engine/update_attempter.h"
-+#include "update_engine/fydeos_utils.h"
 +#include "update_engine/fydeos_toggle_ota.h"
  
  using base::Optional;
  using base::Time;
-@@ -1530,6 +1532,17 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(const OmahaResponse& response,
+@@ -1530,6 +1531,11 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(const OmahaResponse& response,
      LOG(ERROR) << "All packages were excluded.";
    }
  
 +  if (!fydeos::OTAEnabled()) {
 +    LOG(INFO) << "fydeos ota disabled, ignore update";
-+    return true;
-+  }
-+
-+  if (fydeos::ShouldIgnoreUpdate(params_, response)) {
-+    LOG(WARNING) << "Update is forcibly ignored";
-+    *error = ErrorCode::kNoUpdate;
 +    return true;
 +  }
 +
