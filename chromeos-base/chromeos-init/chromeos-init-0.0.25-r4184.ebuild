@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+CROS_WORKON_COMMIT="5a6636098bf2fd68219e56d1d1851df760d07dec"
+CROS_WORKON_TREE=("52a8a8b6d3bbca5e90d4761aa308a5541d52b1bb" "0be9b01657e3488badf97e2e2160b2c16db87cef" "8d228c8e702aebee142bcbf0763a15786eb5b3bb" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -20,11 +22,12 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 SLOT="0/0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="
 	arcpp arcvm cros_embedded +debugd +encrypted_stateful +encrypted_reboot_vault
 	frecon -lvm_stateful_partition kernel-3_8 kernel-3_10 kernel-3_14
-	kernel-3_18 +midi -s3halt +syslog systemd +udev vivid vtconsole"
+	kernel-3_18 +midi -s3halt +syslog systemd +udev vivid vtconsole
+	fydeos_factory_install fixcgroup fixcgroup-memory"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 COMMON_DEPEND="
@@ -234,4 +237,22 @@ pkg_preinst() {
 	# by bootstat and ureadahead.
 	enewuser "debugfs-access"
 	enewgroup "debugfs-access"
+}
+
+src_prepare() {
+  default
+  if use fydeos_factory_install; then
+    eapply -p2 ${FILESDIR}/insert_factory_install_script.patch
+    eapply -p2 ${FILESDIR}/set_default_language_to_zh.patch
+    if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
+      echo $FYDEOS_FACTORY_INSTALL > $FYDEOS_INSTALL_FILE
+    fi
+  fi
+  if use fixcgroup; then
+    eapply -p2 ${FILESDIR}/cgroups_cpuset.patch
+  fi
+  if use fixcgroup-memory; then
+    eapply -p2 ${FILESDIR}/fix_cgroup_memory.patch
+  fi
+  eapply -p2 ${FILESDIR}/change_splash_background_color_black.patch
 }
