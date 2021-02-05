@@ -1,0 +1,12 @@
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index cd006460bccf..2379a3e7401d 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -243,6 +243,7 @@ config X86
+ 	select PROC_PID_ARCH_STATUS		if PROC_FS
+ 	imply IMA_SECURE_AND_OR_TRUSTED_BOOT    if EFI
+ 	select ARCH_HAS_ALT_SYSCALL		if X86_64
++  select SET_FS
+ 
+ config INSTRUCTION_DECODER
+ 	def_bool y
