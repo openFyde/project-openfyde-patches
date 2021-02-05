@@ -22,7 +22,7 @@ SRC_URI=""
 
 LICENSE="Apache-2.0"
 KEYWORDS="*"
-IUSE="cfm cros_host cros_p2p dlc fuzzer -hwid_override +power_management systemd"
+IUSE="cfm cros_host cros_p2p dlc fuzzer -hwid_override +power_management systemd -skip_removable"
 
 COMMON_DEPEND="
 	app-arch/bzip2:=
@@ -136,4 +136,7 @@ src_install() {
 src_prepare() {
   default
   eapply ${FILESDIR}/update_engine_fydeos.patch
+  if use skip_removable; then
+    eapply ${FILESDIR}/ignore_removable_checking.patch
+  fi
 }
