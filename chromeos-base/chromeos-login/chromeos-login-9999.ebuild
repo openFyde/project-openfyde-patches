@@ -114,6 +114,9 @@ src_install() {
 	insinto /etc
 	doins chrome_dev.conf
 
+	insinto /usr/share/power_manager
+	doins powerd_prefs/suspend_freezer_deps_*
+
 	# Create daemon store directories.
 	local daemon_store="/etc/daemon-store/session_manager"
 	dodir "${daemon_store}"
