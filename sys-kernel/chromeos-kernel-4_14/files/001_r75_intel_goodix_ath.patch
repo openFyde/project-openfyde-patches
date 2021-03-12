@@ -1,23 +1,27 @@
 diff --git a/drivers/gpu/drm/i915/intel_dp.c b/drivers/gpu/drm/i915/intel_dp.c
 old mode 100644
 new mode 100755
-index c3b4fbcfec3a..fc416f8c279d
+index 728f2bfd1cc2..df8e6039e144
 --- a/drivers/gpu/drm/i915/intel_dp.c
 +++ b/drivers/gpu/drm/i915/intel_dp.c
-@@ -391,8 +391,10 @@ static bool intel_dp_link_params_valid(struct intel_dp *intel_dp, int link_rate,
+@@ -393,12 +393,15 @@ static bool intel_dp_link_params_valid(struct intel_dp *intel_dp, int link_rate,
  int intel_dp_get_link_train_fallback_values(struct intel_dp *intel_dp,
  					    int link_rate, uint8_t lane_count)
  {
 -	int index;
--
 +//	int index;
-+  DRM_ERROR("Link Training Unsuccessful\n");
-+  return -1;
++    DRM_ERROR("Link Training Unsuccessful\n");
++    return -1;
+ 
+ 	/*
+ 	 * TODO: Enable fallback on MST links once MST link compute can handle
+ 	 * the fallback params.
+ 	 */
 +/*
- 	index = intel_dp_rate_index(intel_dp->common_rates,
- 				    intel_dp->num_common_rates,
- 				    link_rate);
-@@ -408,6 +410,7 @@ int intel_dp_get_link_train_fallback_values(struct intel_dp *intel_dp,
+ 	if (intel_dp->is_mst) {
+ 		DRM_ERROR("Link Training Unsuccessful\n");
+ 		return -1;
+@@ -419,6 +422,7 @@ int intel_dp_get_link_train_fallback_values(struct intel_dp *intel_dp,
  	}
  
  	return 0;
@@ -28,7 +32,7 @@ index c3b4fbcfec3a..fc416f8c279d
 diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
 old mode 100644
 new mode 100755
-index 2bfa89ec552c..111d979ceb07
+index 87f5722a6782..113fe85e4452
 --- a/drivers/input/touchscreen/goodix.c
 +++ b/drivers/input/touchscreen/goodix.c
 @@ -34,6 +34,7 @@
@@ -47,7 +51,7 @@ index 2bfa89ec552c..111d979ceb07
  
  static const unsigned long goodix_irq_flags[] = {
  	IRQ_TYPE_EDGE_RISING,
-@@ -247,12 +249,13 @@ static int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
+@@ -268,12 +270,13 @@ static int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
  	return 0;
  }
  
@@ -62,7 +66,7 @@ index 2bfa89ec552c..111d979ceb07
  
  	/* Inversions have to happen before axis swapping */
  	if (ts->inverted_x)
-@@ -261,13 +264,29 @@ static void goodix_ts_report_touch(struct goodix_ts_data *ts, u8 *coor_data)
+@@ -282,13 +285,29 @@ static void goodix_ts_report_touch(struct goodix_ts_data *ts, u8 *coor_data)
  		input_y = ts->abs_y_max - input_y;
  	if (ts->swapped_x_y)
  		swap(input_x, input_y);
@@ -99,7 +103,7 @@ index 2bfa89ec552c..111d979ceb07
  }
  
  /**
-@@ -292,12 +311,11 @@ static void goodix_process_events(struct goodix_ts_data *ts)
+@@ -313,12 +332,11 @@ static void goodix_process_events(struct goodix_ts_data *ts)
  	 * Bit 4 of the first byte reports the status of the capacitive
  	 * Windows/Home button.
  	 */
@@ -114,7 +118,7 @@ index 2bfa89ec552c..111d979ceb07
  	input_mt_sync_frame(ts->input_dev);
  	input_sync(ts->input_dev);
  }
-@@ -605,6 +623,28 @@ static int goodix_i2c_test(struct i2c_client *client)
+@@ -626,6 +644,28 @@ static int goodix_i2c_test(struct i2c_client *client)
  	return error;
  }
  
@@ -143,7 +147,7 @@ index 2bfa89ec552c..111d979ceb07
  /**
   * goodix_request_input_dev - Allocate, populate and register the input device
   *
-@@ -621,6 +661,8 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
+@@ -642,6 +682,8 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
  		dev_err(&ts->client->dev, "Failed to allocate input device.");
  		return -ENOMEM;
  	}
@@ -152,7 +156,7 @@ index 2bfa89ec552c..111d979ceb07
  
  	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
  			     0, ts->abs_x_max, 0, 0);
-@@ -628,6 +670,8 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
+@@ -649,6 +691,8 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
  			     0, ts->abs_y_max, 0, 0);
  	input_set_abs_params(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
  	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
@@ -161,7 +165,7 @@ index 2bfa89ec552c..111d979ceb07
  
  	input_mt_init_slots(ts->input_dev, ts->max_touch_num,
  			    INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
-@@ -649,7 +693,7 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
+@@ -670,7 +714,7 @@ static int goodix_request_input_dev(struct goodix_ts_data *ts)
  		return error;
  	}
  

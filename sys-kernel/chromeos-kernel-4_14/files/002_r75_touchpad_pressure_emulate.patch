@@ -1,20 +1,20 @@
 diff --git a/drivers/bluetooth/btusb.c b/drivers/bluetooth/btusb.c
-index f698e55c0e61..fa1e5fa3a55b 100644
+index 5e5a3ac8baa0..32961c59110e 100644
 --- a/drivers/bluetooth/btusb.c
 +++ b/drivers/bluetooth/btusb.c
-@@ -343,6 +343,7 @@ static const struct usb_device_id blacklist_table[] = {
+@@ -347,6 +347,7 @@ static const struct usb_device_id blacklist_table[] = {
  	{ USB_DEVICE(0x1286, 0x2044), .driver_info = BTUSB_MARVELL },
  	{ USB_DEVICE(0x1286, 0x2046), .driver_info = BTUSB_MARVELL },
  	{ USB_DEVICE(0x1286, 0x204e), .driver_info = BTUSB_MARVELL },
-+  { USB_DEVICE(0x1286, 0x204b), .driver_info = BTUSB_MARVELL },
++    { USB_DEVICE(0x1286, 0x204b), .driver_info = BTUSB_MARVELL },
  
  	/* Intel Bluetooth devices */
- 	{ USB_DEVICE(0x8087, 0x0025), .driver_info = BTUSB_INTEL_NEW },
+ 	{ USB_DEVICE(0x8087, 0x0025), .driver_info = BTUSB_INTEL_NEW |
 diff --git a/drivers/hid/hid-ids.h b/drivers/hid/hid-ids.h
-index 7afed140c228..b60bc36a47dc 100644
+index 99cc511dd061..66e833e8b32c 100644
 --- a/drivers/hid/hid-ids.h
 +++ b/drivers/hid/hid-ids.h
-@@ -786,6 +786,17 @@
+@@ -793,6 +793,17 @@
  #define USB_DEVICE_ID_MS_TOUCH_COVER_2   0x07a7
  #define USB_DEVICE_ID_MS_TYPE_COVER_2    0x07a9
  #define USB_DEVICE_ID_MS_POWER_COVER     0x07da
@@ -33,7 +33,7 @@ index 7afed140c228..b60bc36a47dc 100644
  #define USB_VENDOR_ID_MOJO		0x8282
  #define USB_DEVICE_ID_RETRO_ADAPTER	0x3201
 diff --git a/drivers/hid/hid-multitouch.c b/drivers/hid/hid-multitouch.c
-index 6c65d9428dce..49dda02bd605 100644
+index 1f5e7fa82875..4c001d2e0a61 100644
 --- a/drivers/hid/hid-multitouch.c
 +++ b/drivers/hid/hid-multitouch.c
 @@ -142,6 +142,9 @@ struct mt_device {
@@ -46,7 +46,7 @@ index 6c65d9428dce..49dda02bd605 100644
  };
  
  static void mt_post_parse_default_settings(struct mt_device *td);
-@@ -883,6 +886,16 @@ static void mt_process_mt_event(struct hid_device *hid, struct hid_field *field,
+@@ -885,6 +888,16 @@ static void mt_process_mt_event(struct hid_device *hid, struct hid_field *field,
  				td->curdata.cx = value;
  			else
  				td->curdata.x = value;
@@ -63,7 +63,7 @@ index 6c65d9428dce..49dda02bd605 100644
  			break;
  		case HID_GD_Y:
  			if (usage->code == ABS_MT_TOOL_Y)
-@@ -1120,11 +1133,20 @@ static int mt_input_mapped(struct hid_device *hdev, struct hid_input *hi,
+@@ -1122,11 +1135,20 @@ static int mt_input_mapped(struct hid_device *hdev, struct hid_input *hi,
  	 * some egalax touchscreens have "application == HID_DG_TOUCHSCREEN"
  	 * for the stylus.
  	 */

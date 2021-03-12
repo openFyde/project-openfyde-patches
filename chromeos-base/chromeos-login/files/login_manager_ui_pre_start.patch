@@ -1,0 +1,12 @@
+diff --git a/login_manager/init/scripts/ui-pre-start b/login_manager/init/scripts/ui-pre-start
+index e5f9eaa0dd..e4f3f739fb 100755
+--- a/login_manager/init/scripts/ui-pre-start
++++ b/login_manager/init/scripts/ui-pre-start
+@@ -117,6 +117,7 @@ if [ ! -d "${CHROME_FREEZER_CGROUP_DIR}" ]; then
+   mkdir -p "${CHROME_FREEZER_CGROUP_DIR}"
+   mkdir -p "${CHROME_FREEZER_CGROUP_DIR}/to_be_frozen"
+   chown -R chronos "${CHROME_FREEZER_CGROUP_DIR}"
++  chown power:power ${CHROME_FREEZER_CGROUP_DIR}/freezer.state
+ fi
+ 
+ # Set up a cgroup for containers(Android) started by session manager.  To
