@@ -19,7 +19,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/shill/
 
 LICENSE="BSD-Google"
 KEYWORDS="~*"
-IUSE="cellular dhcpv6 fast_transition fuzzer kernel-3_8 kernel-3_10 pppoe +seccomp systemd +tpm +vpn wake_on_wifi +wifi +wired_8021x"
+IUSE="cellular dhcpv6 fuzzer kernel-3_8 kernel-3_10 pppoe +seccomp systemd +tpm +vpn wake_on_wifi +wifi +wired_8021x wpa3_sae"
 
 # Sorted by the package we depend on. (Not by use flag!)
 COMMON_DEPEND="
@@ -29,6 +29,8 @@ COMMON_DEPEND="
 	chromeos-base/libpasswordprovider:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/nsswitch:=
+	chromeos-base/patchpanel-client:=
+	chromeos-base/shill-net:=
 	dev-libs/re2:=
 	cellular? ( net-dialup/ppp:= )
 	pppoe? ( net-dialup/ppp:= )
@@ -46,6 +48,7 @@ COMMON_DEPEND="
 "
 
 RDEPEND="${COMMON_DEPEND}
+	chromeos-base/patchpanel
 	net-misc/dhcpcd
 	dhcpv6? ( net-misc/dhcpcd[ipv6] )
 	vpn? ( net-vpn/openvpn )
@@ -90,17 +93,6 @@ src_configure() {
 }
 
 src_install() {
-	# Install libshill-net library.
-	insinto "/usr/$(get_libdir)/pkgconfig"
-	local v="$(libchrome_ver)"
-	./net/preinstall.sh "${OUT}" "${v}"
-	dolib.so "${OUT}/lib/libshill-net-${v}.so"
-	doins "${OUT}/lib/libshill-net-${v}.pc"
-
-	# Install header files from libshill-net.
-	insinto /usr/include/shill/net
-	doins net/*.h
-
 	dobin bin/ff_debug
 
 	if use cellular; then
