@@ -1,0 +1,39 @@
+diff --git a/drivers/gpu/drm/drm_dp_mst_topology.c b/drivers/gpu/drm/drm_dp_mst_topology.c
+index bef37a65ab43..a86aa5821e44 100644
+--- a/drivers/gpu/drm/drm_dp_mst_topology.c
++++ b/drivers/gpu/drm/drm_dp_mst_topology.c
+@@ -5477,7 +5477,7 @@ struct drm_dp_aux *drm_dp_mst_dsc_aux_for_port(struct drm_dp_mst_port *port)
+ {
+ 	struct drm_dp_mst_port *immediate_upstream_port;
+ 	struct drm_dp_mst_port *fec_port;
+-	struct drm_dp_desc desc = { 0 };
++	struct drm_dp_desc desc;
+ 	u8 endpoint_fec;
+ 	u8 endpoint_dsc;
+ 
+diff --git a/drivers/gpu/drm/i915/display/intel_dp_mst.c b/drivers/gpu/drm/i915/display/intel_dp_mst.c
+index ad91530dd186..5fd1d080167d 100644
+--- a/drivers/gpu/drm/i915/display/intel_dp_mst.c
++++ b/drivers/gpu/drm/i915/display/intel_dp_mst.c
+@@ -105,7 +105,7 @@ static int intel_dp_mst_compute_config(struct intel_encoder *encoder,
+ 		to_intel_digital_connector_state(conn_state);
+ 	const struct drm_display_mode *adjusted_mode =
+ 		&pipe_config->hw.adjusted_mode;
+-	void *port = connector->port;
++	//void *port = connector->port;
+ 	struct link_config_limits limits;
+ 	int ret;
+ 
+diff --git a/drivers/platform/x86/thinkpad_acpi.c b/drivers/platform/x86/thinkpad_acpi.c
+index 8c54d3707fba..9b871f8d2f26 100644
+--- a/drivers/platform/x86/thinkpad_acpi.c
++++ b/drivers/platform/x86/thinkpad_acpi.c
+@@ -2587,7 +2587,7 @@ static void hotkey_compare_and_issue_event(struct tp_nvram_state *oldn,
+  */
+ static int hotkey_kthread(void *data)
+ {
+-	struct tp_nvram_state s[2] = { 0 };
++	struct tp_nvram_state s[2];
+ 	u32 poll_mask, event_mask;
+ 	unsigned int si, so;
+ 	unsigned long t;

@@ -1,0 +1,52 @@
+diff --git a/include/linux/elfcore.h b/include/linux/elfcore.h
+index 4cad0e784b28..b81f9e1d74b0 100644
+--- a/include/linux/elfcore.h
++++ b/include/linux/elfcore.h
+@@ -58,6 +58,7 @@ static inline int elf_core_copy_task_xfpregs(struct task_struct *t, elf_fpxregse
+ }
+ #endif
+ 
++#if defined(CONFIG_UM) || defined(CONFIG_IA64)
+ /*
+  * These functions parameterize elf_core_dump in fs/binfmt_elf.c to write out
+  * extra segments containing the gate DSO contents.  Dumping its
+@@ -72,5 +73,26 @@ elf_core_write_extra_phdrs(struct coredump_params *cprm, loff_t offset);
+ extern int
+ elf_core_write_extra_data(struct coredump_params *cprm);
+ extern size_t elf_core_extra_data_size(void);
++#else
++static inline Elf_Half elf_core_extra_phdrs(void)
++{
++	return 0;
++}
++
++static inline int elf_core_write_extra_phdrs(struct coredump_params *cprm, loff_t offset)
++{
++	return 1;
++}
++
++static inline int elf_core_write_extra_data(struct coredump_params *cprm)
++{
++	return 1;
++}
++
++static inline size_t elf_core_extra_data_size(void)
++{
++	return 0;
++}
++#endif
+ 
+ #endif /* _LINUX_ELFCORE_H */
+diff --git a/kernel/Makefile b/kernel/Makefile
+index 75f3550f4643..67286128c067 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -96,7 +96,7 @@ obj-$(CONFIG_TASK_DELAY_ACCT) += delayacct.o
+ obj-$(CONFIG_TASKSTATS) += taskstats.o tsacct.o
+ obj-$(CONFIG_TRACEPOINTS) += tracepoint.o
+ obj-$(CONFIG_LATENCYTOP) += latencytop.o
+-obj-$(CONFIG_ELFCORE) += elfcore.o
++#obj-$(CONFIG_ELFCORE) += elfcore.o
+ obj-$(CONFIG_FUNCTION_TRACER) += trace/
+ obj-$(CONFIG_TRACING) += trace/
+ obj-$(CONFIG_TRACE_CLOCK) += trace/
