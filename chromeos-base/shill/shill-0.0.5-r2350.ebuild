@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="cb11f42253db4dfbb9c556e16ff2ea2595646ca8"
-CROS_WORKON_TREE=("fe8d35af30ff1c2484e01cd6235a5d45c627d10d" "377caa22e8416ce2388b9c099e85be393001947f" "2834854981f88e2b81fefd49c590185a31f2b1f1" "6ac317a0892f62609403936aa07431dd7a564b9e" "963e076a0b7311a4a5e1c14646f9a5d50c209ef7" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="a5a765ff36ea958d8fe81ae736dd3da814adbb0c"
+CROS_WORKON_TREE=("52a8a8b6d3bbca5e90d4761aa308a5541d52b1bb" "5c6a69ae1a339332642149aa39da47d14efbe3fd" "8d228c8e702aebee142bcbf0763a15786eb5b3bb" "67c5f80d8e908b9810036eff9b399b065a8a9a10" "e0ed49a505c69afe4a7f216b86744c3dabcd5e4c" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
@@ -21,7 +21,7 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/shill/
 
 LICENSE="BSD-Google"
 KEYWORDS="*"
-IUSE="cellular dhcpv6 fast_transition fuzzer kernel-3_8 kernel-3_10 pppoe +seccomp systemd +tpm +vpn wake_on_wifi +wifi +wired_8021x"
+IUSE="cellular dhcpv6 fuzzer kernel-3_8 kernel-3_10 pppoe +seccomp systemd +tpm +vpn wake_on_wifi +wifi +wired_8021x wpa3_sae"
 
 # Sorted by the package we depend on. (Not by use flag!)
 COMMON_DEPEND="
@@ -31,6 +31,8 @@ COMMON_DEPEND="
 	chromeos-base/libpasswordprovider:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/nsswitch:=
+	chromeos-base/patchpanel-client:=
+	chromeos-base/shill-net:=
 	dev-libs/re2:=
 	cellular? ( net-dialup/ppp:= )
 	pppoe? ( net-dialup/ppp:= )
@@ -48,6 +50,7 @@ COMMON_DEPEND="
 "
 
 RDEPEND="${COMMON_DEPEND}
+	chromeos-base/patchpanel
 	net-misc/dhcpcd
 	dhcpv6? ( net-misc/dhcpcd[ipv6] )
 	vpn? ( net-vpn/openvpn )
@@ -92,17 +95,6 @@ src_configure() {
 }
 
 src_install() {
-	# Install libshill-net library.
-	insinto "/usr/$(get_libdir)/pkgconfig"
-	local v="$(libchrome_ver)"
-	./net/preinstall.sh "${OUT}" "${v}"
-	dolib.so "${OUT}/lib/libshill-net-${v}.so"
-	doins "${OUT}/lib/libshill-net-${v}.pc"
-
-	# Install header files from libshill-net.
-	insinto /usr/include/shill/net
-	doins net/*.h
-
 	dobin bin/ff_debug
 
 	if use cellular; then
@@ -236,5 +228,5 @@ platform_pkg_test() {
 
 src_prepare() {
   default
-  epatch ${FILESDIR}/r83_change_defualt_detect_url.patch
+  eapply -p2 ${FILESDIR}/r89_change_defualt_detect_url.patch
 }
