@@ -1,5 +1,5 @@
 diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
-index bfb945fc33a1..55277387645c 100644
+index bfb945fc33a1..0c94e11760a7 100644
 --- a/drivers/input/touchscreen/goodix.c
 +++ b/drivers/input/touchscreen/goodix.c
 @@ -29,6 +29,15 @@
@@ -99,15 +99,17 @@ index bfb945fc33a1..55277387645c 100644
  }
  
  /**
-@@ -383,6 +422,7 @@ static void goodix_process_events(struct goodix_ts_data *ts)
+@@ -383,6 +422,9 @@ static void goodix_process_events(struct goodix_ts_data *ts)
  	int i;
  
  	touch_num = goodix_ts_read_input_report(ts, point_data);
++  /*
 +  dev_info(&ts->client->dev, "touch count:%d\n",touch_num);
++  */
  	if (touch_num < 0)
  		return;
  
-@@ -392,16 +432,19 @@ static void goodix_process_events(struct goodix_ts_data *ts)
+@@ -392,16 +434,19 @@ static void goodix_process_events(struct goodix_ts_data *ts)
  	 */
  	input_report_key(ts->input_dev, KEY_LEFTMETA, point_data[0] & BIT(4));
  
@@ -132,7 +134,7 @@ index bfb945fc33a1..55277387645c 100644
  }
  
  /**
-@@ -737,6 +780,29 @@ static int goodix_i2c_test(struct i2c_client *client)
+@@ -737,6 +782,29 @@ static int goodix_i2c_test(struct i2c_client *client)
  	return error;
  }
  
@@ -162,7 +164,7 @@ index bfb945fc33a1..55277387645c 100644
  /**
   * goodix_configure_dev - Finish device initialization
   *
-@@ -770,10 +836,14 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
+@@ -770,10 +838,14 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
  	/* Capacitive Windows/Home button on some devices */
  	input_set_capability(ts->input_dev, EV_KEY, KEY_LEFTMETA);
  
@@ -177,7 +179,7 @@ index bfb945fc33a1..55277387645c 100644
  
  	/* Read configuration and apply touchscreen parameters */
  	goodix_read_config(ts);
-@@ -807,13 +877,19 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
+@@ -807,13 +879,19 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
  		dev_dbg(&ts->client->dev,
  			"Non-standard 9-bytes report format quirk\n");
  	}
@@ -198,7 +200,7 @@ index bfb945fc33a1..55277387645c 100644
  	error = input_mt_init_slots(ts->input_dev, ts->max_touch_num,
  				    INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
  	if (error) {
-@@ -836,7 +912,7 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
+@@ -836,7 +914,7 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
  		return error;
  	}
  
