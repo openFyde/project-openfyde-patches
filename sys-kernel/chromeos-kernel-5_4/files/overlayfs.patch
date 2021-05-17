@@ -1,21 +1,18 @@
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 0317581e957b..59e7a6c1de89 100644
+index 0317581e957b..2be5bdb7b77b 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
-@@ -102,6 +102,12 @@
+@@ -102,6 +102,9 @@
  #include "netlabel.h"
  #include "audit.h"
  #include "avc_ss.h"
-+#ifndef CONFIG_OVERLAY_FS
-+#define CONFIG_OVERLAY_FS
-+#endif
 +#ifdef CONFIG_OVERLAY_FS
 +#include "../../fs/overlayfs/ovl_entry.h"
 +#endif
  
  struct selinux_state selinux_state;
  
-@@ -506,10 +512,32 @@ static int selinux_is_genfs_special_handling(struct super_block *sb)
+@@ -506,10 +509,32 @@ static int selinux_is_genfs_special_handling(struct super_block *sb)
  		  !strcmp(sb->s_type->name, "cgroup2")));
  }
  
@@ -49,7 +46,7 @@ index 0317581e957b..59e7a6c1de89 100644
  	/*
  	 * IMPORTANT: Double-check logic in this function when adding a new
  	 * SECURITY_FS_USE_* definition!
-@@ -3380,7 +3408,15 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
+@@ -3380,7 +3405,15 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
  	 * and lack of permission just means that we fall back to the
  	 * in-core context value, not a denial.
  	 */
@@ -66,7 +63,7 @@ index 0317581e957b..59e7a6c1de89 100644
  	if (has_cap_mac_admin(false))
  		error = security_sid_to_context_force(&selinux_state,
  						      isec->sid, &context,
-@@ -3403,11 +3439,26 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
+@@ -3403,11 +3436,26 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
  static int selinux_inode_setsecurity(struct inode *inode, const char *name,
  				     const void *value, size_t size, int flags)
  {
