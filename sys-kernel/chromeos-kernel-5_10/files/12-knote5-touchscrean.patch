@@ -1,12 +1,14 @@
 diff --git a/drivers/platform/x86/touchscreen_dmi.c b/drivers/platform/x86/touchscreen_dmi.c
-index 5783139d0a11..7a1b94a1e967 100644
+index 5783139d0a11..e7d34154b835 100644
 --- a/drivers/platform/x86/touchscreen_dmi.c
 +++ b/drivers/platform/x86/touchscreen_dmi.c
-@@ -808,6 +808,20 @@ static const struct ts_dmi_data vinga_twizzle_j116_data = {
+@@ -808,6 +808,22 @@ static const struct ts_dmi_data vinga_twizzle_j116_data = {
  	.properties	= vinga_twizzle_j116_props,
  };
  
 +static const struct property_entry knote5_props[] = {
++  PROPERTY_ENTRY_U32("touchscreen-min-x", -100),
++  PROPERTY_ENTRY_U32("touchscreen-min-y", -49),
 +  PROPERTY_ENTRY_U32("touchscreen-size-x", 1940),
 +  PROPERTY_ENTRY_U32("touchscreen-size-y", 1500),
 +  PROPERTY_ENTRY_STRING("firmware-name", "gsl1680-knote5.fw"),
@@ -23,7 +25,7 @@ index 5783139d0a11..7a1b94a1e967 100644
  /* NOTE: Please keep this table sorted alphabetically */
  const struct dmi_system_id touchscreen_dmi_table[] = {
  	{
-@@ -1298,6 +1312,13 @@ const struct dmi_system_id touchscreen_dmi_table[] = {
+@@ -1298,6 +1314,13 @@ const struct dmi_system_id touchscreen_dmi_table[] = {
  			DMI_MATCH(DMI_PRODUCT_NAME, "Y8W81"),
  		},
  	},

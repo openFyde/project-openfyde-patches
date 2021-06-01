@@ -6,7 +6,7 @@ index 0317581e957b..c5ecfd7566b5 100644
  #include "netlabel.h"
  #include "audit.h"
  #include "avc_ss.h"
-+#define CONFIG_OVERLAY_FS
++//#define CONFIG_OVERLAY_FS
 +#ifdef CONFIG_OVERLAY_FS
 +#include "../../fs/overlayfs/ovl_entry.h"
 +#endif

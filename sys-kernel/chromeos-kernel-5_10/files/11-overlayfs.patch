@@ -7,7 +7,7 @@ index f59fe076ffce..ab34d47508a8 100644
  #include "audit.h"
  #include "avc_ss.h"
 +#ifndef CONFIG_OVERLAY_FS
-+#define CONFIG_OVERLAY_FS
++//#define CONFIG_OVERLAY_FS
 +#endif
 +#ifdef CONFIG_OVERLAY_FS
 +#include "../../fs/overlayfs/ovl_entry.h"
