@@ -1,8 +1,8 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index 362bfaaf..9316a0d3 100644
+index 7db59621..cba8d774 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -210,6 +210,8 @@ static_library("libupdate_engine") {
+@@ -206,6 +206,8 @@ static_library("libupdate_engine") {
      "cros/requisition_util.cc",
      "cros/shill_proxy.cc",
      "cros/update_attempter.cc",
@@ -170,7 +170,7 @@ index 00000000..2c0fbb05
 +
 +#endif // ifndef FYDEOS_TOGGLE_OTA_H_
 diff --git a/cros/omaha_request_action.cc b/cros/omaha_request_action.cc
-index 209c9166..d59693d7 100644
+index e59ba01c..2588873a 100644
 --- a/cros/omaha_request_action.cc
 +++ b/cros/omaha_request_action.cc
 @@ -54,6 +54,9 @@
@@ -181,9 +181,9 @@ index 209c9166..d59693d7 100644
 +#include "update_engine/cros/fydeos_toggle_ota.h"
 +// ---***FYDEOS END***---
  
- using base::Optional;
  using base::Time;
-@@ -1244,6 +1247,11 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(ErrorCode* error) const {
+ using base::TimeDelta;
+@@ -1270,6 +1273,11 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(ErrorCode* error) const {
      LOG(ERROR) << "All packages were excluded.";
    }
  
@@ -196,20 +196,20 @@ index 209c9166..d59693d7 100644
    // return true. If we do, it'll mean a device has to restart the
    // UpdateFirstSeenAt and thus help scattering take effect when the AU is
 diff --git a/cros/omaha_request_builder_xml.cc b/cros/omaha_request_builder_xml.cc
-index 6cd9ab80..092abf4b 100644
+index 590e84ef..3a89548d 100644
 --- a/cros/omaha_request_builder_xml.cc
 +++ b/cros/omaha_request_builder_xml.cc
-@@ -31,6 +31,9 @@
- #include "update_engine/common/system_state.h"
+@@ -33,6 +33,9 @@
  #include "update_engine/common/utils.h"
  #include "update_engine/cros/omaha_request_params.h"
+ #include "update_engine/cros/update_attempter.h"
 +// ---***FYDEOS BEGIN***---
 +#include "update_engine/cros/fydeos_license_checker.h"
 +// ---***FYDEOS END***---
  
  using std::string;
  
-@@ -280,6 +283,11 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+@@ -293,6 +296,11 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
      app_versions = "version=\"" +
                     XmlEncodeWithDefault(app_data.version, kNoVersion) + "\" ";
    }
@@ -221,7 +221,7 @@ index 6cd9ab80..092abf4b 100644
  
    string download_channel = params->download_channel();
    string app_channels =
-@@ -392,6 +400,9 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+@@ -403,6 +411,9 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
        "lang=\"" + XmlEncodeWithDefault(params->app_lang(), "en-US") + "\" " +
        requisition_arg) +
  
@@ -232,11 +232,11 @@ index 6cd9ab80..092abf4b 100644
           app_body +
        "    </app>\n";
 diff --git a/cros/update_attempter.cc b/cros/update_attempter.cc
-index 22ba1401..c14bef3f 100644
+index 197f7a1d..5e12e501 100644
 --- a/cros/update_attempter.cc
 +++ b/cros/update_attempter.cc
-@@ -72,6 +72,9 @@
- #include "update_engine/update_manager/policy_utils.h"
+@@ -71,6 +71,9 @@
+ #include "update_engine/update_manager/omaha_request_params_policy.h"
  #include "update_engine/update_manager/update_manager.h"
  #include "update_engine/update_status_utils.h"
 +// ---***FYDEOS BEGIN***---
@@ -245,7 +245,7 @@ index 22ba1401..c14bef3f 100644
  
  using base::Bind;
  using base::Callback;
-@@ -168,6 +171,13 @@ bool UpdateAttempter::ScheduleUpdates() {
+@@ -175,6 +178,13 @@ bool UpdateAttempter::ScheduleUpdates() {
    if (IsBusyOrUpdateScheduled())
      return false;
  
@@ -256,10 +256,10 @@ index 22ba1401..c14bef3f 100644
 +  }
 +  // ---***FYDEOS END***---
 +
-   chromeos_update_manager::UpdateManager* const update_manager =
-       SystemState::Get()->update_manager();
-   CHECK(update_manager);
-@@ -916,6 +926,13 @@ bool UpdateAttempter::CheckForUpdate(const string& app_version,
+   // We limit the async policy request to a reasonably short time, to avoid a
+   // starvation due to a transient bug.
+   policy_data_.reset(new UpdateCheckAllowedPolicyData());
+@@ -951,6 +961,13 @@ bool UpdateAttempter::CheckForUpdate(const string& app_version,
                << " already in progress.";
      return false;
    }
@@ -274,24 +274,24 @@ index 22ba1401..c14bef3f 100644
    bool interactive = !(flags & UpdateAttemptFlags::kFlagNonInteractive);
    is_install_ = false;
 diff --git a/update_manager/official_build_check_policy_impl.cc b/update_manager/official_build_check_policy_impl.cc
-index e80c09f8..2710a977 100644
+index 59730684..3c621da3 100644
 --- a/update_manager/official_build_check_policy_impl.cc
 +++ b/update_manager/official_build_check_policy_impl.cc
-@@ -24,6 +24,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::UpdateCheckAllowed(
+@@ -24,6 +24,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::Evaluate(
      State* state,
      std::string* error,
-     UpdateCheckParams* result) const {
-+  // ---***FYDEOS BEGIN***---
+     PolicyDataInterface* data) const {
++// ---***FYDEOS BEGIN***---
 +  /*
    const bool* is_official_build_p =
        ec->GetValue(state->system_provider()->var_is_official_build());
    if (is_official_build_p != nullptr && !(*is_official_build_p)) {
-@@ -38,6 +40,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::UpdateCheckAllowed(
+@@ -38,6 +40,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::Evaluate(
      LOG(INFO) << "Unofficial build, but periodic update check interval "
                << "timeout is defined, so update is not blocked.";
    }
 +  */
-+  // ---***FYDEOS END***---
++// ---***FYDEOS END***---
    return EvalStatus::kContinue;
  }
  

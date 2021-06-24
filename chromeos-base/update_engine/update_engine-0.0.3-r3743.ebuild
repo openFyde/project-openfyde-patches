@@ -3,6 +3,8 @@
 
 EAPI=7
 
+CROS_WORKON_COMMIT=("9bce05bb5a11adacf7ca45fbc2b621580fe6ba8a" "38997b6b2ad87bc83f74eb5745d1a6ce60426a20")
+CROS_WORKON_TREE=("17e0c199bc647ae6a33554fd9047fa23ff9bfd7e" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb" "38b0d0d85d07464b7b03997be8a031d7fd6da418")
 CROS_WORKON_LOCALNAME=("platform2" "aosp/system/update_engine")
 CROS_WORKON_PROJECT=("chromiumos/platform2" "aosp/platform/system/update_engine")
 CROS_WORKON_EGIT_BRANCH=("main" "master")
@@ -20,8 +22,8 @@ HOMEPAGE="https://chromium.googlesource.com/aosp/platform/system/update_engine/"
 SRC_URI=""
 
 LICENSE="Apache-2.0"
-KEYWORDS="~*"
-IUSE="cfm cros_host cros_p2p dlc fuzzer -hwid_override minios +power_management systemd"
+KEYWORDS="*"
+IUSE="cfm cros_host cros_p2p dlc fuzzer -hwid_override minios +power_management systemd skip_removable"
 
 COMMON_DEPEND="
 	app-arch/bzip2:=
@@ -137,4 +139,12 @@ src_install() {
 				--dict "${S}"/fuzz/xml.dict
 	platform_fuzzer_install "${S}"/OWNERS \
 				"${OUT}"/update_engine_delta_performer_fuzzer
+}
+
+src_prepare() {
+  default
+  eapply ${FILESDIR}/update_engine_fydeos.patch
+  if use skip_removable; then
+    eapply ${FILESDIR}/ignore_removable_checking.patch
+  fi
 }
