@@ -1,0 +1,13 @@
+diff --git a/splash.c b/splash.c
+index bf94529..5b5116d 100644
+--- a/splash.c
++++ b/splash.c
+@@ -23,7 +23,7 @@
+ #include "term.h"
+ #include "util.h"
+ 
+-#define  MAX_SPLASH_IMAGES      (30)
++#define  MAX_SPLASH_IMAGES      (120)
+ #define  MAX_SPLASH_WAITTIME    (8)
+ 
+ typedef struct {
