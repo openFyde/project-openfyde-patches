@@ -17,6 +17,8 @@ else
 	KEYWORDS="~alpha amd64 arm arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
 fi
 
+SRC_URI+=" ftp://ftp:ftp@ftp.fydeos.xyz/linux-firmware-nvidia/linux-firmware-nvidia-amd64-92.0.0.0.tar.gz"
+
 DESCRIPTION="Linux firmware files"
 HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
 
@@ -69,7 +71,7 @@ RDEPEND="!savedconfig? (
 "
 #add anything else that collides to this
 
-RESTRICT="binchecks strip"
+RESTRICT="binchecks strip mirror"
 
 src_unpack() {
 	if [[ ${PV} == 99999999* ]]; then
@@ -120,6 +122,7 @@ src_prepare() {
 		# remove empty directories, bug #396073
 		find -type d -empty -delete || die
 	fi
+  cp -r ../nvidia .
 }
 
 src_install() {
