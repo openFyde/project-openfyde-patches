@@ -8,23 +8,23 @@ CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 # TODO(crbug.com/809389): Avoid directly including headers from other packages.
-CROS_WORKON_SUBTREE="common-mk libpasswordprovider metrics shill vpn-manager .gn"
+CROS_WORKON_SUBTREE="common-mk chaps libpasswordprovider metrics shill vpn-manager .gn"
 
 PLATFORM_SUBDIR="shill"
 
-inherit cros-workon platform systemd udev user
+inherit cros-workon platform systemd tmpfiles udev user
 
 DESCRIPTION="Shill Connection Manager for Chromium OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/shill/"
 
 LICENSE="BSD-Google"
 KEYWORDS="~*"
-IUSE="cellular dhcpv6 fuzzer kernel-3_8 kernel-3_10 pppoe +seccomp systemd +tpm +vpn wake_on_wifi +wifi +wired_8021x wpa3_sae"
+IUSE="cellular dhcpv6 fuzzer pppoe sae_h2e supplicant-next systemd +tpm +vpn +wake_on_wifi +wifi +wired_8021x +wpa3_sae +wireguard"
 
 # Sorted by the package we depend on. (Not by use flag!)
 COMMON_DEPEND="
 	chromeos-base/bootstat:=
-	tpm? ( chromeos-base/chaps:= )
+	chromeos-base/chaps:=
 	chromeos-base/minijail:=
 	chromeos-base/libpasswordprovider:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
@@ -37,27 +37,32 @@ COMMON_DEPEND="
 	vpn? ( net-dialup/ppp:= )
 	net-dns/c-ares:=
 	net-libs/libtirpc:=
+	net-firewall/conntrack-tools:=
 	net-firewall/iptables:=
-	net-libs/libnetfilter_queue:=
-	net-libs/libnfnetlink:=
 	wifi? ( virtual/wpa_supplicant )
 	wired_8021x? ( virtual/wpa_supplicant )
 	sys-apps/rootdev:=
 	cellular? ( net-misc/modemmanager-next:= )
-	!kernel-3_10? ( !kernel-3_8? ( net-firewall/conntrack-tools:= ) )
 "
 
 RDEPEND="${COMMON_DEPEND}
-	chromeos-base/patchpanel
 	net-misc/dhcpcd
 	dhcpv6? ( net-misc/dhcpcd[ipv6] )
 	vpn? ( net-vpn/openvpn )
+	wireguard? ( net-vpn/wireguard-tools )
 "
 DEPEND="${COMMON_DEPEND}
 	chromeos-base/shill-client:=
 	chromeos-base/power_manager-client:=
 	chromeos-base/system_api:=[fuzzer?]
-	vpn? ( chromeos-base/vpn-manager:= )"
+	vpn? ( chromeos-base/vpn-manager:= )
+"
+PDEPEND="chromeos-base/patchpanel"
+
+# TODO(b/193926134): remove the dependency on supplicant-next once all boards
+# have been upgraded to use a recent wpa_supplicant (newer than July 2021) that
+# supports H2E.
+REQUIRED_USE="sae_h2e? ( supplicant-next )"
 
 pkg_setup() {
 	enewgroup "shill"
@@ -72,6 +77,8 @@ pkg_preinst() {
 	enewuser "shill-scripts"
 	enewgroup "nfqueue"
 	enewuser "nfqueue"
+	enewgroup "vpn"
+	enewuser "vpn"
 }
 
 get_dependent_services() {
@@ -93,6 +100,8 @@ src_configure() {
 }
 
 src_install() {
+	platform_src_install
+
 	dobin bin/ff_debug
 
 	if use cellular; then
@@ -110,23 +119,6 @@ src_install() {
 	fi
 	dobin "${OUT}"/shill
 
-	# Deprecated.  On Linux 3.12+ conntrackd is used instead.
-	local netfilter_queue_helper=no
-	if use kernel-3_8 || use kernel-3_10; then
-		netfilter_queue_helper=yes
-	fi
-
-	if [[ "${netfilter_queue_helper}" == "yes" ]]; then
-		# Netfilter queue helper is run directly from init, so install
-		# in sbin.
-		dosbin "${OUT}"/netfilter-queue-helper
-		dosbin init/netfilter-common
-	fi
-
-	# Install Netfilter queue helper syscall filter policy file.
-	insinto /usr/share/policy
-	use seccomp && newins shims/nfqueue-seccomp-${ARCH}.policy nfqueue-seccomp.policy
-
 	local shims_dir=/usr/$(get_libdir)/shill/shims
 	exeinto "${shims_dir}"
 
@@ -142,6 +134,14 @@ src_install() {
 			"s,@libdir@,/usr/$(get_libdir)", \
 			shims/wpa_supplicant.conf.in \
 			> "${D}/${shims_dir}/wpa_supplicant.conf"
+	fi
+
+	if use sae_h2e; then
+		# If supplicant's version is recent enough (July 2021 rebase
+		# or newer), change the default value of sae_pwe to support both
+		# hunting-and-pecking and hash-to-element, which is required
+		# for newer standards.
+		echo "sae_pwe=2" >> "${D}/${shims_dir}/wpa_supplicant.conf"
 	fi
 
 	dosym /run/shill/resolv.conf /etc/resolv.conf
@@ -169,11 +169,6 @@ src_install() {
 
 	# Install init scripts
 	if use systemd; then
-		if [[ "${netfilter_queue_helper}" == "yes" ]]; then
-			systemd_dounit init/netfilter-queue.service
-			systemd_enable_service network.target \
-				netfilter-queue.service
-		fi
 		systemd_dounit init/shill-start-user-session.service
 		systemd_dounit init/shill-stop-user-session.service
 
@@ -196,12 +191,10 @@ src_install() {
 			init/shill-start-user-session.conf \
 			init/shill-stop-user-session.conf \
 			init/shill_respawn.conf
-		if [[ "${netfilter_queue_helper}" == "yes" ]]; then
-			doins init/netfilter-queue.conf
-		fi
 	fi
 	exeinto /usr/share/cros/init
 	doexe init/*.sh
+	dotmpfiles tmpfiles.d/*.conf
 
 	insinto /usr/share/cros/startup/process_management_policies
 	doins setuid_restrictions/shill_allowed.txt
@@ -214,10 +207,15 @@ src_install() {
 	fperms 0700 "${daemon_store}"
 	fowners shill:shill "${daemon_store}"
 
-	local fuzzer
-	for fuzzer in "${OUT}"/*_fuzzer; do
-		platform_fuzzer_install "${S}"/OWNERS "${fuzzer}"
-	done
+	local cellular_fuzzer_component_id="167157"
+	platform_fuzzer_install "${S}"/OWNERS "${OUT}/cellular_pco_fuzzer" \
+		--comp "${cellular_fuzzer_component_id}"
+	platform_fuzzer_install "${S}"/OWNERS "${OUT}/verizon_subscription_state_fuzzer" \
+		--comp "${cellular_fuzzer_component_id}"
+
+	local wifi_ies_fuzzer_component_id="893827"
+	platform_fuzzer_install "${S}"/OWNERS "${OUT}/wifi_ies_fuzzer" \
+		--comp "${wifi_ies_fuzzer_component_id}"
 }
 
 platform_pkg_test() {
