@@ -12,9 +12,12 @@ DESCRIPTION="Chrome OS verified boot tools"
 
 LICENSE="BSD-Google"
 KEYWORDS="~*"
-IUSE="cros_host dev_debug_force fuzzer pd_sync test tpmtests tpm tpm2 tpm2_simulator"
+IUSE="cros_host dev_debug_force fuzzer pd_sync test tpmtests tpm tpm_dynamic tpm2 tpm2_simulator vtpm_proxy"
 
-REQUIRED_USE="?? ( tpm2 tpm )"
+REQUIRED_USE="
+	tpm_dynamic? ( tpm tpm2 )
+	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+"
 
 COMMON_DEPEND="dev-libs/libzip:=
 	dev-libs/openssl:=
@@ -65,6 +68,7 @@ vemake() {
 		PD_SYNC=$(usev pd_sync) \
 		DEV_DEBUG_FORCE=$(usev dev_debug_force) \
 		TPM2_SIMULATOR="$(usev tpm2_simulator)" \
+		VTPM_PROXY="$(usev vtpm_proxy)" \
 		FUZZ_FLAGS="${SANITIZER_CFLAGS}" \
 		"$@"
 }
@@ -98,8 +102,12 @@ src_install() {
 
 	if use fuzzer; then
 		einfo "Installing fuzzers"
-		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/cgpt_fuzzer
-		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_keyblock_fuzzer
-		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_preamble_fuzzer
+		local fuzzer_component_id="167186"
+		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/cgpt_fuzzer \
+			--comp "${fuzzer_component_id}"
+		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_keyblock_fuzzer \
+			--comp "${fuzzer_component_id}"
+		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_preamble_fuzzer \
+			--comp "${fuzzer_component_id}"
 	fi
 }

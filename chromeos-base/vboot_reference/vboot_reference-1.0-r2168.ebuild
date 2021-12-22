@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="d641f8d74688290f4c7185c042b6973032ce2f37"
-CROS_WORKON_TREE="8dd90ba4003ba8ece554fe2c43b26d0168d737d2"
+CROS_WORKON_COMMIT="edcc9cd30731fafc410675ac90e3b90f822e1d9f"
+CROS_WORKON_TREE="805f67cbce91b84ce07501d316389282b07416cc"
 CROS_WORKON_PROJECT="chromiumos/platform/vboot_reference"
 CROS_WORKON_LOCALNAME="platform/vboot_reference"
 
@@ -14,9 +14,12 @@ DESCRIPTION="Chrome OS verified boot tools"
 
 LICENSE="BSD-Google"
 KEYWORDS="*"
-IUSE="cros_host dev_debug_force fuzzer pd_sync test tpmtests tpm tpm2"
+IUSE="cros_host dev_debug_force fuzzer pd_sync test tpmtests tpm tpm_dynamic tpm2 tpm2_simulator vtpm_proxy"
 
-REQUIRED_USE="?? ( tpm2 tpm )"
+REQUIRED_USE="
+	tpm_dynamic? ( tpm tpm2 )
+	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+"
 
 COMMON_DEPEND="dev-libs/libzip:=
 	dev-libs/openssl:=
@@ -41,6 +44,9 @@ src_configure() {
 		# Disable alignment sanitization, https://crbug.com/1015908 .
 		SANITIZER_CFLAGS+=" -fno-sanitize=alignment"
 
+		# Run sanitizers with useful log output.
+		SANITIZER_CFLAGS+=" -DVBOOT_DEBUG"
+
 		# Suppressions for unit tests.
 		if use test; then
 			# Do not check memory leaks or odr violations in address sanitizer.
@@ -63,6 +69,8 @@ vemake() {
 		TPM2_MODE=$(usev tpm2) \
 		PD_SYNC=$(usev pd_sync) \
 		DEV_DEBUG_FORCE=$(usev dev_debug_force) \
+		TPM2_SIMULATOR="$(usev tpm2_simulator)" \
+		VTPM_PROXY="$(usev vtpm_proxy)" \
 		FUZZ_FLAGS="${SANITIZER_CFLAGS}" \
 		"$@"
 }
@@ -96,13 +104,18 @@ src_install() {
 
 	if use fuzzer; then
 		einfo "Installing fuzzers"
-		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/cgpt_fuzzer
-		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_keyblock_fuzzer
-		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_preamble_fuzzer
+		local fuzzer_component_id="167186"
+		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/cgpt_fuzzer \
+			--comp "${fuzzer_component_id}"
+		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_keyblock_fuzzer \
+			--comp "${fuzzer_component_id}"
+		fuzzer_install "${S}"/OWNERS "$(get_build_dir)"/tests/vb2_preamble_fuzzer \
+			--comp "${fuzzer_component_id}"
 	fi
 }
 
+
 src_prepare() {
   default
-  epatch ${FILESDIR}/force_set_vm.patch
+  eapply ${FILESDIR}/force_set_vm.patch
 }
