@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="f57aaaf4fd5b61ead59c54e8b5ef7411371231a1"
-CROS_WORKON_TREE=("17e0c199bc647ae6a33554fd9047fa23ff9bfd7e" "8990b0761ef52cd3d53ecfd588738ab7aac39593" "a2ab6048637d439be995dd4cdc3ef91d0291fb42" "eae0546f4ee5132d4544af4770755eb05f60cba6" "8f4424732c01ef4e602667fcd00b01b6ba955189" "ac3c728704742d0682457391f0cf3d83a6d77c2f" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="54c7fac37782fd4a975d5ac8982da4ef9423fda7"
+CROS_WORKON_TREE=("d897a7a44e07236268904e1df7f983871c1e1258" "3a8b816b9fdaca04ec76e8a8d97b206e139a9dfc" "26b91e41e669cca59d25dedeb6fb18c470d60c4b" "56dc9b3a788bc68f829c1e7a1d3b6cf067c7aaf9" "996150408ecdb3786beec73b5beedde1fd9515ad" "e08a2eb734e33827dffeecf57eca046cd1091373" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -14,7 +14,7 @@ CROS_WORKON_SUBTREE="common-mk chromeos-config libcontainer libpasswordprovider 
 
 PLATFORM_SUBDIR="login_manager"
 
-inherit cros-workon platform systemd user
+inherit tmpfiles cros-workon cros-unibuild platform systemd user
 
 DESCRIPTION="Login manager for Chromium OS."
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/chromeos-login/"
@@ -22,13 +22,9 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 KEYWORDS="*"
-IUSE="arc_adb_sideloading cheets fuzzer generated_cros_config systemd unibuild user_session_isolation"
+IUSE="arc_adb_sideloading cheets fuzzer systemd user_session_isolation"
 
 COMMON_DEPEND="chromeos-base/bootstat:=
-	unibuild? (
-		!generated_cros_config? ( chromeos-base/chromeos-config )
-		generated_cros_config? ( chromeos-base/chromeos-config-bsp:= )
-	)
 	chromeos-base/chromeos-config-tools:=
 	chromeos-base/minijail:=
 	chromeos-base/cryptohome:=
@@ -102,6 +98,8 @@ src_install() {
 	exeinto /usr/share/cros/init/
 	doexe init/scripts/*
 
+	dotmpfiles tmpfiles.d/chromeos-login.conf
+
 	# For user session processes.
 	dodir /etc/skel/log
 
@@ -132,6 +130,7 @@ src_install() {
 
 	local fuzzer
 	for fuzzer in "${fuzzers[@]}"; do
+		# fuzzer_component_id is unknown/unlisted
 		platform_fuzzer_install "${S}"/OWNERS "${OUT}/${fuzzer}"
 	done
 }

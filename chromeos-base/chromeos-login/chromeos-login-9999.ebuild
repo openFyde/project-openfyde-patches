@@ -12,7 +12,7 @@ CROS_WORKON_SUBTREE="common-mk chromeos-config libcontainer libpasswordprovider 
 
 PLATFORM_SUBDIR="login_manager"
 
-inherit cros-workon platform systemd user
+inherit tmpfiles cros-workon cros-unibuild platform systemd user
 
 DESCRIPTION="Login manager for Chromium OS."
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/chromeos-login/"
@@ -20,13 +20,9 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 KEYWORDS="~*"
-IUSE="arc_adb_sideloading cheets fuzzer generated_cros_config systemd unibuild user_session_isolation"
+IUSE="arc_adb_sideloading cheets fuzzer systemd user_session_isolation"
 
 COMMON_DEPEND="chromeos-base/bootstat:=
-	unibuild? (
-		!generated_cros_config? ( chromeos-base/chromeos-config )
-		generated_cros_config? ( chromeos-base/chromeos-config-bsp:= )
-	)
 	chromeos-base/chromeos-config-tools:=
 	chromeos-base/minijail:=
 	chromeos-base/cryptohome:=
@@ -43,7 +39,7 @@ COMMON_DEPEND="chromeos-base/bootstat:=
 RDEPEND="${COMMON_DEPEND}"
 
 DEPEND="${COMMON_DEPEND}
-	>=chromeos-base/protofiles-0.0.39:=
+	>=chromeos-base/protofiles-0.0.43:=
 	chromeos-base/system_api:=[fuzzer?]
 	chromeos-base/vboot_reference:=
 "
@@ -100,6 +96,8 @@ src_install() {
 	exeinto /usr/share/cros/init/
 	doexe init/scripts/*
 
+	dotmpfiles tmpfiles.d/chromeos-login.conf
+
 	# For user session processes.
 	dodir /etc/skel/log
 
@@ -130,6 +128,7 @@ src_install() {
 
 	local fuzzer
 	for fuzzer in "${fuzzers[@]}"; do
+		# fuzzer_component_id is unknown/unlisted
 		platform_fuzzer_install "${S}"/OWNERS "${OUT}/${fuzzer}"
 	done
 }

@@ -1,1 +1,0 @@
-chromeos-login-0.0.2-r4573.ebuild
