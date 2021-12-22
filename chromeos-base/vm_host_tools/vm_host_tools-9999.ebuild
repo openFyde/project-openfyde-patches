@@ -7,11 +7,36 @@ CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_INCREMENTAL_BUILD=1
-CROS_WORKON_SUBTREE="common-mk metrics vm_tools .gn"
+
+PLATFORM2_PATHS=(
+	common-mk
+	metrics
+	.gn
+
+	vm_tools/BUILD.gn
+	vm_tools/host
+	vm_tools/common
+
+	vm_tools/cicerone
+	vm_tools/concierge
+	vm_tools/dbus
+	vm_tools/init
+	vm_tools/maitred/client.cc
+	vm_tools/pstore_dump
+	vm_tools/seneschal
+	vm_tools/syslog
+	vm_tools/tmpfiles.d
+	vm_tools/udev
+	vm_tools/vsh
+
+	# Required by the fuzzer
+	vm_tools/OWNERS
+)
+CROS_WORKON_SUBTREE="${PLATFORM2_PATHS[*]}"
 
 PLATFORM_SUBDIR="vm_tools"
 
-inherit cros-workon platform udev user arc-build-constants
+inherit tmpfiles cros-workon platform udev user arc-build-constants
 
 DESCRIPTION="VM host tools for Chrome OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/vm_tools"
@@ -20,7 +45,7 @@ LICENSE="BSD-Google"
 KEYWORDS="~*"
 # The crosvm-wl-dmabuf and crosvm-virtio-video USE flags
 # are used when preprocessing concierge source.
-IUSE="+kvm_host +seccomp +crosvm-wl-dmabuf fuzzer wilco +crosvm-virtio-video"
+IUSE="+kvm_host +seccomp +crosvm-wl-dmabuf fuzzer wilco +crosvm-virtio-video vulkan"
 REQUIRED_USE="kvm_host"
 
 COMMON_DEPEND="
@@ -72,6 +97,9 @@ pkg_setup() {
 	enewgroup crosvm
 	enewuser pluginvm
 	cros-workon_pkg_setup
+
+	enewuser crosvm-root
+	enewgroup crosvm-root
 }
 
 src_install() {
@@ -87,17 +115,12 @@ src_install() {
 	dobin "${OUT}"/vmlog_forwarder
 	dobin "${OUT}"/vsh
 
-	# TODO(b/153934386): Add back arm64 when pstore works.
-	if use arcvm && use amd64; then
-		dobin "${OUT}"/vm_pstore_dump
-	fi
-
 	if use arcvm; then
-		arc-build-constants-configure
-		exeinto "${ARC_VM_VENDOR_DIR}/bin"
-		doexe "${OUT}"/vshd
+		dobin "${OUT}"/vm_pstore_dump
+		dobin "${OUT}"/vshd
 	fi
 
+	# fuzzer_component_id is unknown/unlisted
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/cicerone_container_listener_fuzzer
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/vsh_client_fuzzer
 
@@ -109,6 +132,8 @@ src_install() {
 	doins init/seneschal.conf
 	doins init/vm_cicerone.conf
 	doins init/vm_concierge.conf
+
+	dotmpfiles tmpfiles.d/*.conf
 
 	# Modify vmlog_forwarder starting and stopping conditions based on USE flags.
 	sed \

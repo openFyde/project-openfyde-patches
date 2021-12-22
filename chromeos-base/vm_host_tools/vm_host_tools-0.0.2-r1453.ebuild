@@ -3,17 +3,42 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="54d3f459f0d7285e1df9cfd0062277340a2d0e67"
-CROS_WORKON_TREE=("17e0c199bc647ae6a33554fd9047fa23ff9bfd7e" "ac3c728704742d0682457391f0cf3d83a6d77c2f" "05e70201b3dc2ddd89bb3c8bb2098cb7592ffac3" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="1122afa4ba5fdb2efba2279f0bdfebbafba1622d"
+CROS_WORKON_TREE=("d897a7a44e07236268904e1df7f983871c1e1258" "e08a2eb734e33827dffeecf57eca046cd1091373" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb" "7ef75a42aba67052842459f221271e681184cc89" "d3d64631b9ff3b946b7482bf794aeda97b564813" "c1bde153626532428bf7409bc0597e79452c5eb8" "d898c3ab65ad3e7b7e6487d8e356e953ad207fc3" "9f23778af8ed04333cc22317f1f1f6248ba8abc7" "1780a540acb435bb7583751430df696e44eef2e3" "44aba539142920cfb63480823be41293e2402fae" "e2598f8160f0e1089268ae21cb458eb6bc46d71e" "3a57293314fa7ffce092cd9ce0b29e1d51e1080b" "8f9d6739f87454b9e1a41de38e49435b51fa2753" "5bd4e7177af169b227e69bb3c61d1125f07acaac" "0d3d3aeea63686781aace849eac35118b45e87b9" "4b930736bc7da8c301f27c7a82718e7d605de289" "373c7816706a5b9b44695b2ee1b2bca6ab4defa3" "bbe1454835752d769b8aa28c25ca8e1a39c9add5")
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_INCREMENTAL_BUILD=1
-CROS_WORKON_SUBTREE="common-mk metrics vm_tools .gn"
+
+PLATFORM2_PATHS=(
+	common-mk
+	metrics
+	.gn
+
+	vm_tools/BUILD.gn
+	vm_tools/host
+	vm_tools/common
+
+	vm_tools/cicerone
+	vm_tools/concierge
+	vm_tools/dbus
+	vm_tools/init
+	vm_tools/maitred/client.cc
+	vm_tools/pstore_dump
+	vm_tools/seneschal
+	vm_tools/syslog
+	vm_tools/tmpfiles.d
+	vm_tools/udev
+	vm_tools/vsh
+
+	# Required by the fuzzer
+	vm_tools/OWNERS
+)
+CROS_WORKON_SUBTREE="${PLATFORM2_PATHS[*]}"
 
 PLATFORM_SUBDIR="vm_tools"
 
-inherit cros-workon platform udev user arc-build-constants
+inherit tmpfiles cros-workon platform udev user arc-build-constants
 
 DESCRIPTION="VM host tools for Chrome OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/vm_tools"
@@ -22,7 +47,7 @@ LICENSE="BSD-Google"
 KEYWORDS="*"
 # The crosvm-wl-dmabuf and crosvm-virtio-video USE flags
 # are used when preprocessing concierge source.
-IUSE="+kvm_host +seccomp +crosvm-wl-dmabuf fuzzer wilco +crosvm-virtio-video"
+IUSE="+kvm_host +seccomp +crosvm-wl-dmabuf fuzzer wilco +crosvm-virtio-video vulkan"
 REQUIRED_USE="kvm_host"
 
 COMMON_DEPEND="
@@ -74,6 +99,9 @@ pkg_setup() {
 	enewgroup crosvm
 	enewuser pluginvm
 	cros-workon_pkg_setup
+
+	enewuser crosvm-root
+	enewgroup crosvm-root
 }
 
 src_install() {
@@ -89,17 +117,12 @@ src_install() {
 	dobin "${OUT}"/vmlog_forwarder
 	dobin "${OUT}"/vsh
 
-	# TODO(b/153934386): Add back arm64 when pstore works.
-	if use arcvm && use amd64; then
-		dobin "${OUT}"/vm_pstore_dump
-	fi
-
 	if use arcvm; then
-		arc-build-constants-configure
-		exeinto "${ARC_VM_VENDOR_DIR}/bin"
-		doexe "${OUT}"/vshd
+		dobin "${OUT}"/vm_pstore_dump
+		dobin "${OUT}"/vshd
 	fi
 
+	# fuzzer_component_id is unknown/unlisted
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/cicerone_container_listener_fuzzer
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/vsh_client_fuzzer
 
@@ -111,6 +134,8 @@ src_install() {
 	doins init/seneschal.conf
 	doins init/vm_cicerone.conf
 	doins init/vm_concierge.conf
+
+	dotmpfiles tmpfiles.d/*.conf
 
 	# Modify vmlog_forwarder starting and stopping conditions based on USE flags.
 	sed \
