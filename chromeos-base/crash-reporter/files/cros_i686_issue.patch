@@ -1,17 +1,20 @@
 diff --git a/crash-reporter/BUILD.gn b/crash-reporter/BUILD.gn
-index e53ce7f6f..1b63c4644 100644
+index 7722b2bea5..15dcb0e962 100644
 --- a/crash-reporter/BUILD.gn
 +++ b/crash-reporter/BUILD.gn
-@@ -185,9 +185,9 @@ if (use.cheets) {
+@@ -283,12 +283,12 @@ if (use.arcpp) {
      # This condition matches the "use_i686" helper in the "cros-i686"
      # eclass. The "amd64" check allows the "cros_i686" USE flag to be
      # enabled for an overlay inherited by non-x86 boards.
 -    if (use.cros_i686 && use.amd64) {
++    # if (use.cros_i686 && use.amd64) {
+       # We link the C & C++ runtime statically because dynamic libs for these
+       # (multilib) ABIs aren't installed.  The eclasses handle forcing -static,
+       # and that doesn't work with PIE linking
 -      configs -= [ "//common-mk:pie" ]
 -    }
-+    #if (use.cros_i686 && use.amd64) {
-+    #  configs -= [ "//common-mk:pie" ]
-+    #}
-   }
- }
++    #   configs -= [ "//common-mk:pie" ]
++    # }
  
+     # This condition matches the "use_arm64" helper in the "cros-arm64"
+     # eclass. The "arm" check allows the "cros_arm64" USE flag to be

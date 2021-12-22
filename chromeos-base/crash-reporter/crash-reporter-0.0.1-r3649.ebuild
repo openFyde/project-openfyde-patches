@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="a0f172755fa87b358d1f913f3f898d8d9a25e001"
-CROS_WORKON_TREE=("dea48af07754556aac092c0830de0b1ab410077b" "fb0800ce12bfcbafea51e96bdbf923152ebe419a" "c218b19793213fbc08daad20dce926cf44766c10" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="54c7fac37782fd4a975d5ac8982da4ef9423fda7"
+CROS_WORKON_TREE=("d897a7a44e07236268904e1df7f983871c1e1258" "465a8e6252f494e70f702d2555b6cb549bb161b1" "e08a2eb734e33827dffeecf57eca046cd1091373" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -14,20 +14,19 @@ CROS_WORKON_SUBTREE="common-mk crash-reporter metrics .gn"
 
 PLATFORM_SUBDIR="crash-reporter"
 
-inherit cros-i686 cros-workon platform systemd udev user
+inherit cros-arm64 cros-i686 cros-workon platform systemd udev user
 
 DESCRIPTION="Crash reporting service that uploads crash reports with debug information"
-HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/crash-reporter/"
+HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/HEAD/crash-reporter/"
 
 LICENSE="BSD-Google"
 KEYWORDS="*"
-IUSE="cheets chromeless_tty cros_embedded -direncryption kvm_guest systemd fuzzer"
+IUSE="arcpp arcvm chromeless_tty cros_ec cros_embedded -direncryption kvm_guest systemd fuzzer test vm-containers"
 
 COMMON_DEPEND="
 	chromeos-base/minijail:=
-	chromeos-base/google-breakpad:=[cros_i686?]
-	chromeos-base/metrics:=
-	dev-libs/libpcre:=
+	chromeos-base/google-breakpad:=[cros_i686?,cros_arm64?]
+	>=chromeos-base/metrics-0.0.1-r3152:=
 	dev-libs/protobuf:=
 	dev-libs/re2:=
 	kvm_guest? ( net-libs/grpc:= )
@@ -36,8 +35,8 @@ COMMON_DEPEND="
 "
 RDEPEND="${COMMON_DEPEND}
 	chromeos-base/chromeos-ca-certificates
-	|| ( sys-apps/journald:= sys-apps/systemd:= )
 	direncryption? ( sys-apps/keyutils:= )
+	cros_ec? ( chromeos-base/ec-utils )
 "
 DEPEND="
 	${COMMON_DEPEND}
@@ -47,16 +46,21 @@ DEPEND="
 	chromeos-base/system_api:=[fuzzer?]
 	chromeos-base/vboot_reference:=
 	chromeos-base/vm_protos:=
+	test? (
+		app-arch/gzip
+	)
 "
 
 src_configure() {
 	platform_src_configure
-	use cheets && use_i686 && platform_src_configure_i686
+	use arcpp && use_i686 && platform_src_configure_i686
+	use arcpp && use_arm64 && platform_src_configure_arm64
 }
 
 src_compile() {
 	platform_src_compile
-	use cheets && use_i686 && platform_src_compile_i686 "core_collector"
+	use arcpp && use_i686 && platform_src_compile_i686 "core_collector"
+	use arcpp && use_arm64 && platform_src_compile_arm64 "core_collector"
 }
 
 pkg_setup() {
@@ -75,7 +79,9 @@ pkg_setup() {
 src_install() {
 	into /
 	dosbin "${OUT}"/crash_reporter
-	dosbin "${OUT}"/crash_sender
+	if ! use vm-containers; then
+		dosbin "${OUT}"/crash_sender
+	fi
 
 	insinto /etc/dbus-1/system.d
 	doins dbus/org.chromium.AnomalyEventService.conf
@@ -89,9 +95,10 @@ src_install() {
 	use cros_embedded || dobin "${OUT}"/anomaly_detector
 	dosbin kernel_log_collector.sh
 
-	if use cheets; then
+	if use arcpp; then
 		dobin "${OUT}"/core_collector
 		use_i686 && newbin "$(platform_out_i686)"/core_collector "core_collector32"
+		use_arm64 && newbin "$(platform_out_arm64)"/core_collector "core_collector64"
 	fi
 
 	if use systemd; then
@@ -99,10 +106,12 @@ src_install() {
 		systemd_dounit init/crash-boot-collect.service
 		systemd_enable_service multi-user.target crash-reporter.service
 		systemd_enable_service multi-user.target crash-boot-collect.service
-		systemd_dounit init/crash-sender.service
-		systemd_enable_service multi-user.target crash-sender.service
-		systemd_dounit init/crash-sender.timer
-		systemd_enable_service timers.target crash-sender.timer
+		if ! use vm-containers; then
+			systemd_dounit init/crash-sender.service
+			systemd_enable_service multi-user.target crash-sender.service
+			systemd_dounit init/crash-sender.timer
+			systemd_enable_service timers.target crash-sender.timer
+		fi
 		if ! use cros_embedded; then
 			systemd_dounit init/anomaly-detector.service
 			systemd_enable_service multi-user.target anomaly-detector.service
@@ -112,7 +121,9 @@ src_install() {
 		doins init/crash-reporter.conf
 		doins init/crash-reporter-early-init.conf
 		doins init/crash-boot-collect.conf
-		doins init/crash-sender.conf
+		if ! use vm-containers; then
+			doins init/crash-sender.conf
+		fi
 		use cros_embedded || doins init/anomaly-detector.conf
 	fi
 
@@ -121,11 +132,30 @@ src_install() {
 
 	udev_dorules 99-crash-reporter.rules
 
-	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/crash_sender_fuzzer \
-		--dict "${S}"/crash_sender_fuzzer.dict
+	# Install metrics/OWNERS as the owners file for the fuzzers.
+	# The owners files need to have actual email addresses, not
+	# an include-link.
+	local fuzzer_component_id="1032705"
+	platform_fuzzer_install "${S}"/../metrics/OWNERS \
+		"${OUT}"/crash_sender_fuzzer \
+		--dict "${S}"/crash_sender_fuzzer.dict \
+		--comp "${fuzzer_component_id}"
 
-	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/anomaly_detector_fuzzer \
-		--dict "${S}"/anomaly_detector_fuzzer.dict
+	platform_fuzzer_install "${S}"/../metrics/OWNERS \
+		"${OUT}"/chrome_collector_fuzzer \
+		--dict "${S}"/chrome_collector_fuzzer.dict \
+		--comp "${fuzzer_component_id}"
+
+	platform_fuzzer_install "${S}"/../metrics/OWNERS \
+		"${OUT}"/anomaly_detector_fuzzer \
+		--dict "${S}"/anomaly_detector_fuzzer.dict \
+		--comp "${fuzzer_component_id}"
+
+	# Install crash_serializer into /usr/local/sbin, which is only present
+	# on test images. See:
+	# https://chromium.googlesource.com/chromiumos/platform2/+/refs/heads/master/dev-install/README.md#Environments
+	into /usr/local
+	dosbin "${OUT}"/crash_serializer
 }
 
 platform_pkg_test() {
@@ -137,9 +167,11 @@ platform_pkg_test() {
 	platform_test "run" "${OUT}/crash_reporter_test" "1" \
 		"${gtest_filter_root_tests}"
 	platform_test "run" "${OUT}/anomaly_detector_test"
+	platform_test "run" "${OUT}/anomaly_detector_text_file_reader_test"
+	platform_test "run" "${OUT}/anomaly_detector_log_reader_test"
 }
 
 src_prepare() {
-  epatch "${FILESDIR}/cros_i686_issue.patch"
+  eapply -p2 "${FILESDIR}/cros_i686_issue.patch"
   default
 }
