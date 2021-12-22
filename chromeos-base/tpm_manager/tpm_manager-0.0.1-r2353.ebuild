@@ -3,14 +3,14 @@
 
 EAPI="5"
 
-CROS_WORKON_COMMIT="f0a8fa83760bd052e3c44f3fbca7ea9282e044d7"
-CROS_WORKON_TREE=("fe8d35af30ff1c2484e01cd6235a5d45c627d10d" "659ff958b03625d691bbdac92411d7954413d446" "e031bc0916237739f919f53a1ec2ac5b2d3d0cdc" "2834854981f88e2b81fefd49c590185a31f2b1f1" "df6635d434b56fb1784ba5ab44639de55a9e3fe3" "d106e74b42f56a88eb17dbd227b57c8843c563dd" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="9560b19a804e464732fb45d93188aec8db7262d9"
+CROS_WORKON_TREE=("d897a7a44e07236268904e1df7f983871c1e1258" "2bd42cf4f2f41e68c177dfdba095d8d3412fd76c" "1e9ca239fab09ba22b58e4a22d63e2ede865b159" "26e3713c1f2916a87c54f5aa50da42d121f1a5a3" "e08a2eb734e33827dffeecf57eca046cd1091373" "ebc0c24b80fdfa0cba6a530d414d95bb083babee" "f07eafa8dbb53d50c194352868520a8407a26bcc" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 # TODO(crbug.com/809389): Avoid directly including headers from other packages.
-CROS_WORKON_SUBTREE="common-mk libhwsec libtpmcrypto metrics tpm_manager trunks .gn"
+CROS_WORKON_SUBTREE="common-mk libhwsec libhwsec-foundation libtpmcrypto metrics tpm_manager trunks .gn"
 
 PLATFORM_SUBDIR="tpm_manager"
 
@@ -22,12 +22,15 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/tpm_ma
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="*"
-IUSE="test tpm tpm2"
+IUSE="pinweaver_csme test tpm tpm_dynamic tpm2 fuzzer"
 
-REQUIRED_USE="tpm2? ( !tpm )"
+REQUIRED_USE="
+	tpm_dynamic? ( tpm tpm2 )
+	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+"
 
 RDEPEND="
-	!tpm2? ( app-crypt/trousers )
+	tpm? ( app-crypt/trousers )
 	tpm2? (
 		chromeos-base/trunks
 	)
@@ -35,10 +38,13 @@ RDEPEND="
 	chromeos-base/minijail
 	chromeos-base/libhwsec
 	chromeos-base/libtpmcrypto
+	chromeos-base/system_api:=[fuzzer?]
+	chromeos-base/tpm_manager-client
 	"
 
 DEPEND="${RDEPEND}
 	tpm2? ( chromeos-base/trunks[test?] )
+	fuzzer? ( dev-libs/libprotobuf-mutator )
 	"
 
 pkg_preinst() {
@@ -54,30 +60,39 @@ src_install() {
 	# Install upstart config file.
 	insinto /etc/init
 	doins server/tpm_managerd.conf
-	if use tpm2; then
-		sed -i 's/started tcsd/started trunksd/' \
+	if use tpm_dynamic; then
+		conds=("started no-tpm-checker")
+		if use tpm; then
+			conds+=("started tcsd")
+		fi
+		if use tpm2; then
+			conds+=("started trunksd")
+		fi
+		cond=$(printf " or %s" "${conds[@]}")
+		cond=${cond:4}
+		sed -i "s/started tcsd/(${cond})/" \
 			"${D}/etc/init/tpm_managerd.conf" ||
-			die "Can't replace tcsd with trunksd in tpm_managerd.conf"
+			die "Can't replace 'started tcsd' with '${cond}' in tpm_managerd.conf"
+	elif use tpm2; then
+		dep_job="trunksd"
+		if use pinweaver_csme; then
+			dep_job="tpm_tunneld"
+		fi
+		sed -i "s/started tcsd/started ${dep_job}/" \
+			"${D}/etc/init/tpm_managerd.conf" ||
+			die "Can't replace tcsd with ${dep_job} in tpm_managerd.conf"
 	fi
 
 	# Install the executables provided by TpmManager
 	dosbin "${OUT}"/tpm_managerd
 	dosbin "${OUT}"/local_data_migration
-	dobin "${OUT}"/tpm_manager_client
 
 	# Install seccomp policy files.
 	insinto /usr/share/policy
 	newins server/tpm_managerd-seccomp-${ARCH}.policy tpm_managerd-seccomp.policy
 
-	dolib.so "${OUT}"/lib/libtpm_manager.so
-	dolib.a "${OUT}"/libtpm_manager_test.a
-
-
-	# Install header files.
-	insinto /usr/include/tpm_manager/client
-	doins client/*.h
-	insinto /usr/include/tpm_manager/common
-	doins common/*.h
+	# Install fuzzer.
+	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/tpm_manager_service_fuzzer
 }
 
 platform_pkg_test() {

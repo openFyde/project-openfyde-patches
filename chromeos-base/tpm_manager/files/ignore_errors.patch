@@ -1,10 +1,10 @@
 diff --git a/tpm_manager/client/tpm_manager_utility.cc b/tpm_manager/client/tpm_manager_utility.cc
-index 0be3f4c33..aa922c45b 100644
+index d0b1bb0ca4..2cea5a83ec 100644
 --- a/tpm_manager/client/tpm_manager_utility.cc
 +++ b/tpm_manager/client/tpm_manager_utility.cc
-@@ -64,7 +64,8 @@ bool TpmManagerUtility::GetTpmStatus(bool* is_enabled,
-                  tpm_manager::GetTpmStatusRequest()),
-       &tpm_status);
+@@ -74,7 +74,8 @@ bool TpmManagerUtility::GetTpmStatus(bool* is_enabled,
+       &org::chromium::TpmManagerProxyInterface::GetTpmStatusAsync, tpm_owner_,
+       request, &tpm_status);
    if (tpm_status.status() != tpm_manager::STATUS_SUCCESS) {
 -    LOG(ERROR) << __func__ << ": Failed to read TPM state from tpm_managerd.";
 +    //LOG(ERROR) << __func__ << ": Failed to read TPM state from tpm_managerd.";
@@ -13,24 +13,24 @@ index 0be3f4c33..aa922c45b 100644
    }
    *is_enabled = tpm_status.enabled();
 diff --git a/tpm_manager/server/tpm_manager_service.cc b/tpm_manager/server/tpm_manager_service.cc
-index de934343b..77822a682 100644
+index fec2f31e9b..a96667b087 100644
 --- a/tpm_manager/server/tpm_manager_service.cc
 +++ b/tpm_manager/server/tpm_manager_service.cc
-@@ -210,7 +210,8 @@ void TpmManagerService::GetTpmStatusTask(
+@@ -442,7 +442,8 @@ void TpmManagerService::GetTpmStatusTask(
  
    TpmStatus::TpmOwnershipStatus ownership_status;
-   if (!tpm_status_->CheckAndNotifyIfTpmOwned(&ownership_status)) {
+   if (!tpm_status_->GetTpmOwned(&ownership_status)) {
 -    LOG(ERROR) << __func__ << ": failed to get tpm ownership status";
-+    //LOG(ERROR) << __func__ << ": failed to get tpm ownership status";
++    // LOG(ERROR) << __func__ << ": failed to get tpm ownership status";
 +    VLOG(1) << __func__ << ": failed to get tpm ownership status";
      reply->set_status(STATUS_DEVICE_ERROR);
      return;
    }
 diff --git a/tpm_manager/server/tpm_status_impl.cc b/tpm_manager/server/tpm_status_impl.cc
-index edb6fed97..868d33dcf 100644
+index 19b8cff675..75231a0b53 100644
 --- a/tpm_manager/server/tpm_status_impl.cc
 +++ b/tpm_manager/server/tpm_status_impl.cc
-@@ -84,7 +84,8 @@ bool TpmStatusImpl::CheckAndNotifyIfTpmOwned(
+@@ -109,7 +109,8 @@ bool TpmStatusImpl::GetTpmOwned(TpmStatus::TpmOwnershipStatus* status) {
    const base::Optional<bool> is_default_owner_password =
        TestTpmWithDefaultOwnerPassword();
    if (!is_default_owner_password.has_value()) {
@@ -39,4 +39,4 @@ index edb6fed97..868d33dcf 100644
 +    VLOG(1) << __func__ << ": Failed to test default owner password.";
      return false;
    }
-   ownership_status_ = *is_default_owner_password ? kTpmPreOwned : kTpmOwned;
+   if (*is_default_owner_password) {

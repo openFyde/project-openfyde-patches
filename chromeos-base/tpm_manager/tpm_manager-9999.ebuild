@@ -8,7 +8,7 @@ CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 # TODO(crbug.com/809389): Avoid directly including headers from other packages.
-CROS_WORKON_SUBTREE="common-mk libhwsec libtpmcrypto metrics tpm_manager trunks .gn"
+CROS_WORKON_SUBTREE="common-mk libhwsec libhwsec-foundation libtpmcrypto metrics tpm_manager trunks .gn"
 
 PLATFORM_SUBDIR="tpm_manager"
 
@@ -20,12 +20,15 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/tpm_ma
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="~*"
-IUSE="test tpm tpm2"
+IUSE="pinweaver_csme test tpm tpm_dynamic tpm2 fuzzer"
 
-REQUIRED_USE="tpm2? ( !tpm )"
+REQUIRED_USE="
+	tpm_dynamic? ( tpm tpm2 )
+	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+"
 
 RDEPEND="
-	!tpm2? ( app-crypt/trousers )
+	tpm? ( app-crypt/trousers )
 	tpm2? (
 		chromeos-base/trunks
 	)
@@ -33,10 +36,13 @@ RDEPEND="
 	chromeos-base/minijail
 	chromeos-base/libhwsec
 	chromeos-base/libtpmcrypto
+	chromeos-base/system_api:=[fuzzer?]
+	chromeos-base/tpm_manager-client
 	"
 
 DEPEND="${RDEPEND}
 	tpm2? ( chromeos-base/trunks[test?] )
+	fuzzer? ( dev-libs/libprotobuf-mutator )
 	"
 
 pkg_preinst() {
@@ -52,30 +58,39 @@ src_install() {
 	# Install upstart config file.
 	insinto /etc/init
 	doins server/tpm_managerd.conf
-	if use tpm2; then
-		sed -i 's/started tcsd/started trunksd/' \
+	if use tpm_dynamic; then
+		conds=("started no-tpm-checker")
+		if use tpm; then
+			conds+=("started tcsd")
+		fi
+		if use tpm2; then
+			conds+=("started trunksd")
+		fi
+		cond=$(printf " or %s" "${conds[@]}")
+		cond=${cond:4}
+		sed -i "s/started tcsd/(${cond})/" \
 			"${D}/etc/init/tpm_managerd.conf" ||
-			die "Can't replace tcsd with trunksd in tpm_managerd.conf"
+			die "Can't replace 'started tcsd' with '${cond}' in tpm_managerd.conf"
+	elif use tpm2; then
+		dep_job="trunksd"
+		if use pinweaver_csme; then
+			dep_job="tpm_tunneld"
+		fi
+		sed -i "s/started tcsd/started ${dep_job}/" \
+			"${D}/etc/init/tpm_managerd.conf" ||
+			die "Can't replace tcsd with ${dep_job} in tpm_managerd.conf"
 	fi
 
 	# Install the executables provided by TpmManager
 	dosbin "${OUT}"/tpm_managerd
 	dosbin "${OUT}"/local_data_migration
-	dobin "${OUT}"/tpm_manager_client
 
 	# Install seccomp policy files.
 	insinto /usr/share/policy
 	newins server/tpm_managerd-seccomp-${ARCH}.policy tpm_managerd-seccomp.policy
 
-	dolib.so "${OUT}"/lib/libtpm_manager.so
-	dolib.a "${OUT}"/libtpm_manager_test.a
-
-
-	# Install header files.
-	insinto /usr/include/tpm_manager/client
-	doins client/*.h
-	insinto /usr/include/tpm_manager/common
-	doins common/*.h
+	# Install fuzzer.
+	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/tpm_manager_service_fuzzer
 }
 
 platform_pkg_test() {
