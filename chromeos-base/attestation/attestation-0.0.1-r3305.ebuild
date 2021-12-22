@@ -3,14 +3,14 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="f0a8fa83760bd052e3c44f3fbca7ea9282e044d7"
-CROS_WORKON_TREE=("fe8d35af30ff1c2484e01cd6235a5d45c627d10d" "34f123f5ae929ba27d05117207d524a2d78b4bf9" "0c46ae610a148a5dc8c30638a060f1c9a05c8967" "659ff958b03625d691bbdac92411d7954413d446" "2834854981f88e2b81fefd49c590185a31f2b1f1" "df6635d434b56fb1784ba5ab44639de55a9e3fe3" "d106e74b42f56a88eb17dbd227b57c8843c563dd" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="9560b19a804e464732fb45d93188aec8db7262d9"
+CROS_WORKON_TREE=("d897a7a44e07236268904e1df7f983871c1e1258" "8d013c81257bb616a69faad339ffe22c6849a906" "59afb77b5aa8928c405f13f468a6e1d679e27508" "2bd42cf4f2f41e68c177dfdba095d8d3412fd76c" "1e9ca239fab09ba22b58e4a22d63e2ede865b159" "e08a2eb734e33827dffeecf57eca046cd1091373" "ebc0c24b80fdfa0cba6a530d414d95bb083babee" "f07eafa8dbb53d50c194352868520a8407a26bcc" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 # TODO(crbug.com/809389): Avoid directly including headers from other packages.
-CROS_WORKON_SUBTREE="common-mk attestation chaps libhwsec metrics tpm_manager trunks .gn"
+CROS_WORKON_SUBTREE="common-mk attestation chaps libhwsec libhwsec-foundation metrics tpm_manager trunks .gn"
 
 PLATFORM_SUBDIR="attestation"
 
@@ -21,9 +21,12 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/attest
 
 LICENSE="Apache-2.0"
 KEYWORDS="*"
-IUSE="test tpm tpm2"
+IUSE="generic_tpm2 test tpm tpm_dynamic tpm2"
 
-REQUIRED_USE="tpm2? ( !tpm )"
+REQUIRED_USE="
+	tpm_dynamic? ( tpm tpm2 )
+	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+"
 
 RDEPEND="
 	tpm? (
@@ -33,9 +36,12 @@ RDEPEND="
 		chromeos-base/trunks:=
 	)
 	chromeos-base/chaps:=
+	chromeos-base/libhwsec-foundation:=
+	chromeos-base/system_api:=[fuzzer?]
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/minijail:=
 	chromeos-base/tpm_manager:=
+	chromeos-base/attestation-client
 	"
 
 DEPEND="
@@ -78,9 +84,6 @@ src_install() {
 
 	dolib.so "${OUT}"/lib/libattestation.so
 
-
-	insinto /usr/include/attestation/client
-	doins client/dbus_proxy.h
 	insinto /usr/include/attestation/common
 	doins common/attestation_interface.h
 	doins common/print_attestation_ca_proto.h
@@ -109,5 +112,5 @@ platform_pkg_test() {
 
 src_prepare() {
   default
-  epatch ${FILESDIR}/ignore_errors.patch
+  eapply -p2 ${FILESDIR}/ignore_errors.patch
 }

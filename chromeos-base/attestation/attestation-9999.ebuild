@@ -8,7 +8,7 @@ CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 # TODO(crbug.com/809389): Avoid directly including headers from other packages.
-CROS_WORKON_SUBTREE="common-mk attestation chaps libhwsec metrics tpm_manager trunks .gn"
+CROS_WORKON_SUBTREE="common-mk attestation chaps libhwsec libhwsec-foundation metrics tpm_manager trunks .gn"
 
 PLATFORM_SUBDIR="attestation"
 
@@ -19,9 +19,12 @@ HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/attest
 
 LICENSE="Apache-2.0"
 KEYWORDS="~*"
-IUSE="test tpm tpm2"
+IUSE="generic_tpm2 test tpm tpm_dynamic tpm2"
 
-REQUIRED_USE="tpm2? ( !tpm )"
+REQUIRED_USE="
+	tpm_dynamic? ( tpm tpm2 )
+	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+"
 
 RDEPEND="
 	tpm? (
@@ -31,9 +34,12 @@ RDEPEND="
 		chromeos-base/trunks:=
 	)
 	chromeos-base/chaps:=
+	chromeos-base/libhwsec-foundation:=
+	chromeos-base/system_api:=[fuzzer?]
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/minijail:=
 	chromeos-base/tpm_manager:=
+	chromeos-base/attestation-client
 	"
 
 DEPEND="
@@ -76,9 +82,6 @@ src_install() {
 
 	dolib.so "${OUT}"/lib/libattestation.so
 
-
-	insinto /usr/include/attestation/client
-	doins client/dbus_proxy.h
 	insinto /usr/include/attestation/common
 	doins common/attestation_interface.h
 	doins common/print_attestation_ca_proto.h
