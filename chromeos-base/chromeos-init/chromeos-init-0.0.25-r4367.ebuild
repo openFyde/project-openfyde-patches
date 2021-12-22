@@ -2,8 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="a0f172755fa87b358d1f913f3f898d8d9a25e001"
-CROS_WORKON_TREE=("dea48af07754556aac092c0830de0b1ab410077b" "92ad7a901a50086a46484711dfe4a7684c35a7a4" "c218b19793213fbc08daad20dce926cf44766c10" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="6e4c52d607067c63a3e5b978926680d6ce5d9c51"
+CROS_WORKON_TREE=("d897a7a44e07236268904e1df7f983871c1e1258" "b7919263b40caa3c74dcaec74730bca1c1bcb024" "e08a2eb734e33827dffeecf57eca046cd1091373" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -14,24 +14,24 @@ CROS_WORKON_SUBTREE="common-mk init metrics .gn"
 PLATFORM_NATIVE_TEST="yes"
 PLATFORM_SUBDIR="init"
 
-inherit cros-workon platform user
+inherit tmpfiles cros-workon platform user
 
 DESCRIPTION="Upstart init scripts for Chromium OS"
-HOMEPAGE="http://www.chromium.org/"
+HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/master/init/"
 SRC_URI=""
 
 LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="*"
 IUSE="
-	cros_embedded +debugd +encrypted_stateful frecon
-	kernel-3_8 kernel-3_10 kernel-3_14 kernel-3_18 +midi
-	-s3halt +syslog systemd +udev vivid vtconsole
-  fydeos_factory_install fixcgroup fixcgroup-memory"
+	arcpp arcvm cros_embedded +encrypted_stateful +encrypted_reboot_vault
+	frecon lvm_stateful_partition kernel-3_18 +midi +oobe_config -s3halt +syslog
+	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+	systemd +udev vivid vtconsole"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 COMMON_DEPEND="
-	chromeos-base/metrics:=
+	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
 	chromeos-base/vboot_reference:=
 	sys-apps/rootdev:=
@@ -40,6 +40,7 @@ COMMON_DEPEND="
 DEPEND="${COMMON_DEPEND}
 	test? (
 		sys-process/psmisc
+		dev-util/shflags
 		dev-util/shunit2
 		sys-apps/diffutils
 	)
@@ -52,7 +53,9 @@ RDEPEND="${COMMON_DEPEND}
 	!chromeos-base/chromeos-disableecho
 	chromeos-base/chromeos-common-script
 	chromeos-base/tty
+	oobe_config? ( chromeos-base/oobe_config )
 	sys-apps/upstart
+	!systemd? ( sys-apps/systemd-tmpfiles )
 	sys-process/lsof
 	virtual/chromeos-bootcomplete
 	!cros_embedded? (
@@ -66,11 +69,8 @@ RDEPEND="${COMMON_DEPEND}
 	)
 "
 
-FYDEOS_INSTALL_FILE=".fydeos_factory_install"
-
 platform_pkg_test() {
 	local shell_tests=(
-		periodic_scheduler_unittest
 		killers_unittest
 		tests/chromeos-disk-metrics-test.sh
 		tests/send-kernel-errors-test.sh
@@ -84,6 +84,7 @@ platform_pkg_test() {
 	local cpp_tests=(
 		clobber_state_test
 		file_attrs_cleaner_test
+		periodic_scheduler_test
 		usermode-helper_test
 	)
 
@@ -97,6 +98,7 @@ src_install_upstart() {
 
 	if use cros_embedded; then
 		doins upstart/startup.conf
+		dotmpfiles tmpfiles.d/chromeos.conf
 		doins upstart/embedded-init/boot-services.conf
 
 		doins upstart/report-boot-complete.conf
@@ -108,14 +110,16 @@ src_install_upstart() {
 		doins upstart/sysrq-init.conf
 
 		if use syslog; then
-			doins upstart/log-rotate.conf upstart/syslog.conf upstart/journald.conf
+			doins upstart/collect-early-logs.conf
+			doins upstart/log-rotate.conf upstart/syslog.conf
+			dotmpfiles tmpfiles.d/syslog.conf
 		fi
 		if use !systemd; then
 			doins upstart/cgroups.conf
 			doins upstart/dbus.conf
+			dotmpfiles tmpfiles.d/dbus.conf
 			if use udev; then
-				doins upstart/udev.conf upstart/udev-trigger.conf
-				doins upstart/udev-trigger-early.conf
+				doins upstart/udev*.conf
 			fi
 		fi
 		if use frecon; then
@@ -123,20 +127,21 @@ src_install_upstart() {
 		fi
 	else
 		doins upstart/*.conf
+		dotmpfiles tmpfiles.d/*.conf
+
+		if ! use arcpp && use arcvm; then
+			sed -i '/^env IS_ARCVM=/s:=0:=1:' \
+				"${D}/etc/init/rt-limits.conf" || \
+				die "Failed to replace is_arcvm in rt-limits.conf"
+		fi
 
 		dosbin chromeos-disk-metrics
 		dosbin chromeos-send-kernel-errors
 		dosbin display_low_battery_alert
 	fi
 
-	if ! use debugd; then
-		sed -i '/^env PSTORE_GROUP=/s:=.*:=root:' \
-			"${D}/etc/init/pstore.conf" || \
-			die "Failed to replace PSTORE_GROUP in pstore.conf"
-	fi
-
 	if use midi; then
-		if use kernel-3_8 || use kernel-3_10 || use kernel-3_14 || use kernel-3_18; then
+		if use kernel-3_18; then
 			doins upstart/workaround-init/midi-workaround.conf
 		fi
 	fi
@@ -156,7 +161,7 @@ src_install_upstart() {
 
 src_install() {
 	# Install helper to run periodic tasks.
-	dobin periodic_scheduler
+	dobin "${OUT}"/periodic_scheduler
 
 	if use syslog; then
 		# Install log cleaning script and run it daily.
@@ -187,6 +192,20 @@ src_install() {
 	# Install startup/shutdown scripts.
 	dosbin chromeos_startup chromeos_shutdown
 
+	# Disable encrypted reboot vault if it is not used.
+	if ! use encrypted_reboot_vault; then
+		sed -i '/USE_ENCRYPTED_REBOOT_VAULT=/s:=1:=0:' \
+			"${D}/sbin/chromeos_startup" ||
+			die "Failed to replace USE_ENCRYPTED_REBOOT_VAULT in chromeos_startup"
+	fi
+
+	# Enable lvm stateful partition.
+	if use lvm_stateful_partition; then
+		sed -i '/USE_LVM_STATEFUL_PARTITION=/s:=0:=1:' \
+			"${D}/sbin/chromeos_startup" ||
+			die "Failed to replace USE_LVM_STATEFUL_PARTITION in chromeos_startup"
+	fi
+
 	dosbin "${OUT}"/clobber-state
 
 	dosbin clobber-log
@@ -198,16 +217,10 @@ src_install() {
 	insinto /usr/share/cros
 	doins $(usex encrypted_stateful encrypted_stateful \
 		unencrypted_stateful)/startup_utils.sh
-  if use fydeos_factory_install; then
-    doins ${FILESDIR}/fydeos_factory_install.sh
-    insinto /usr/share/chromeos-assets/text/boot_messages
-    doins -r ${FILESDIR}/zh-CN
-    doins -r ${FILESDIR}/en
-    if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
-      insinto /usr/share/oem
-      doins $FYDEOS_INSTALL_FILE
-    fi
-  fi
+
+	# Install LVM conf files.
+	insinto /etc/lvm
+	doins lvm.conf
 }
 
 pkg_preinst() {
@@ -220,22 +233,28 @@ pkg_preinst() {
 	# by bootstat and ureadahead.
 	enewuser "debugfs-access"
 	enewgroup "debugfs-access"
+
+	# Create pstore-access group.
+	enewgroup pstore-access
 }
 
 src_prepare() {
   default
   if use fydeos_factory_install; then
-    epatch ${FILESDIR}/insert_factory_install_script.patch
-    epatch ${FILESDIR}/set_default_language_to_zh.patch
+    eapply -p2 ${FILESDIR}/insert_factory_install_script.patch
+    eapply -p2 ${FILESDIR}/set_default_language_to_zh.patch
     if [ -n "${FYDEOS_FACTORY_INSTALL}" ]; then
       echo $FYDEOS_FACTORY_INSTALL > $FYDEOS_INSTALL_FILE
     fi
   fi
   if use fixcgroup; then
-    epatch ${FILESDIR}/cgroups_cpuset.patch
+    eapply -p2 ${FILESDIR}/cgroups_cpuset.patch
   fi
   if use fixcgroup-memory; then
-    epatch ${FILESDIR}/fix_cgroup_memory.patch
+    eapply -p2 ${FILESDIR}/fix_cgroup_memory.patch
   fi
-  epatch ${FILESDIR}/change_splash_background_color_black.patch
+  eapply -p2 ${FILESDIR}/change_splash_background_color_black.patch
+  if ! use kvm_host; then
+    eapply -p2 ${FILESDIR}/remove_cgroup_crosvm.patch
+  fi
 }

@@ -22,9 +22,9 @@ LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="~*"
 IUSE="
-	arcpp arcvm cros_embedded +debugd +encrypted_stateful +encrypted_reboot_vault
-	frecon -lvm_stateful_partition kernel-3_8 kernel-3_10 kernel-3_14
-	kernel-3_18 +midi -s3halt +syslog systemd +udev vivid vtconsole"
+	arcpp arcvm cros_embedded +encrypted_stateful +encrypted_reboot_vault
+	frecon lvm_stateful_partition kernel-3_18 +midi +oobe_config -s3halt +syslog
+	systemd +udev vivid vtconsole"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 COMMON_DEPEND="
@@ -37,6 +37,7 @@ COMMON_DEPEND="
 DEPEND="${COMMON_DEPEND}
 	test? (
 		sys-process/psmisc
+		dev-util/shflags
 		dev-util/shunit2
 		sys-apps/diffutils
 	)
@@ -49,7 +50,9 @@ RDEPEND="${COMMON_DEPEND}
 	!chromeos-base/chromeos-disableecho
 	chromeos-base/chromeos-common-script
 	chromeos-base/tty
+	oobe_config? ( chromeos-base/oobe_config )
 	sys-apps/upstart
+	!systemd? ( sys-apps/systemd-tmpfiles )
 	sys-process/lsof
 	virtual/chromeos-bootcomplete
 	!cros_embedded? (
@@ -92,6 +95,7 @@ src_install_upstart() {
 
 	if use cros_embedded; then
 		doins upstart/startup.conf
+		dotmpfiles tmpfiles.d/chromeos.conf
 		doins upstart/embedded-init/boot-services.conf
 
 		doins upstart/report-boot-complete.conf
@@ -103,7 +107,8 @@ src_install_upstart() {
 		doins upstart/sysrq-init.conf
 
 		if use syslog; then
-			doins upstart/log-rotate.conf upstart/syslog.conf upstart/journald.conf
+			doins upstart/collect-early-logs.conf
+			doins upstart/log-rotate.conf upstart/syslog.conf
 			dotmpfiles tmpfiles.d/syslog.conf
 		fi
 		if use !systemd; then
@@ -111,8 +116,7 @@ src_install_upstart() {
 			doins upstart/dbus.conf
 			dotmpfiles tmpfiles.d/dbus.conf
 			if use udev; then
-				doins upstart/udev.conf upstart/udev-trigger.conf
-				doins upstart/udev-trigger-early.conf
+				doins upstart/udev*.conf
 			fi
 		fi
 		if use frecon; then
@@ -133,14 +137,8 @@ src_install_upstart() {
 		dosbin display_low_battery_alert
 	fi
 
-	if ! use debugd; then
-		sed -i '/^env PSTORE_GROUP=/s:=.*:=root:' \
-			"${D}/etc/init/pstore.conf" || \
-			die "Failed to replace PSTORE_GROUP in pstore.conf"
-	fi
-
 	if use midi; then
-		if use kernel-3_8 || use kernel-3_10 || use kernel-3_14 || use kernel-3_18; then
+		if use kernel-3_18; then
 			doins upstart/workaround-init/midi-workaround.conf
 		fi
 	fi
@@ -218,10 +216,8 @@ src_install() {
 		unencrypted_stateful)/startup_utils.sh
 
 	# Install LVM conf files.
-	if use lvm_stateful_partition; then
-		insinto /etc/lvm
-		doins lvm.conf
-	fi
+	insinto /etc/lvm
+	doins lvm.conf
 }
 
 pkg_preinst() {
@@ -234,4 +230,7 @@ pkg_preinst() {
 	# by bootstat and ureadahead.
 	enewuser "debugfs-access"
 	enewgroup "debugfs-access"
+
+	# Create pstore-access group.
+	enewgroup pstore-access
 }
