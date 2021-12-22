@@ -9,7 +9,7 @@ CROS_WORKON_EGIT_BRANCH=("main" "master")
 CROS_WORKON_DESTDIR=("${S}/platform2" "${S}/platform2/update_engine")
 CROS_WORKON_USE_VCSID=1
 CROS_WORKON_INCREMENTAL_BUILD=1
-CROS_WORKON_SUBTREE=("common-mk .gn" "")
+CROS_WORKON_SUBTREE=("common-mk diagnostics .gn" "")
 
 PLATFORM_SUBDIR="update_engine"
 
@@ -21,11 +21,12 @@ SRC_URI=""
 
 LICENSE="Apache-2.0"
 KEYWORDS="~*"
-IUSE="cfm cros_host cros_p2p dlc fuzzer -hwid_override minios +power_management systemd"
+IUSE="cfm cros_host cros_p2p dlc fuzzer hw_details -hwid_override minios +power_management systemd"
 
 COMMON_DEPEND="
 	app-arch/bzip2:=
 	chromeos-base/chromeos-ca-certificates:=
+	hw_details? ( chromeos-base/diagnostics:= )
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/vboot_reference:=
 	cros_p2p? ( chromeos-base/p2p:= )
@@ -132,9 +133,12 @@ src_install() {
 		doins scripts/update_payload/update-payload-key.pub.pem
 	fi
 
+	local fuzzer_component_id="908319"
 	platform_fuzzer_install "${S}"/OWNERS \
 				"${OUT}"/update_engine_omaha_request_action_fuzzer \
-				--dict "${S}"/fuzz/xml.dict
+				--dict "${S}"/fuzz/xml.dict \
+				--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS \
-				"${OUT}"/update_engine_delta_performer_fuzzer
+				"${OUT}"/update_engine_delta_performer_fuzzer \
+				--comp "${fuzzer_component_id}"
 }

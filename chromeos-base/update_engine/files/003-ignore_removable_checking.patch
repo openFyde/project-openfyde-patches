@@ -1,0 +1,49 @@
+--- a/cros/boot_control_chromeos.cc
++++ b/cros/boot_control_chromeos.cc
+@@ -24,6 +24,7 @@
+ #include <base/bind.h>
+ #include <base/files/file_path.h>
+ #include <base/files/file_util.h>
++#include <base/process/launch.h>
+ #include <base/logging.h>
+ #include <base/strings/string_split.h>
+ #include <base/strings/string_util.h>
+@@ -147,9 +148,9 @@
+ 
+   // All installed Chrome OS devices have two slots. We don't update removable
+   // devices, so we will pretend we have only one slot in that case.
+-  if (IsRemovableDevice(boot_disk_name_)) {
++  if (IsRunningFromInstaller()) {
+     LOG(INFO)
+-        << "Booted from a removable device, pretending we have only one slot.";
++        << "Booted from an installer device, we have only one slot.";
+     num_slots_ = 1;
+   } else {
+     // TODO(deymo): Look at the actual number of slots reported in the GPT.
+@@ -379,6 +380,15 @@
+ }
+ 
+ // static
++bool BootControlChromeOS::IsRunningFromInstaller() {
++  std::string output;
++  if (!base::GetAppOutput({"is_running_from_installer"}, &output)) {
++    return false;
++  }
++  return output == "yes\n";
++}
++
++// static
+ bool BootControlChromeOS::IsRemovableDevice(const string& device) {
+   string sysfs_block = SysfsBlockDevice(device);
+   string removable;
+--- a/cros/boot_control_chromeos.h
++++ b/cros/boot_control_chromeos.h
+@@ -82,6 +82,8 @@
+   // string if the input device is not of the "/dev/xyz" form.
+   static std::string SysfsBlockDevice(const std::string& device);
+ 
++  static bool IsRunningFromInstaller();
++
+   // Returns true if the root |device| (e.g., "/dev/sdb") is known to be
+   // removable, false otherwise.
+   static bool IsRemovableDevice(const std::string& device);
