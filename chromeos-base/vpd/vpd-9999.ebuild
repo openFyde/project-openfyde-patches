@@ -45,6 +45,7 @@ src_install() {
 	else
 		insinto /etc/init
 		doins init/check-rw-vpd.conf
+		doins init/vpd-icc.conf
 		doins init/vpd-log.conf
 	fi
 }
