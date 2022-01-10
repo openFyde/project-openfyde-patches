@@ -17,7 +17,7 @@ else
 	KEYWORDS="~alpha amd64 arm arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
 fi
 
-SRC_URI+=" ftp://ftp:ftp@ftp.fydeos.xyz/linux-firmware-nvidia/linux-firmware-nvidia-amd64-92.0.0.0.tar.gz"
+SRC_URI+=" ${FYDEOS_PREBUILT_PKGS_HOST_URL}/linux-firmware-nvidia/linux-firmware-nvidia-amd64-92.0.0.0.tar.gz"
 
 DESCRIPTION="Linux firmware files"
 HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
