@@ -1,0 +1,13 @@
+diff --git a/cryptohome/mount_encrypted/encryption_key.cc b/cryptohome/mount_encrypted/encryption_key.cc
+index 58219e4cf2..34cde3e2e9 100644
+--- a/cryptohome/mount_encrypted/encryption_key.cc
++++ b/cryptohome/mount_encrypted/encryption_key.cc
+@@ -223,7 +223,7 @@ result_code EncryptionKey::SetInsecureFallbackSystemKey() {
+   std::string product_uuid;
+   if (base::ReadFileToStringWithMaxSize(base::FilePath(paths::kProductUUID),
+                                         &product_uuid, kMaxReadSize)) {
+-    system_key_ = Sha256(base::ToUpperASCII(product_uuid));
++    system_key_ = Sha256(product_uuid);
+     LOG(INFO) << "Using UUID as system key.";
+     system_key_status_ = SystemKeyStatus::kProductUUID;
+     return RESULT_SUCCESS;
