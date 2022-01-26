@@ -219,4 +219,5 @@ pkg_preinst() {
 src_prepare() {
   default
   eapply -p2 ${FILESDIR}/disable_smt.patch
+  eapply -p2 ${FILESDIR}/r96_fix_vm_concierge_if_syntax_error.patch
 }
