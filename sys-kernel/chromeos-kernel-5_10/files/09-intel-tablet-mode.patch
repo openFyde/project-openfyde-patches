@@ -1,7 +1,7 @@
-diff --git a/drivers/platform/x86/intel-hid.c b/drivers/platform/x86/intel-hid.c
-index 86261970bd8f..0d41b5e53cec 100644
---- a/drivers/platform/x86/intel-hid.c
-+++ b/drivers/platform/x86/intel-hid.c
+Index: kernel5_10/drivers/platform/x86/intel-hid.c
+===================================================================
+--- kernel5_10.orig/drivers/platform/x86/intel-hid.c
++++ kernel5_10/drivers/platform/x86/intel-hid.c
 @@ -5,7 +5,6 @@
   *  Copyright (C) 2015 Alex Hung <alex.hung@canonical.com>
   *  Copyright (C) 2015 Andrew Lutomirski <luto@kernel.org>
@@ -10,7 +10,7 @@ index 86261970bd8f..0d41b5e53cec 100644
  #include <linux/acpi.h>
  #include <linux/dmi.h>
  #include <linux/input.h>
-@@ -59,6 +58,10 @@ static const struct key_entry intel_array_keymap[] = {
+@@ -59,6 +58,10 @@ static const struct key_entry intel_arra
  	{ KE_IGNORE, 0xC7, { KEY_VOLUMEDOWN } },              /* Release */
  	{ KE_KEY,    0xC8, { KEY_ROTATE_LOCK_TOGGLE } },      /* Press */
  	{ KE_IGNORE, 0xC9, { KEY_ROTATE_LOCK_TOGGLE } },      /* Release */
@@ -21,7 +21,7 @@ index 86261970bd8f..0d41b5e53cec 100644
  	{ KE_KEY,    0xCE, { KEY_POWER } },                   /* Press */
  	{ KE_IGNORE, 0xCF, { KEY_POWER } },                   /* Release */
  	{ KE_END },
-@@ -237,6 +240,26 @@ static int intel_hid_set_enable(struct device *device, bool enable)
+@@ -244,6 +247,26 @@ static int intel_hid_set_enable(struct d
  	return 0;
  }
  
@@ -48,7 +48,7 @@ index 86261970bd8f..0d41b5e53cec 100644
  static void intel_button_array_enable(struct device *device, bool enable)
  {
  	struct intel_hid_priv *priv = dev_get_drvdata(device);
-@@ -483,6 +506,8 @@ static int intel_hid_probe(struct platform_device *device)
+@@ -490,6 +513,8 @@ static int intel_hid_probe(struct platfo
  		err = intel_button_array_input_setup(device);
  		if (err)
  			pr_err("Failed to setup Intel 5 button array hotkeys\n");

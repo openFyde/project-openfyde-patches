@@ -1,8 +1,8 @@
-diff --git a/drivers/gpu/drm/drm_panel_orientation_quirks.c b/drivers/gpu/drm/drm_panel_orientation_quirks.c
-index 58f5dc2f6dd5..f2bcf5f82b45 100644
---- a/drivers/gpu/drm/drm_panel_orientation_quirks.c
-+++ b/drivers/gpu/drm/drm_panel_orientation_quirks.c
-@@ -217,6 +217,12 @@ static const struct dmi_system_id orientation_data[] = {
+Index: kernel5_10/drivers/gpu/drm/drm_panel_orientation_quirks.c
+===================================================================
+--- kernel5_10.orig/drivers/gpu/drm/drm_panel_orientation_quirks.c
++++ kernel5_10/drivers/gpu/drm/drm_panel_orientation_quirks.c
+@@ -231,6 +231,12 @@ static const struct dmi_system_id orient
  		  DMI_EXACT_MATCH(DMI_PRODUCT_NAME, "LTH17"),
  		},
  		.driver_data = (void *)&lcd800x1280_rightside_up,

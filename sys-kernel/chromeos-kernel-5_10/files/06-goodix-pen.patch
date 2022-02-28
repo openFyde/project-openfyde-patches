@@ -1,7 +1,7 @@
-diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
-index 6612f9e2d7e8..56bdf895b7fb 100644
---- a/drivers/input/touchscreen/goodix.c
-+++ b/drivers/input/touchscreen/goodix.c
+Index: kernel5_10/drivers/input/touchscreen/goodix.c
+===================================================================
+--- kernel5_10.orig/drivers/input/touchscreen/goodix.c
++++ kernel5_10/drivers/input/touchscreen/goodix.c
 @@ -62,6 +62,7 @@
  #define RESOLUTION_LOC		1
  #define MAX_CONTACTS_LOC	5
@@ -18,7 +18,7 @@ index 6612f9e2d7e8..56bdf895b7fb 100644
  	const struct goodix_chip_data *chip;
  	struct touchscreen_properties prop;
  	unsigned int max_touch_num;
-@@ -387,34 +389,58 @@ static int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
+@@ -343,34 +345,58 @@ static int goodix_ts_read_input_report(s
  	return -ENOMSG;
  }
  
@@ -79,7 +79,7 @@ index 6612f9e2d7e8..56bdf895b7fb 100644
  }
  
  static void goodix_ts_report_key(struct goodix_ts_data *ts, u8 *data)
-@@ -459,13 +485,10 @@ static void goodix_process_events(struct goodix_ts_data *ts)
+@@ -415,13 +441,10 @@ static void goodix_process_events(struct
  	for (i = 0; i < touch_num; i++)
  		if (ts->contact_size == 9)
  			goodix_ts_report_touch_9b(ts,
@@ -95,7 +95,7 @@ index 6612f9e2d7e8..56bdf895b7fb 100644
  }
  
  /**
-@@ -1050,6 +1073,29 @@ static int goodix_i2c_test(struct i2c_client *client)
+@@ -1006,6 +1029,29 @@ static int goodix_i2c_test(struct i2c_cl
  	return error;
  }
  
@@ -125,7 +125,7 @@ index 6612f9e2d7e8..56bdf895b7fb 100644
  /**
   * goodix_configure_dev - Finish device initialization
   *
-@@ -1096,10 +1142,14 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
+@@ -1052,10 +1098,14 @@ static int goodix_configure_dev(struct g
  		input_set_capability(ts->input_dev, EV_KEY, ts->keymap[i]);
  	}
  
@@ -140,7 +140,7 @@ index 6612f9e2d7e8..56bdf895b7fb 100644
  
  	/* Read configuration and apply touchscreen parameters */
  	goodix_read_config(ts);
-@@ -1162,7 +1212,7 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
+@@ -1111,7 +1161,7 @@ static int goodix_configure_dev(struct g
  		return error;
  	}
  

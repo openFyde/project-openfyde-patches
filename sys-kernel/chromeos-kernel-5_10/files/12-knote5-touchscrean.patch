@@ -1,8 +1,8 @@
-diff --git a/drivers/platform/x86/touchscreen_dmi.c b/drivers/platform/x86/touchscreen_dmi.c
-index 5783139d0a11..e7d34154b835 100644
---- a/drivers/platform/x86/touchscreen_dmi.c
-+++ b/drivers/platform/x86/touchscreen_dmi.c
-@@ -808,6 +808,22 @@ static const struct ts_dmi_data vinga_twizzle_j116_data = {
+Index: kernel5_10/drivers/platform/x86/touchscreen_dmi.c
+===================================================================
+--- kernel5_10.orig/drivers/platform/x86/touchscreen_dmi.c
++++ kernel5_10/drivers/platform/x86/touchscreen_dmi.c
+@@ -873,6 +873,22 @@ static const struct ts_dmi_data vinga_tw
  	.properties	= vinga_twizzle_j116_props,
  };
  
@@ -25,7 +25,7 @@ index 5783139d0a11..e7d34154b835 100644
  /* NOTE: Please keep this table sorted alphabetically */
  const struct dmi_system_id touchscreen_dmi_table[] = {
  	{
-@@ -1298,6 +1314,13 @@ const struct dmi_system_id touchscreen_dmi_table[] = {
+@@ -1444,6 +1460,13 @@ const struct dmi_system_id touchscreen_d
  			DMI_MATCH(DMI_PRODUCT_NAME, "Y8W81"),
  		},
  	},

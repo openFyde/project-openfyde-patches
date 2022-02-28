@@ -1,8 +1,8 @@
-diff --git a/arch/x86/pci/acpi.c b/arch/x86/pci/acpi.c
-index 948656069cddd..3f871bb3707e1 100644
---- a/arch/x86/pci/acpi.c
-+++ b/arch/x86/pci/acpi.c
-@@ -135,6 +135,14 @@ static const struct dmi_system_id pci_crs_quirks[] __initconst = {
+Index: kernel5_10/arch/x86/pci/acpi.c
+===================================================================
+--- kernel5_10.orig/arch/x86/pci/acpi.c
++++ kernel5_10/arch/x86/pci/acpi.c
+@@ -135,6 +135,14 @@ static const struct dmi_system_id pci_cr
  			DMI_MATCH(DMI_PRODUCT_NAME, "HP xw9300 Workstation"),
  		},
  	},

@@ -1,8 +1,8 @@
-diff --git a/drivers/hid/hid-ids.h b/drivers/hid/hid-ids.h
-index e523985a1084..cc5219eaf39e 100644
---- a/drivers/hid/hid-ids.h
-+++ b/drivers/hid/hid-ids.h
-@@ -471,6 +471,7 @@
+Index: kernel5_10/drivers/hid/hid-ids.h
+===================================================================
+--- kernel5_10.orig/drivers/hid/hid-ids.h
++++ kernel5_10/drivers/hid/hid-ids.h
+@@ -474,6 +474,7 @@
  
  #define I2C_VENDOR_ID_GOODIX		0x27c6
  #define I2C_DEVICE_ID_GOODIX_01F0	0x01f0
@@ -10,7 +10,7 @@ index e523985a1084..cc5219eaf39e 100644
  
  #define USB_VENDOR_ID_GOODTOUCH		0x1aad
  #define USB_DEVICE_ID_GOODTOUCH_000f	0x000f
-@@ -860,6 +861,17 @@
+@@ -867,6 +868,17 @@
  #define USB_DEVICE_ID_MS_TOUCH_COVER_2   0x07a7
  #define USB_DEVICE_ID_MS_TYPE_COVER_2    0x07a9
  #define USB_DEVICE_ID_MS_POWER_COVER     0x07da
@@ -28,7 +28,7 @@ index e523985a1084..cc5219eaf39e 100644
  #define USB_DEVICE_ID_MS_XBOX_ONE_S_CONTROLLER	0x02fd
  #define USB_DEVICE_ID_MS_PIXART_MOUSE    0x00cb
  #define USB_DEVICE_ID_8BITDO_SN30_PRO_PLUS      0x02e0
-@@ -1313,6 +1325,9 @@
+@@ -1322,6 +1334,9 @@
  #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
  #define USB_DEVICE_ID_UGTIZER_TABLET_GT5040	0x0077
  
@@ -38,11 +38,11 @@ index e523985a1084..cc5219eaf39e 100644
  #define USB_VENDOR_ID_VIEWSONIC			0x0543
  #define USB_DEVICE_ID_VIEWSONIC_PD1011		0xe621
  
-diff --git a/drivers/hid/hid-microsoft.c b/drivers/hid/hid-microsoft.c
-index 071fd093a5f4..a0ad091cc0db 100644
---- a/drivers/hid/hid-microsoft.c
-+++ b/drivers/hid/hid-microsoft.c
-@@ -440,7 +440,9 @@ static const struct hid_device_id ms_devices[] = {
+Index: kernel5_10/drivers/hid/hid-microsoft.c
+===================================================================
+--- kernel5_10.orig/drivers/hid/hid-microsoft.c
++++ kernel5_10/drivers/hid/hid-microsoft.c
+@@ -440,7 +440,9 @@ static const struct hid_device_id ms_dev
  	{ HID_USB_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_POWER_COVER),
  		.driver_data = MS_HIDINPUT },
  	{ HID_USB_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_COMFORT_KEYBOARD),
@@ -53,10 +53,10 @@ index 071fd093a5f4..a0ad091cc0db 100644
  
  	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_PRESENTER_8K_BT),
  		.driver_data = MS_PRESENTER },
-diff --git a/drivers/hid/hid-multitouch.c b/drivers/hid/hid-multitouch.c
-index d670bcd57bde..14656c18bccb 100644
---- a/drivers/hid/hid-multitouch.c
-+++ b/drivers/hid/hid-multitouch.c
+Index: kernel5_10/drivers/hid/hid-multitouch.c
+===================================================================
+--- kernel5_10.orig/drivers/hid/hid-multitouch.c
++++ kernel5_10/drivers/hid/hid-multitouch.c
 @@ -70,6 +70,8 @@ MODULE_LICENSE("GPL");
  #define MT_QUIRK_WIN8_PTP_BUTTONS	BIT(18)
  #define MT_QUIRK_SEPARATE_APP_REPORT	BIT(19)
@@ -76,7 +76,7 @@ index d670bcd57bde..14656c18bccb 100644
  };
  
  struct mt_class {
-@@ -191,6 +196,7 @@ static void mt_post_parse(struct mt_device *td, struct mt_application *app);
+@@ -191,6 +196,7 @@ static void mt_post_parse(struct mt_devi
  #define MT_CLS_EXPORT_ALL_INPUTS		0x0013
  /* reserved					0x0014 */
  #define MT_CLS_WIN_8_FORCE_MULTI_INPUT		0x0015
@@ -84,7 +84,7 @@ index d670bcd57bde..14656c18bccb 100644
  
  /* vendor specific classes */
  #define MT_CLS_3M				0x0101
-@@ -270,6 +276,16 @@ static const struct mt_class mt_classes[] = {
+@@ -270,6 +276,16 @@ static const struct mt_class mt_classes[
  			MT_QUIRK_STICKY_FINGERS |
  			MT_QUIRK_WIN8_PTP_BUTTONS,
  		.export_all_inputs = true },
@@ -101,7 +101,7 @@ index d670bcd57bde..14656c18bccb 100644
  	{ .name = MT_CLS_EXPORT_ALL_INPUTS,
  		.quirks = MT_QUIRK_ALWAYS_VALID |
  			MT_QUIRK_CONTACT_CNT_ACCURATE,
-@@ -770,6 +786,15 @@ static int mt_touch_input_mapping(struct hid_device *hdev, struct hid_input *hi,
+@@ -775,6 +791,15 @@ static int mt_touch_input_mapping(struct
  						     MT_TOOL_PALM, 0, 0);
  
  			MT_STORE_FIELD(confidence_state);
@@ -117,7 +117,7 @@ index d670bcd57bde..14656c18bccb 100644
  			return 1;
  		case HID_DG_TIPSWITCH:
  			if (field->application != HID_GD_SYSTEM_MULTIAXIS)
-@@ -1079,8 +1104,27 @@ static int mt_process_slot(struct mt_device *td, struct input_dev *input,
+@@ -1084,8 +1109,27 @@ static int mt_process_slot(struct mt_dev
  			minor = minor >> 1;
  		}
  
@@ -146,7 +146,7 @@ index d670bcd57bde..14656c18bccb 100644
  		input_event(input, EV_ABS, ABS_MT_TOOL_X, *slot->cx);
  		input_event(input, EV_ABS, ABS_MT_TOOL_Y, *slot->cy);
  		input_event(input, EV_ABS, ABS_MT_DISTANCE, !*slot->tip_state);
-@@ -1130,7 +1174,17 @@ static void mt_process_mt_event(struct hid_device *hid,
+@@ -1135,7 +1179,17 @@ static void mt_process_mt_event(struct h
  			return;
  		}
  	}
@@ -165,7 +165,7 @@ index d670bcd57bde..14656c18bccb 100644
  	input_event(input, usage->type, usage->code, value);
  }
  
-@@ -1307,9 +1361,11 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
+@@ -1312,9 +1366,11 @@ static int mt_input_mapping(struct hid_d
  	    field->application != HID_DG_TOUCHSCREEN &&
  	    field->application != HID_DG_PEN &&
  	    field->application != HID_DG_TOUCHPAD &&
@@ -177,7 +177,7 @@ index d670bcd57bde..14656c18bccb 100644
  	    field->application != HID_GD_WIRELESS_RADIO_CTLS &&
  	    field->application != HID_GD_SYSTEM_MULTIAXIS &&
  	    !(field->application == HID_VD_ASUS_CUSTOM_MEDIA_KEYS &&
-@@ -1361,6 +1417,13 @@ static int mt_input_mapped(struct hid_device *hdev, struct hid_input *hi,
+@@ -1366,6 +1422,13 @@ static int mt_input_mapped(struct hid_de
  	struct mt_device *td = hid_get_drvdata(hdev);
  	struct mt_report_data *rdata;
  
@@ -191,27 +191,15 @@ index d670bcd57bde..14656c18bccb 100644
  	rdata = mt_find_report_data(td, field->report);
  	if (rdata && rdata->is_mt_collection) {
  		/* We own these mappings, tell hid-input to ignore them */
-@@ -1574,16 +1637,19 @@ static int mt_input_configured(struct hid_device *hdev, struct hid_input *hi)
- 	case HID_DG_TOUCHSCREEN:
- 		/* we do not set suffix = "Touchscreen" */
- 		hi->input->name = hdev->name;
-+    hid_info(hdev, "set touchscreen mtclass:%d", td->mtclass.name);
- 		break;
+@@ -1586,6 +1649,7 @@ static int mt_input_configured(struct hi
  	case HID_DG_STYLUS:
  		/* force BTN_STYLUS to allow tablet matching in udev */
  		__set_bit(BTN_STYLUS, hi->input->keybit);
 +    __set_bit(INPUT_PROP_DIRECT, hi->input->propbit);
- 		break;
- 	case HID_VD_ASUS_CUSTOM_MEDIA_KEYS:
- 		suffix = "Custom Media Keys";
- 		break;
+ 		fallthrough;
  	case HID_DG_PEN:
  		suffix = "Stylus";
-+    hid_info(hdev, "set stylus mtclass:%d", td->mtclass.name);
- 		break;
- 	default:
- 		suffix = "UNKNOWN";
-@@ -1985,6 +2051,63 @@ static const struct hid_device_id mt_devices[] = {
+@@ -1990,6 +2054,63 @@ static const struct hid_device_id mt_dev
  			   USB_VENDOR_ID_LENOVO,
  			   USB_DEVICE_ID_LENOVO_X1_TAB3) },
  
@@ -275,7 +263,7 @@ index d670bcd57bde..14656c18bccb 100644
  	/* MosArt panels */
  	{ .driver_data = MT_CLS_CONFIDENCE_MINUS_ONE,
  		MT_USB_DEVICE(USB_VENDOR_ID_ASUS,
-@@ -2125,6 +2248,9 @@ static const struct hid_device_id mt_devices[] = {
+@@ -2134,6 +2255,9 @@ static const struct hid_device_id mt_dev
  	{ HID_DEVICE(HID_BUS_ANY, HID_GROUP_MULTITOUCH, HID_ANY_ID, HID_ANY_ID) },
  
  	/* Generic Win 8 certified MT device */
