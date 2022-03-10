@@ -1,7 +1,7 @@
-Index: kernel5_10/drivers/hid/hid-ids.h
+Index: v5.10/drivers/hid/hid-ids.h
 ===================================================================
---- kernel5_10.orig/drivers/hid/hid-ids.h
-+++ kernel5_10/drivers/hid/hid-ids.h
+--- v5.10.orig/drivers/hid/hid-ids.h
++++ v5.10/drivers/hid/hid-ids.h
 @@ -474,6 +474,7 @@
  
  #define I2C_VENDOR_ID_GOODIX		0x27c6
@@ -10,7 +10,7 @@ Index: kernel5_10/drivers/hid/hid-ids.h
  
  #define USB_VENDOR_ID_GOODTOUCH		0x1aad
  #define USB_DEVICE_ID_GOODTOUCH_000f	0x000f
-@@ -867,6 +868,17 @@
+@@ -868,6 +869,17 @@
  #define USB_DEVICE_ID_MS_TOUCH_COVER_2   0x07a7
  #define USB_DEVICE_ID_MS_TYPE_COVER_2    0x07a9
  #define USB_DEVICE_ID_MS_POWER_COVER     0x07da
@@ -25,10 +25,10 @@ Index: kernel5_10/drivers/hid/hid-ids.h
 +#define USB_DEVICE_ID_MS_SURFACE_BOOK_2    0x0922
 +#define USB_DEVICE_ID_MS_SURFACE_GO      0x096f
 +#define USB_DEVICE_ID_MS_SURFACE_VHF   0xf001
+ #define USB_DEVICE_ID_MS_SURFACE3_COVER		0x07de
  #define USB_DEVICE_ID_MS_XBOX_ONE_S_CONTROLLER	0x02fd
  #define USB_DEVICE_ID_MS_PIXART_MOUSE    0x00cb
- #define USB_DEVICE_ID_8BITDO_SN30_PRO_PLUS      0x02e0
-@@ -1322,6 +1334,9 @@
+@@ -1324,6 +1336,9 @@
  #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
  #define USB_DEVICE_ID_UGTIZER_TABLET_GT5040	0x0077
  
@@ -38,10 +38,10 @@ Index: kernel5_10/drivers/hid/hid-ids.h
  #define USB_VENDOR_ID_VIEWSONIC			0x0543
  #define USB_DEVICE_ID_VIEWSONIC_PD1011		0xe621
  
-Index: kernel5_10/drivers/hid/hid-microsoft.c
+Index: v5.10/drivers/hid/hid-microsoft.c
 ===================================================================
---- kernel5_10.orig/drivers/hid/hid-microsoft.c
-+++ kernel5_10/drivers/hid/hid-microsoft.c
+--- v5.10.orig/drivers/hid/hid-microsoft.c
++++ v5.10/drivers/hid/hid-microsoft.c
 @@ -440,7 +440,9 @@ static const struct hid_device_id ms_dev
  	{ HID_USB_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_POWER_COVER),
  		.driver_data = MS_HIDINPUT },
@@ -53,10 +53,10 @@ Index: kernel5_10/drivers/hid/hid-microsoft.c
  
  	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_MICROSOFT, USB_DEVICE_ID_MS_PRESENTER_8K_BT),
  		.driver_data = MS_PRESENTER },
-Index: kernel5_10/drivers/hid/hid-multitouch.c
+Index: v5.10/drivers/hid/hid-multitouch.c
 ===================================================================
---- kernel5_10.orig/drivers/hid/hid-multitouch.c
-+++ kernel5_10/drivers/hid/hid-multitouch.c
+--- v5.10.orig/drivers/hid/hid-multitouch.c
++++ v5.10/drivers/hid/hid-multitouch.c
 @@ -70,6 +70,8 @@ MODULE_LICENSE("GPL");
  #define MT_QUIRK_WIN8_PTP_BUTTONS	BIT(18)
  #define MT_QUIRK_SEPARATE_APP_REPORT	BIT(19)
