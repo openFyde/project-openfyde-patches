@@ -19,13 +19,14 @@ S=${WORKDIR}
 
 src_install() {
   insinto /usr/local/etc/portage/savedconfig/sys-kernel
+  target_config=linux-firmware-20220310
   if use intel-common; then
-    newins ${FILESDIR}/intel-common-config linux-firmware    
+    newins ${FILESDIR}/intel-common-config $target_config
   elif use amd-common; then
-    newins ${FILESDIR}/amd-config linux-firmware
+    newins ${FILESDIR}/amd-config $target_config
   elif use nvidia-common; then
-    newins ${FILESDIR}/nvidia-config linux-firmware
+    newins ${FILESDIR}/nvidia-config $target_config
   else
-    newins ${FILESDIR}/common-config linux-firmware
+    newins ${FILESDIR}/common-config $target_config 
   fi
 }
