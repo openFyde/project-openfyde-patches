@@ -35,6 +35,9 @@ rtlwifi/rtl8723befw_36.bin
 rtlwifi/rtl8723aufw_B.bin
 rtlwifi/rtl8192cufw_B.bin
 rtlwifi/rtl8188efw.bin
+rtlwifi/rtl8723bs_nic.bin
+rtlwifi/rtl8723bs_ap_wowlan.bin
+rtlwifi/rtl8192eefw.bin
 ti-connectivity/wl128x-fw-5-plt.bin
 ti-connectivity/wl127x-nvs.bin
 ti-connectivity/wl128x-fw.bin
