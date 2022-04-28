@@ -1,0 +1,29 @@
+From b9a81bdca10df084e5d67236172f71afdcb46bc6 Mon Sep 17 00:00:00 2001
+From: Luca Coelho <luciano.coelho@intel.com>
+Date: Wed, 10 Feb 2021 17:23:55 +0200
+Subject: [PATCH] iwlwifi: bump FW API to 62 for AX devices
+
+Start supporting API version 62 for AX devices.
+
+Signed-off-by: Luca Coelho <luciano.coelho@intel.com>
+Signed-off-by: Su Yue <glass@fydeos.io>
+---
+ drivers/net/wireless/intel/iwlwifi/cfg/22000.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/intel/iwlwifi/cfg/22000.c b/drivers/net/wireless/intel/iwlwifi/cfg/22000.c
+index d2bbe6a73514..10c9482ee6bc 100644
+--- a/drivers/net/wireless/intel/iwlwifi/cfg/22000.c
++++ b/drivers/net/wireless/intel/iwlwifi/cfg/22000.c
+@@ -57,7 +57,7 @@
+ #include "iwl-prph.h"
+ 
+ /* Highest firmware API version supported */
+-#define IWL_22000_UCODE_API_MAX	59
++#define IWL_22000_UCODE_API_MAX	62
+ 
+ /* Lowest firmware API version supported */
+ #define IWL_22000_UCODE_API_MIN	39
+-- 
+2.36.0
+
