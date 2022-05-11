@@ -1,13 +1,10 @@
-# Copyright (c) 2022 Fyde Innovations Limited and the openFyde Authors.
-# Distributed under the license specified in the root directory of this project.
-
 # Copyright 2019 The Chromium OS Authors. All rights reserved.
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
 
-CROS_WORKON_COMMIT="b202cb23b8e455e39337b49c37aa58ba5c5d3521"
-CROS_WORKON_TREE="29acb3eab71e1469ec32197e2805eae170ce0a67"
+CROS_WORKON_COMMIT="3358c5a3654fc513e42afc8610ef848adf710147"
+CROS_WORKON_TREE="685c851d3eec021401b65754acc886f1073e6192"
 CROS_WORKON_PROJECT="chromiumos/third_party/kernel"
 CROS_WORKON_LOCALNAME="kernel/v5.4"
 CROS_WORKON_EGIT_BRANCH="chromeos-5.4"
