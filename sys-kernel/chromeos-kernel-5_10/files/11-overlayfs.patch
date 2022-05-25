@@ -1,5 +1,5 @@
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index f59fe076ffce..44cc20bcec0b 100644
+index ff7be657df4e..b32bdc305e15 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
 @@ -103,6 +103,9 @@
@@ -18,20 +18,20 @@ index f59fe076ffce..44cc20bcec0b 100644
  
 +static bool is_overlay_sb(struct super_block *sb)
 +{
-+  const char* fstype = sb->s_type->name;
-+  return strcmp(fstype, "overlay") == 0;
++	const char* fstype = sb->s_type->name;
++	return strcmp(fstype, "overlay") == 0;
 +}
 +
 +static bool is_overlay_inode(struct inode *inode)
 +{
-+  return is_overlay_sb(inode->i_sb); 
++	return is_overlay_sb(inode->i_sb);
 +}
 +
 +#ifdef CONFIG_OVERLAY_FS
 +static struct inode *get_real_inode_from_ovl(struct inode *inode) {
-+  struct ovl_inode *oi = OVL_I(inode);
-+  struct dentry *upperdentry = ovl_upperdentry_dereference(oi);
-+  return upperdentry ? d_inode(upperdentry) : oi->lower;
++	struct ovl_inode *oi = OVL_I(inode);
++	struct dentry *upperdentry = ovl_upperdentry_dereference(oi);
++	return upperdentry ? d_inode(upperdentry) : oi->lower;
 +}
 +#endif
 +
@@ -40,30 +40,30 @@ index f59fe076ffce..44cc20bcec0b 100644
  	struct superblock_security_struct *sbsec = sb->s_security;
 -
 +#ifdef CONFIG_OVERLAY_FS
-+  if(is_overlay_sb(sb)) 
-+    return 1;
++	if(is_overlay_sb(sb))
++		return 1;
 +#endif
  	/*
  	 * IMPORTANT: Double-check logic in this function when adding a new
  	 * SECURITY_FS_USE_* definition!
-@@ -3364,7 +3389,15 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
+@@ -3366,7 +3391,15 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
  	 * and lack of permission just means that we fall back to the
  	 * in-core context value, not a denial.
  	 */
 -	isec = inode_security(inode);
-+  if (is_overlay_inode(inode)) {
++	if (is_overlay_inode(inode)) {
 +#ifdef CONFIG_OVERLAY_FS
-+    isec = inode_security(get_real_inode_from_ovl(inode));
++		isec = inode_security(get_real_inode_from_ovl(inode));
 +#else
-+    isec = inode_security(inode);
++		isec = inode_security(inode);
 +#endif
-+  }else {
-+	  isec = inode_security(inode);
-+  }
++	}else {
++		isec = inode_security(inode);
++	}
  	if (has_cap_mac_admin(false))
  		error = security_sid_to_context_force(&selinux_state,
  						      isec->sid, &context,
-@@ -3387,11 +3420,26 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
+@@ -3389,11 +3422,26 @@ static int selinux_inode_getsecurity(struct inode *inode, const char *name, void
  static int selinux_inode_setsecurity(struct inode *inode, const char *name,
  				     const void *value, size_t size, int flags)
  {
@@ -75,21 +75,21 @@ index f59fe076ffce..44cc20bcec0b 100644
  	int rc;
 -
 +#ifdef CONFIG_OVERLAY_FS
-+  struct inode *ovl_inode;
++	struct inode *ovl_inode;
 +#endif
-+  if (is_overlay_inode(inode)) {
++	if (is_overlay_inode(inode)) {
 +#ifdef CONFIG_OVERLAY_FS
-+    ovl_inode = get_real_inode_from_ovl(inode);
-+    isec = inode_security_novalidate(ovl_inode);
-+    sbsec = ovl_inode->i_sb->s_security;
++		ovl_inode = get_real_inode_from_ovl(inode);
++		isec = inode_security_novalidate(ovl_inode);
++		sbsec = ovl_inode->i_sb->s_security;
 +#else
-+    isec = inode_security_novalidate(inode);
-+    sbsec = inode->i_sb->s_security;
++		isec = inode_security_novalidate(inode);
++		sbsec = inode->i_sb->s_security;
 +#endif
-+  }else{
-+    isec = inode_security_novalidate(inode);
-+    sbsec = inode->i_sb->s_security;
-+  }
++	}else{
++		isec = inode_security_novalidate(inode);
++		sbsec = inode->i_sb->s_security;
++	}
  	if (strcmp(name, XATTR_SELINUX_SUFFIX))
  		return -EOPNOTSUPP;
  
