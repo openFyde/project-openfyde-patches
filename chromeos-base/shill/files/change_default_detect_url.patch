@@ -1,19 +1,29 @@
-diff --git a/shill/portal_detector.cc b/shill/portal_detector.cc
-index 9044f505a8..642217587e 100644
---- a/shill/portal_detector.cc
-+++ b/shill/portal_detector.cc
-@@ -46,11 +46,11 @@ static std::string ObjectID(const PortalDetector* pd) {
- const char PortalDetector::kDefaultCheckPortalList[] = "ethernet,wifi,cellular";
- 
- const char PortalDetector::kDefaultHttpUrl[] =
--    "http://www.gstatic.com/generate_204";
-+    "http://store.fydeos.com/204";
- const char PortalDetector::kDefaultHttpsUrl[] =
--    "https://www.google.com/generate_204";
-+    "https://store.fydeos.com/204";
- const std::vector<std::string> PortalDetector::kDefaultFallbackHttpUrls{
--    "http://www.google.com/gen_204",
-+    "http://store.fydeos.com/204",
-     "http://play.googleapis.com/generate_204",
-     "http://connectivitycheck.gstatic.com/generate_204",
- };
+--- a/shill/portal_detector.h
++++ b/shill/portal_detector.h
+@@ -70,22 +70,22 @@
+   // Default URL used for the first HTTP probe sent by PortalDetector on a new
+   // network connection.
+   static constexpr char kDefaultHttpUrl[] =
+-      "http://www.gstatic.com/generate_204";
++      "http://store.fydeos.com/204";
+   // Default URL used for the first HTTPS probe sent by PortalDetector on a new
+   // network connection.
+   static constexpr char kDefaultHttpsUrl[] =
+-      "https://www.google.com/generate_204";
++      "https://store.fydeos.com/204";
+   // Set of fallback URLs used for retrying the HTTP probe when portal detection
+   // is not conclusive.
+   static constexpr std::array<const char*, 3> kDefaultFallbackHttpUrls = {
+-      "http://www.google.com/gen_204",
++      "http://store.fydeos.com/204",
+       "http://play.googleapis.com/generate_204",
+       "http://connectivitycheck.gstatic.com/generate_204",
+   };
+   // Set of fallback URLs used for retrying the HTTPS probe when portal
+   // detection is not conclusive.
+   static constexpr std::array<const char*, 3> kDefaultFallbackHttpsUrls = {
+-      "https://www.gstatic.com/generate_204",
++      "https://store.fydeos.com/204",
+       "https://accounts.google.com/generate_204",
+       "https://www.googleapis.com/generate_204",
+   };
