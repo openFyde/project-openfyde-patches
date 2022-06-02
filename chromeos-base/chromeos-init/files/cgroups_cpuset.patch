@@ -1,8 +1,6 @@
-diff --git a/init/upstart/cgroups.conf b/init/upstart/cgroups.conf
-index 8f6b68f16..67a7e3f15 100644
 --- a/init/upstart/cgroups.conf
 +++ b/init/upstart/cgroups.conf
-@@ -52,7 +52,7 @@ script
+@@ -80,7 +80,7 @@
    # (all cpus, all mems).
    cpuset_root_dir="/sys/fs/cgroup/cpuset"
    if [ -d "${cpuset_root_dir}" ]; then

@@ -1,9 +1,7 @@
-diff --git a/init/chromeos_startup b/init/chromeos_startup
-index 3783d648a..3ab2bf99d 100755
---- a/init/chromeos_startup
-+++ b/init/chromeos_startup
-@@ -591,6 +591,8 @@ if [ -x "$(command -v rollback_finish_restore)" ]; then
-   rollback_finish_restore
+--- a/init/chromeos_startup.sh
++++ b/init/chromeos_startup.sh
+@@ -776,6 +776,8 @@
+   fi
  fi
  
 +. /usr/share/cros/fydeos_factory_install.sh
