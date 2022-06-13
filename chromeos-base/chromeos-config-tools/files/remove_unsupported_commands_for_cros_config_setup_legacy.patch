@@ -1,0 +1,32 @@
+diff --git a/chromeos-config/scripts/cros_config_setup_legacy.sh b/chromeos-config/scripts/cros_config_setup_legacy.sh
+index 120934ee36..0ccdb39eca 100755
+--- a/chromeos-config/scripts/cros_config_setup_legacy.sh
++++ b/chromeos-config/scripts/cros_config_setup_legacy.sh
+@@ -33,11 +33,6 @@ setconfig() {
+     fi
+ }
+ 
+-model="$(mosys platform model)"
+-brand_code="$(mosys platform brand)"
+-sku_id="$(mosys platform sku || true)"
+-customization_id="$(mosys platform customization || true)"
+-platform_name="$(mosys platform name)"
+ eval "$(grep DEVICETYPE /etc/lsb-release)"
+ 
+ case "${DEVICETYPE}" in
+@@ -50,15 +45,8 @@ case "${DEVICETYPE}" in
+         psu_type=AC_only
+ esac
+ 
+-setconfig / brand-code "${brand_code}"
+-setconfig / name "${model}"
+-setconfig /firmware image-name "${model}"
+ setconfig /hardware-properties form-factor "${DEVICETYPE}"
+ setconfig /hardware-properties has-backlight "${has_backlight}"
+-setconfig /hardware-properties psu-type "${psu_type}"
+-setconfig /identity platform-name "${platform_name}"
+-setconfig /identity sku-id "${sku_id}"
+-setconfig /ui help-content-id "${customization_id}"
+ 
+ mkdir -p "${MOUNTPOINT}/v1"
+ mount -n -obind,ro,nodev,noexec,nosuid "${CONFIG_OUT}" "${MOUNTPOINT}/v1"
