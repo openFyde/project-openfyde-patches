@@ -1,0 +1,44 @@
+diff --git a/trunks/BUILD.gn b/trunks/BUILD.gn
+index 664026e507..d1637ddf6d 100644
+--- a/trunks/BUILD.gn
++++ b/trunks/BUILD.gn
+@@ -184,6 +184,7 @@ static_library("trunksd_lib") {
+     "power_manager.cc",
+     "resource_manager.cc",
+     "tpm_handle.cc",
++    "tpm_simulator_handle.cc",
+     "trunks_dbus_service.cc",
+     "trunks_metrics.cc",
+   ]
+@@ -218,6 +219,9 @@ executable("trunksd") {
+     ":trunks",
+     ":trunksd_lib",
+   ]
++  if (use.tpm2_simulator) {
++    libs = [ "tpm2" ]
++  }
+ }
+ 
+ executable("tpm_tunneld") {
+diff --git a/trunks/trunksd.cc b/trunks/trunksd.cc
+index d17cff2374..44c3576778 100644
+--- a/trunks/trunksd.cc
++++ b/trunks/trunksd.cc
+@@ -21,6 +21,7 @@
+ #include "trunks/power_manager.h"
+ #include "trunks/resource_manager.h"
+ #include "trunks/tpm_handle.h"
++#include "trunks/tpm_simulator_handle.h"
+ #include "trunks/trunks_dbus_service.h"
+ #include "trunks/trunks_factory_impl.h"
+ #include "trunks/trunks_ftdi_spi.h"
+@@ -98,6 +99,9 @@ int main(int argc, char** argv) {
+   if (cl->HasSwitch("ftdi")) {
+     LOG(INFO) << "Sending commands to FTDI SPI.";
+     low_level_transceiver = new trunks::TrunksFtdiSpi();
++  } else if (cl->HasSwitch("simulator")) {
++    LOG(INFO) << "Sending commands to simulator.";
++    low_level_transceiver = new trunks::TpmSimulatorHandle();
+   } else {
+     low_level_transceiver = new trunks::TpmHandle();
+   }
