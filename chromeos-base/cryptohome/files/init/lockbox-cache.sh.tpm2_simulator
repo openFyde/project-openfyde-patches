@@ -21,5 +21,7 @@ if initctl status trunksd; then
   rm "${LOCKBOX_NVRAM_FILE}"
 # In other cases, pretend like lockbox is supported.
 else
-  cp "${INSTALL_ATTRS_FILE}" "${INSTALL_ATTRS_CACHE}"
+  if [ -f "${INSTALL_ATTRS_FILE}" ]; then
+    cp "${INSTALL_ATTRS_FILE}" "${INSTALL_ATTRS_CACHE}"
+  fi
 fi
