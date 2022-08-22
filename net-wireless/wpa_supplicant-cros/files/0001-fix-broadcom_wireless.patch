@@ -1,0 +1,177 @@
+diff --git a/wpa_supplicant/bgscan_learn.c b/wpa_supplicant/bgscan_learn.c
+index 3d10d911853c..cb732f709b9e 100644
+--- a/wpa_supplicant/bgscan_learn.c
++++ b/wpa_supplicant/bgscan_learn.c
+@@ -305,7 +305,7 @@ static void bgscan_learn_timeout(void *eloop_ctx, void *timeout_ctx)
+ 	}
+ 
+ 	wpa_printf(MSG_DEBUG, "bgscan learn: Request a background scan");
+-	if (wpa_supplicant_trigger_scan(wpa_s, &params, true)) {
++	if (wpa_supplicant_trigger_scan(wpa_s, &params)) {
+ 		wpa_printf(MSG_DEBUG, "bgscan learn: Failed to trigger scan");
+ 		eloop_register_timeout(data->scan_interval, 0,
+ 				       bgscan_learn_timeout, data, NULL);
+diff --git a/wpa_supplicant/bgscan_simple.c b/wpa_supplicant/bgscan_simple.c
+index afe9394cbaa7..740b1f8cff5a 100644
+--- a/wpa_supplicant/bgscan_simple.c
++++ b/wpa_supplicant/bgscan_simple.c
+@@ -49,7 +49,7 @@ static void bgscan_simple_timeout(void *eloop_ctx, void *timeout_ctx)
+ 	 */
+ 
+ 	wpa_printf(MSG_DEBUG, "bgscan simple: Request a background scan");
+-	if (wpa_supplicant_trigger_scan(wpa_s, &params, true)) {
++	if (wpa_supplicant_trigger_scan(wpa_s, &params)) {
+ 		wpa_printf(MSG_DEBUG, "bgscan simple: Failed to trigger scan");
+ 		eloop_register_timeout(data->scan_interval, 0,
+ 				       bgscan_simple_timeout, data, NULL);
+diff --git a/wpa_supplicant/dbus/dbus_new_handlers.c b/wpa_supplicant/dbus/dbus_new_handlers.c
+index b45a3f058c3e..60512eae4b64 100644
+--- a/wpa_supplicant/dbus/dbus_new_handlers.c
++++ b/wpa_supplicant/dbus/dbus_new_handlers.c
+@@ -1498,7 +1498,6 @@ DBusMessage * wpas_dbus_handler_scan(DBusMessage *message,
+ 	struct wpa_driver_scan_params params;
+ 	size_t i;
+ 	dbus_bool_t allow_roam = 1;
+-	bool custom_ies = false;
+ 
+ 	os_memset(&params, 0, sizeof(params));
+ 
+@@ -1525,7 +1524,6 @@ DBusMessage * wpas_dbus_handler_scan(DBusMessage *message,
+ 			if (wpas_dbus_get_scan_ies(message, &variant_iter,
+ 						   &params, &reply) < 0)
+ 				goto out;
+-			custom_ies = true;
+ 		} else if (os_strcmp(key, "Channels") == 0) {
+ 			if (wpas_dbus_get_scan_channels(message, &variant_iter,
+ 							&params, &reply) < 0)
+@@ -1573,7 +1571,7 @@ DBusMessage * wpas_dbus_handler_scan(DBusMessage *message,
+ 			if (params.freqs && params.freqs[0]) {
+ 				wpa_s->last_scan_req = MANUAL_SCAN_REQ;
+ 				if (wpa_supplicant_trigger_scan(wpa_s,
+-								&params, false)) {
++								&params)) {
+ 					reply = wpas_dbus_error_scan_error(
+ 						message,
+ 						"Scan request rejected");
+@@ -1599,7 +1597,7 @@ DBusMessage * wpas_dbus_handler_scan(DBusMessage *message,
+ 		}
+ 
+ 		wpa_s->last_scan_req = MANUAL_SCAN_REQ;
+-		if (wpa_supplicant_trigger_scan(wpa_s, &params, !custom_ies)) {
++		if (wpa_supplicant_trigger_scan(wpa_s, &params)) {
+ 			reply = wpas_dbus_error_scan_error(
+ 				message, "Scan request rejected");
+ 		}
+diff --git a/wpa_supplicant/rrm.c b/wpa_supplicant/rrm.c
+index 7e4f8ea15816..cc86db655ffe 100644
+--- a/wpa_supplicant/rrm.c
++++ b/wpa_supplicant/rrm.c
+@@ -1034,7 +1034,7 @@ static void wpas_rrm_scan_timeout(void *eloop_ctx, void *timeout_ctx)
+ 	}
+ 	os_get_reltime(&wpa_s->beacon_rep_scan);
+ 	if (wpa_s->scanning || wpas_p2p_in_progress(wpa_s) ||
+-	    wpa_supplicant_trigger_scan(wpa_s, params, true))
++	    wpa_supplicant_trigger_scan(wpa_s, params))
+ 		wpas_rrm_refuse_request(wpa_s);
+ 	params->duration = prev_duration;
+ }
+diff --git a/wpa_supplicant/scan.c b/wpa_supplicant/scan.c
+index 5a7b8a46f2be..97a8d9a638d6 100644
+--- a/wpa_supplicant/scan.c
++++ b/wpa_supplicant/scan.c
+@@ -278,42 +278,19 @@ static void wpas_trigger_scan_cb(struct wpa_radio_work *work, int deinit)
+  * wpa_supplicant_trigger_scan - Request driver to start a scan
+  * @wpa_s: Pointer to wpa_supplicant data
+  * @params: Scan parameters
+- * @default_ies: Whether or not to use the default IEs in the probe request.
+- * Note that this will free any existing IEs set in @params, so this shouldn't
+- * be set if the IEs have already been set with wpa_supplicant_extra_ies.
+- * Otherwise, wpabuf_free will lead to a double-free.
+  * Returns: 0 on success, -1 on failure
+  */
+ int wpa_supplicant_trigger_scan(struct wpa_supplicant *wpa_s,
+-				struct wpa_driver_scan_params *params,
+-				bool default_ies)
++				struct wpa_driver_scan_params *params)
+ {
+ 	struct wpa_driver_scan_params *ctx;
+-	struct wpabuf *ies = NULL;
+ 
+ 	if (wpa_s->scan_work) {
+ 		wpa_dbg(wpa_s, MSG_INFO, "Reject scan trigger since one is already pending");
+ 		return -1;
+ 	}
+ 
+-	if (default_ies) {
+-		if (params->extra_ies_len) {
+-			os_free((u8 *) params->extra_ies);
+-			params->extra_ies = NULL;
+-			params->extra_ies_len = 0;
+-		}
+-		ies = wpa_supplicant_extra_ies(wpa_s);
+-		if (ies) {
+-			params->extra_ies = wpabuf_head(ies);
+-			params->extra_ies_len = wpabuf_len(ies);
+-		}
+-	}
+ 	ctx = wpa_scan_clone_params(params);
+-	if (ies) {
+-		wpabuf_free(ies);
+-		params->extra_ies = NULL;
+-		params->extra_ies_len = 0;
+-	}
+ 	if (!ctx ||
+ 	    radio_add_work(wpa_s, 0, "scan", 0, wpas_trigger_scan_cb, ctx) < 0)
+ 	{
+@@ -589,7 +566,7 @@ void wpa_supplicant_set_default_scan_ies(struct wpa_supplicant *wpa_s)
+ }
+ 
+ 
+-struct wpabuf * wpa_supplicant_extra_ies(struct wpa_supplicant *wpa_s)
++static struct wpabuf * wpa_supplicant_extra_ies(struct wpa_supplicant *wpa_s)
+ {
+ 	struct wpabuf *extra_ie = NULL;
+ 	u8 ext_capab[18];
+@@ -1362,7 +1339,7 @@ scan:
+ 	}
+ #endif /* CONFIG_P2P */
+ 
+-	ret = wpa_supplicant_trigger_scan(wpa_s, scan_params, false);
++	ret = wpa_supplicant_trigger_scan(wpa_s, scan_params);
+ 
+ 	if (ret && wpa_s->last_scan_req == MANUAL_SCAN_REQ && params.freqs &&
+ 	    !wpa_s->manual_scan_freqs) {
+diff --git a/wpa_supplicant/scan.h b/wpa_supplicant/scan.h
+index c74c79f2d24d..d1780eb09979 100644
+--- a/wpa_supplicant/scan.h
++++ b/wpa_supplicant/scan.h
+@@ -45,8 +45,7 @@ void wpa_supplicant_notify_scanning(struct wpa_supplicant *wpa_s,
+ 				    int scanning);
+ struct wpa_driver_scan_params;
+ int wpa_supplicant_trigger_scan(struct wpa_supplicant *wpa_s,
+-				struct wpa_driver_scan_params *params,
+-				bool default_ies);
++				struct wpa_driver_scan_params *params);
+ struct wpa_scan_results *
+ wpa_supplicant_get_scan_results(struct wpa_supplicant *wpa_s,
+ 				struct scan_info *info, int new_scan);
+@@ -93,6 +92,5 @@ int wpa_add_scan_freqs_list(struct wpa_supplicant *wpa_s,
+ 			    enum hostapd_hw_mode band,
+ 			    struct wpa_driver_scan_params *params,
+ 			    bool is_6ghz);
+-struct wpabuf * wpa_supplicant_extra_ies(struct wpa_supplicant *wpa_s);
+ 
+ #endif /* SCAN_H */
+diff --git a/wpa_supplicant/sme.c b/wpa_supplicant/sme.c
+index 8f6495f3f883..4755cdd68d89 100644
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -2550,7 +2550,7 @@ static void sme_obss_scan_timeout(void *eloop_ctx, void *timeout_ctx)
+ 	params.low_priority = 1;
+ 	wpa_printf(MSG_DEBUG, "SME OBSS: Request an OBSS scan");
+ 
+-	if (wpa_supplicant_trigger_scan(wpa_s, &params, true))
++	if (wpa_supplicant_trigger_scan(wpa_s, &params))
+ 		wpa_printf(MSG_DEBUG, "SME OBSS: Failed to trigger scan");
+ 	else
+ 		wpa_s->sme.sched_obss_scan = 1;
