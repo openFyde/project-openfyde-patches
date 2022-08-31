@@ -75,7 +75,7 @@ src_install() {
 	if use cr50_onboard || use ti50_onboard; then
 		newins trunksd.conf.cr50 trunksd.conf
 	else
-		doins trunksd.conf.tpm2_simulator trunksd.conf
+		doins trunksd.conf
 	fi
 
 	if use tpm_dynamic; then
