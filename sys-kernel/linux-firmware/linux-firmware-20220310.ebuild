@@ -28,7 +28,7 @@ fi
 DESCRIPTION="Linux firmware files"
 HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
 
-LICENSE="GPL-2 GPL-2+ GPL-3 BSD MIT  MPL-1.1 
+LICENSE="GPL-2 GPL-2+ GPL-3 BSD MIT  MPL-1.1
 	redistributable? (
 		linux-fw-redistributable ( BSD-2 BSD BSD-4 ISC MIT ) )
 	unknown-license? ( all-rights-reserved )"
@@ -313,7 +313,7 @@ src_install() {
 	echo "# Remove files that shall not be installed from this list." > "${S}"/${PN}.conf || die
 	find * ! -type d >> "${S}"/${PN}.conf || die
 	save_config "${S}"/${PN}.conf
-
+  ln -s iwlwifi-cc-a0-71.ucode iwlwifi-cc-a0-72.ucode
 	popd &>/dev/null || die
 
 	if use initramfs ; then

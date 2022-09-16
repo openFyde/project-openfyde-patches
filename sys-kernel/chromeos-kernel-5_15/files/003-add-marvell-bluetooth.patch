@@ -1,0 +1,12 @@
+Index: kernel-5_15/drivers/bluetooth/btusb.c
+===================================================================
+--- kernel-5_15.orig/drivers/bluetooth/btusb.c
++++ kernel-5_15/drivers/bluetooth/btusb.c
+@@ -357,6 +357,7 @@ static const struct usb_device_id blackl
+ 	{ USB_DEVICE(0x1286, 0x2044), .driver_info = BTUSB_MARVELL },
+ 	{ USB_DEVICE(0x1286, 0x2046), .driver_info = BTUSB_MARVELL },
+ 	{ USB_DEVICE(0x1286, 0x204e), .driver_info = BTUSB_MARVELL },
++	{ USB_DEVICE(0x1286, 0x204b), .driver_info = BTUSB_MARVELL },
+ 
+ 	/* Intel Bluetooth devices */
+ 	{ USB_DEVICE(0x8087, 0x0025), .driver_info = BTUSB_INTEL_COMBINED },
