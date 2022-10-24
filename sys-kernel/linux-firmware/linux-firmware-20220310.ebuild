@@ -313,7 +313,8 @@ src_install() {
 	echo "# Remove files that shall not be installed from this list." > "${S}"/${PN}.conf || die
 	find * ! -type d >> "${S}"/${PN}.conf || die
 	save_config "${S}"/${PN}.conf
-  ln -s iwlwifi-cc-a0-71.ucode iwlwifi-cc-a0-72.ucode
+	ln -s iwlwifi-cc-a0-71.ucode iwlwifi-cc-a0-72.ucode
+	ln -s iwlwifi-ty-a0-gf-a0-71.ucode iwlwifi-ty-a0-gf-a0-72.ucode
 	popd &>/dev/null || die
 
 	if use initramfs ; then
