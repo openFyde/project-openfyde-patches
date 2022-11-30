@@ -33,13 +33,14 @@ IUSE="+device_mapper -direncription_allow_v2 -direncryption
 	lvm_application_containers lvm_stateful_partition mount_oop pinweaver
 	selinux slow_mount systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
 	tpm2_simulator uprev-4-to-5 user_session_isolation uss_migration
-	tpm2_simulator_deprecated
+	-tpm2_simulator_deprecated
 	+vault_legacy_mount vtpm_proxy"
 
 REQUIRED_USE="
 	device_mapper
 	tpm_dynamic? ( tpm tpm2 )
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
+	tpm2_simulator_deprecated? ( tpm2_simulator )
 "
 
 COMMON_DEPEND="

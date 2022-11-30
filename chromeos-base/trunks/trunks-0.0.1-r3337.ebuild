@@ -32,12 +32,12 @@ IUSE="
 	ti50_onboard
 	tpm_dynamic
 	tpm2_simulator
-	tpm2_simulator_deprecated
+	-tpm2_simulator_deprecated
 "
 
 REQUIRED_USE="
 	?? ( cr50_onboard pinweaver_csme )
-	tpm2_simulator? ( !tpm2_simulator_deprecated )
+	tpm2_simulator_deprecated? ( tpm2_simulator )
 "
 
 # This depends on protobuf because it uses protoc and needs to be rebuilt
@@ -49,8 +49,10 @@ COMMON_DEPEND="
 	chromeos-base/power_manager-client:=
 	ftdi_tpm? ( dev-embedded/libftdi:= )
 	test? ( chromeos-base/tpm2:=[test] )
-	tpm2_simulator? ( chromeos-base/tpm2-simulator:= )
-	tpm2_simulator_deprecated? ( chromeos-base/tpm2:= )
+	tpm2_simulator? (
+		!tpm2_simulator_deprecated? ( chromeos-base/tpm2-simulator:= )
+		tpm2_simulator_deprecated? ( chromeos-base/tpm2:= )
+	)
 	dev-libs/protobuf:=
 	fuzzer? (
 		dev-cpp/gtest:=
