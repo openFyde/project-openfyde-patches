@@ -1,4 +1,4 @@
-# Copyright 2014 The Chromium OS Authors. All rights reserved.
+# Copyright 2014 The ChromiumOS Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
@@ -7,9 +7,7 @@ CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
-# TODO(crbug/1184685): "libhwsec" is not necessary; remove it after solving
-# the bug.
-CROS_WORKON_SUBTREE="common-mk libhwsec libhwsec-foundation metrics trunks .gn"
+CROS_WORKON_SUBTREE="common-mk libhwsec-foundation metrics trunks .gn"
 
 PLATFORM_SUBDIR="trunks"
 
@@ -26,6 +24,7 @@ IUSE="
 	fuzzer
 	ftdi_tpm
 	generic_tpm2
+	hibernate
 	pinweaver_csme
 	test
 	ti50_onboard
@@ -51,6 +50,7 @@ COMMON_DEPEND="
 	fuzzer? (
 		dev-cpp/gtest:=
 	)
+	chromeos-base/pinweaver:=
 	"
 
 RDEPEND="
@@ -82,6 +82,14 @@ src_install() {
 		sed -i '/env TPM_DYNAMIC=/s:=.*:=true:' \
 			"${D}/etc/init/trunksd.conf" ||
 			die "Can't activate tpm_dynamic in trunksd.conf"
+	fi
+
+	if use hibernate; then
+		# Replace the start on line with waiting on hiberman to either
+		# signal all clear or exit (eg crash).
+		sed -i 's/^start on .*/start on hibernate-tpm-done or stopped hiberman/' \
+			"${D}/etc/init/trunksd.conf" ||
+			die "Can't depend on hibernate in trunksd.conf"
 	fi
 
 	if use pinweaver_csme && use generic_tpm2; then
@@ -118,7 +126,7 @@ src_install() {
 	fi
 
 	insinto /usr/include/trunks
-	doins *.h
+	doins ./*.h
 	doins "${OUT}"/gen/include/trunks/*.h
 
 	insinto /usr/include/trunks/csme
@@ -133,7 +141,7 @@ src_install() {
 
 	insinto "/usr/$(get_libdir)/pkgconfig"
 	doins "${OUT}"/obj/trunks/libtrunks.pc
-	local fuzzer_component_id="886041"
+	local fuzzer_component_id="1188704"
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/trunks_creation_blob_fuzzer \
 		--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS \

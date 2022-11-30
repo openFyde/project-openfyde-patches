@@ -1,1 +1,0 @@
-linux-firmware-20201218.ebuild

@@ -1,6 +1,6 @@
 --- a/shill/portal_detector.h
 +++ b/shill/portal_detector.h
-@@ -70,22 +70,22 @@
+@@ -69,15 +69,15 @@
    // Default URL used for the first HTTP probe sent by PortalDetector on a new
    // network connection.
    static constexpr char kDefaultHttpUrl[] =
@@ -14,16 +14,8 @@
    // Set of fallback URLs used for retrying the HTTP probe when portal detection
    // is not conclusive.
    static constexpr std::array<const char*, 3> kDefaultFallbackHttpUrls = {
--      "http://www.google.com/gen_204",
+-      "http://safebrowsing.google.com/generate_204",
 +      "http://store.fydeos.com/204",
-       "http://play.googleapis.com/generate_204",
+       "http://www.googleapis.com/generate_204",
        "http://connectivitycheck.gstatic.com/generate_204",
-   };
-   // Set of fallback URLs used for retrying the HTTPS probe when portal
-   // detection is not conclusive.
-   static constexpr std::array<const char*, 3> kDefaultFallbackHttpsUrls = {
--      "https://www.gstatic.com/generate_204",
-+      "https://store.fydeos.com/204",
-       "https://accounts.google.com/generate_204",
-       "https://www.googleapis.com/generate_204",
    };

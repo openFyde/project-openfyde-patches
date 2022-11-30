@@ -1,6 +1,6 @@
 --- a/cros/omaha_request_action.cc
 +++ b/cros/omaha_request_action.cc
-@@ -1257,10 +1257,6 @@
+@@ -1258,10 +1258,6 @@
      }
    }
  

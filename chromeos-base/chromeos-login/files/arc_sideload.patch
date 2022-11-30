@@ -1,8 +1,6 @@
-diff --git a/login_manager/arc_sideload_status.cc b/login_manager/arc_sideload_status.cc
-index 22e96e4..f6ba16b 100644
 --- a/login_manager/arc_sideload_status.cc
 +++ b/login_manager/arc_sideload_status.cc
-@@ -27,7 +27,7 @@ namespace {
+@@ -28,7 +28,7 @@
  
  // Boot attribute used to track if the user has allowed sideloading on the
  // device.
@@ -11,20 +9,16 @@ index 22e96e4..f6ba16b 100644
  
  // TODO(victorhsieh): switch to base::DoNothing() once libchrome is upreved.
  void DoNothing(ArcSideloadStatusInterface::Status, const char*) {}
-@@ -42,9 +42,12 @@ ArcSideloadStatus::ArcSideloadStatus(dbus::ObjectProxy* boot_lockbox_proxy)
- ArcSideloadStatus::~ArcSideloadStatus() {}
- 
- void ArcSideloadStatus::Initialize() {
-+
+@@ -46,6 +46,8 @@
    boot_lockbox_proxy_->WaitForServiceToBeAvailable(
-       base::Bind(&ArcSideloadStatus::OnBootLockboxServiceAvailable,
-                  weak_ptr_factory_.GetWeakPtr()));
+       base::BindOnce(&ArcSideloadStatus::OnBootLockboxServiceAvailable,
+                      weak_ptr_factory_.GetWeakPtr()));
 +
 +  OnBootLockboxServiceAvailable(true);
  }
  
  bool ArcSideloadStatus::IsAdbSideloadAllowed() {
-@@ -63,7 +66,7 @@ void ArcSideloadStatus::EnableAdbSideload(EnableAdbSideloadCallback callback) {
+@@ -64,7 +66,7 @@
    // that an interleaved call will be queued and handled when the transition is
    // finished. Otherwise, a QueryAdbSideload call (potentially from another
    // client) can return with a outdated cached result.
@@ -33,17 +27,17 @@ index 22e96e4..f6ba16b 100644
    dbus::MethodCall method_call(cryptohome::kBootLockboxInterface,
                                 cryptohome::kBootLockboxStoreBootLockbox);
  
-@@ -77,6 +80,9 @@ void ArcSideloadStatus::EnableAdbSideload(EnableAdbSideloadCallback callback) {
+@@ -78,6 +80,9 @@
        &method_call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
-       base::Bind(&ArcSideloadStatus::OnEnableAdbSideloadSet,
-                  weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
+       base::BindOnce(&ArcSideloadStatus::OnEnableAdbSideloadSet,
+                      weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
 +*/
 +  std::unique_ptr<dbus::Response> resp = dbus::Response::CreateEmpty();
 +  OnEnableAdbSideloadSet(std::move(callback), resp.get());
  }
  
  void ArcSideloadStatus::QueryAdbSideload(QueryAdbSideloadCallback callback) {
-@@ -103,6 +109,7 @@ void ArcSideloadStatus::OnBootLockboxServiceAvailable(bool service_available) {
+@@ -104,6 +109,7 @@
  
  void ArcSideloadStatus::GetAdbSideloadAllowed(
      EnableAdbSideloadCallback callback) {
@@ -51,17 +45,17 @@ index 22e96e4..f6ba16b 100644
    dbus::MethodCall method_call(cryptohome::kBootLockboxInterface,
                                 cryptohome::kBootLockboxReadBootLockbox);
  
-@@ -115,6 +122,9 @@ void ArcSideloadStatus::GetAdbSideloadAllowed(
+@@ -116,6 +122,9 @@
        &method_call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
-       base::Bind(&ArcSideloadStatus::OnGotAdbSideloadAllowed,
-                  weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
+       base::BindOnce(&ArcSideloadStatus::OnGotAdbSideloadAllowed,
+                      weak_ptr_factory_.GetWeakPtr(), std::move(callback)));
 +  */
 +  std::unique_ptr<dbus::Response> resp = dbus::Response::CreateEmpty();
 +  OnGotAdbSideloadAllowed(std::move(callback), resp.get());
  }
  
  ArcSideloadStatusInterface::Status ArcSideloadStatus::ParseResponseFromRead(
-@@ -173,7 +183,7 @@ ArcSideloadStatusInterface::Status ArcSideloadStatus::ParseResponseFromRead(
+@@ -179,7 +188,7 @@
  
  void ArcSideloadStatus::OnGotAdbSideloadAllowed(
      EnableAdbSideloadCallback callback, dbus::Response* response) {
@@ -70,7 +64,7 @@ index 22e96e4..f6ba16b 100644
    SetAdbSideloadStatusAndNotify(status);
    std::move(callback).Run(status, nullptr);
  }
-@@ -185,7 +195,7 @@ void ArcSideloadStatus::OnEnableAdbSideloadSet(
+@@ -191,7 +200,7 @@
                              "result is null");
      return;
    }
@@ -79,7 +73,7 @@ index 22e96e4..f6ba16b 100644
    dbus::MessageReader reader(result);
    cryptohome::StoreBootLockboxReply reply;
    if (!reader.PopArrayOfBytesAsProto(&reply)) {
-@@ -204,6 +214,7 @@ void ArcSideloadStatus::OnEnableAdbSideloadSet(
+@@ -210,6 +219,7 @@
      }
      return;
    }

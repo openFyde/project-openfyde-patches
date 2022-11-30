@@ -1,13 +1,13 @@
 # Copyright (c) 2022 Fyde Innovations Limited and the openFyde Authors.
 # Distributed under the license specified in the root directory of this project.
 
-# Copyright 2014 The Chromium OS Authors. All rights reserved.
+# Copyright 2014 The ChromiumOS Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
 
-CROS_WORKON_COMMIT="2677458c0303b64d62ddb5e9189b455b1f7dadc4"
-CROS_WORKON_TREE=("2345346c6533c29d4e3ee84bc2bf53306247256c" "befb2af485f532981f5ff40c4b0e665f1468fef9" "13c6a4ec079a88834780ccbd1597c8e59d479f90" "ba414ad0d84630d5bf4ac4f82bb576f80b0d5491" "1454f5ebf6a159645127c22d8c4e382e8752569d" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="c9b2de00324b43cca454225620cfb27469283010"
+CROS_WORKON_TREE=("79cdd007ff69259efcaad08803ef2d1498374ec4" "4da12996f330009279430f009bdb2ac8309cc64f" "b112a735ae08e0bd176a25074e39643c83eaa31e" "53484d9a746662594836a32e203068e89c9eae63" "0cbf638bdbdbacc203abd3bcb0d31c738f9fd9ed" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_DESTDIR="${S}/platform2"
@@ -27,12 +27,14 @@ SRC_URI=""
 LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="*"
-IUSE="-cert_provision +device_mapper -direncription_allow_v2 -direncryption
+IUSE="+device_mapper -direncription_allow_v2 -direncryption
 	double_extend_pcr_issue +downloads_bind_mount fuzzer
 	generic_tpm2 kernel-5_15 kernel-5_10 kernel-5_4 kernel-upstream
-	lvm_stateful_partition mount_oop pinweaver selinux slow_mount systemd
-	test tpm tpm_dynamic tpm2 tpm2_simulator uprev-4-to-5
-	user_session_isolation +vault_legacy_mount vtpm_proxy"
+	lvm_application_containers lvm_stateful_partition mount_oop pinweaver
+	selinux slow_mount systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
+	tpm2_simulator uprev-4-to-5 user_session_isolation uss_migration
+	tpm2_simulator_deprecated
+	+vault_legacy_mount vtpm_proxy"
 
 REQUIRED_USE="
 	device_mapper
@@ -61,7 +63,7 @@ COMMON_DEPEND="
 	chromeos-base/cbor:=
 	chromeos-base/chaps:=
 	chromeos-base/chromeos-config-tools:=
-	chromeos-base/libhwsec:=
+	chromeos-base/libhwsec:=[test?]
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
 	chromeos-base/tpm_manager:=
@@ -77,6 +79,8 @@ COMMON_DEPEND="
 "
 
 RDEPEND="${COMMON_DEPEND}"
+
+# TODO(b/230430190): Remove shill-client dependency after experiment ended.
 DEPEND="${COMMON_DEPEND}
 	test? (
 		app-shells/dash:=
@@ -87,6 +91,7 @@ DEPEND="${COMMON_DEPEND}
 	chromeos-base/cryptohome-client:=
 	chromeos-base/power_manager-client:=
 	chromeos-base/protofiles:=
+	chromeos-base/shill-client:=
 	chromeos-base/system_api:=[fuzzer?]
 	chromeos-base/tpm_manager-client:=
 	chromeos-base/vboot_reference:=
@@ -96,16 +101,13 @@ DEPEND="${COMMON_DEPEND}
 src_install() {
 	pushd "${OUT}" || die
 	dosbin cryptohomed cryptohome cryptohome-path homedirs_initializer \
-		lockbox-cache tpm-manager
+		lockbox-cache stateful-recovery
 	dosbin cryptohome-namespace-mounter
 	dosbin mount-encrypted
 	dosbin encrypted-reboot-vault
 	dosbin bootlockboxd bootlockboxtool
-	if use cert_provision; then
-		dolib.so lib/libcert_provision.so
-		dosbin cert_provision_client
-	fi
-	popd >/dev/null
+
+	popd >/dev/null || die
 
 	insinto /etc/dbus-1/system.d
 	doins etc/org.chromium.UserDataAuth.conf
@@ -144,8 +146,8 @@ src_install() {
 		doins init/send-mount-encrypted-metrics.conf
 		if use tpm_dynamic; then
 			newins init/lockbox-cache.conf.tpm_dynamic lockbox-cache.conf
-		elif use tpm2_simulator && ! use vtpm_proxy; then
-			newins ${FILESDIR}/init/lockbox-cache.conf.tpm2_simulator lockbox-cache.conf
+		elif use tpm2_simulator_deprecated && ! use vtpm_proxy; then
+			newins ${FILESDIR}/init/lockbox-cache.conf.tpm2_simulator_deprecated lockbox-cache.conf
 		else
 			doins init/lockbox-cache.conf
 		fi
@@ -170,19 +172,23 @@ src_install() {
 				"${D}/etc/init/cryptohomed.conf" ||
 				die "Can't replace fscrypt_v2 flag in cryptohomed.conf"
 		fi
+		if use lvm_application_containers; then
+			sed -i '/env APPLICATION_CONTAINERS=/s:=.*:="--application_containers":' \
+				"${D}/etc/init/cryptohomed.conf" ||
+				die "Can't replace application_containers flag in cryptohomed.conf"
+		fi
 	fi
 	exeinto /usr/share/cros/init
 	if use tpm_dynamic; then
 		newexe init/lockbox-cache.sh.tpm_dynamic lockbox-cache.sh
-	elif use tpm2_simulator && ! use vtpm_proxy; then
-		newexe ${FILESDIR}/init/lockbox-cache.sh.tpm2_simulator lockbox-cache.sh
+	elif use tpm2_simulator_deprecated && ! use vtpm_proxy; then
+		newexe ${FILESDIR}/init/lockbox-cache.sh.tpm2_simulator_deprecated lockbox-cache.sh
 	else
 		doexe init/lockbox-cache.sh
 	fi
-	if use cert_provision; then
-		insinto /usr/include/cryptohome
-		doins cert_provision.h
-	fi
+
+	# Install udev rules for cryptohome.
+	udev_dorules udev/50-dm-cryptohome.rules
 
 	# Install seccomp policy for bootlockboxd
 	insinto /usr/share/policy
@@ -191,7 +197,7 @@ src_install() {
 
 	dotmpfiles tmpfiles.d/cryptohome.conf
 
-	local fuzzer_component_id="886041"
+	local fuzzer_component_id="1188704"
 	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_cryptolib_rsa_oaep_decrypt_fuzzer \
 		--comp "${fuzzer_component_id}" \
@@ -219,8 +225,9 @@ pkg_preinst() {
 }
 
 platform_pkg_test() {
-	platform_test "run" "${OUT}/fake_platform_unittest"
-	platform_test "run" "${OUT}/cryptohome_testrunner"
-	platform_test "run" "${OUT}/mount_encrypted_unittests"
 	platform_test "run" "${OUT}/boot_lockbox_unittests"
+	platform_test "run" "${OUT}/cryptohome_testrunner"
+	platform_test "run" "${OUT}/fake_platform_unittest"
+	platform_test "run" "${OUT}/mount_encrypted_unittests"
+	platform_test "run" "${OUT}/stateful_recovery_unittests"
 }

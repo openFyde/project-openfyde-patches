@@ -1,17 +1,15 @@
-# Copyright 2014 The Chromium OS Authors. All rights reserved.
+# Copyright 2014 The ChromiumOS Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
 
-CROS_WORKON_COMMIT="770a5752c98e825f09877abdefd0803ae885d130"
-CROS_WORKON_TREE=("2345346c6533c29d4e3ee84bc2bf53306247256c" "13c6a4ec079a88834780ccbd1597c8e59d479f90" "ba414ad0d84630d5bf4ac4f82bb576f80b0d5491" "55976c0a11bc37a530f8d4c14ae732300e17ccd9" "95ab9854e23d3d30061ce2ebd581486219be9b78" "e7dba8c91c1f3257c34d4a7ffff0ea2537aeb6bb")
+CROS_WORKON_COMMIT="7c777f8c612c8c5c65a66533ab320a13e099a7f2"
+CROS_WORKON_TREE=("79cdd007ff69259efcaad08803ef2d1498374ec4" "53484d9a746662594836a32e203068e89c9eae63" "eb510d666a66e6125e281499b649651b849a25f7" "34261f5753edf6cebef258a148897af911297046" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
-# TODO(crbug/1184685): "libhwsec" is not necessary; remove it after solving
-# the bug.
-CROS_WORKON_SUBTREE="common-mk libhwsec libhwsec-foundation metrics trunks .gn"
+CROS_WORKON_SUBTREE="common-mk libhwsec-foundation metrics trunks .gn"
 
 PLATFORM_SUBDIR="trunks"
 
@@ -28,15 +26,18 @@ IUSE="
 	fuzzer
 	ftdi_tpm
 	generic_tpm2
+	hibernate
 	pinweaver_csme
 	test
 	ti50_onboard
 	tpm_dynamic
 	tpm2_simulator
+	tpm2_simulator_deprecated
 "
 
 REQUIRED_USE="
 	?? ( cr50_onboard pinweaver_csme )
+	tpm2_simulator? ( !tpm2_simulator_deprecated )
 "
 
 # This depends on protobuf because it uses protoc and needs to be rebuilt
@@ -48,11 +49,13 @@ COMMON_DEPEND="
 	chromeos-base/power_manager-client:=
 	ftdi_tpm? ( dev-embedded/libftdi:= )
 	test? ( chromeos-base/tpm2:=[test] )
-	tpm2_simulator? ( chromeos-base/tpm2:= )
+	tpm2_simulator? ( chromeos-base/tpm2-simulator:= )
+	tpm2_simulator_deprecated? ( chromeos-base/tpm2:= )
 	dev-libs/protobuf:=
 	fuzzer? (
 		dev-cpp/gtest:=
 	)
+	chromeos-base/pinweaver:=
 	"
 
 RDEPEND="
@@ -71,7 +74,9 @@ DEPEND="
 
 src_prepare() {
 	default
-	eapply -p2 ${FILESDIR}/patches/contain_tpm_simulator_handle.patch
+	if use tpm2_simulator_deprecated; then
+		eapply -p2 ${FILESDIR}/patches/contain_tpm_simulator_handle.patch
+	fi
 }
 
 src_install() {
@@ -81,7 +86,7 @@ src_install() {
 	insinto /etc/init
 	if use cr50_onboard || use ti50_onboard; then
 		newins trunksd.conf.cr50 trunksd.conf
-	elif use tpm2_simulator; then
+	elif use tpm2_simulator_deprecated; then
 		newins ${FILESDIR}/trunksd.conf.tpm2_simulator trunksd.conf
 	else
 		doins trunksd.conf
@@ -91,6 +96,14 @@ src_install() {
 		sed -i '/env TPM_DYNAMIC=/s:=.*:=true:' \
 			"${D}/etc/init/trunksd.conf" ||
 			die "Can't activate tpm_dynamic in trunksd.conf"
+	fi
+
+	if use hibernate; then
+		# Replace the start on line with waiting on hiberman to either
+		# signal all clear or exit (eg crash).
+		sed -i 's/^start on .*/start on hibernate-tpm-done or stopped hiberman/' \
+			"${D}/etc/init/trunksd.conf" ||
+			die "Can't depend on hibernate in trunksd.conf"
 	fi
 
 	if use pinweaver_csme && use generic_tpm2; then
@@ -127,7 +140,7 @@ src_install() {
 	fi
 
 	insinto /usr/include/trunks
-	doins *.h
+	doins ./*.h
 	doins "${OUT}"/gen/include/trunks/*.h
 
 	insinto /usr/include/trunks/csme
@@ -142,7 +155,7 @@ src_install() {
 
 	insinto "/usr/$(get_libdir)/pkgconfig"
 	doins "${OUT}"/obj/trunks/libtrunks.pc
-	local fuzzer_component_id="886041"
+	local fuzzer_component_id="1188704"
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/trunks_creation_blob_fuzzer \
 		--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS \
