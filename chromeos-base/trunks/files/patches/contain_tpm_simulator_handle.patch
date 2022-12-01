@@ -1,18 +1,16 @@
-diff --git a/trunks/BUILD.gn b/trunks/BUILD.gn
-index 664026e507..9b6d50724a 100644
 --- a/trunks/BUILD.gn
 +++ b/trunks/BUILD.gn
-@@ -51,6 +51,9 @@ config("target_defaults") {
-     "USE_GENERIC_TPM2=${use.generic_tpm2}",
-     "USE_PINWEAVER_CSME=${use.pinweaver_csme}",
+@@ -53,6 +53,9 @@
+     "BIOMETRICS_DEV=true",
    ]
+   libs = [ "hwsec-foundation" ]
 +  if (use.tpm2_simulator) {
 +    defines += [ "USE_SIMULATOR=1" ]
 +  }
  }
  
  proto_library("interface_proto") {
-@@ -187,6 +190,11 @@ static_library("trunksd_lib") {
+@@ -191,6 +194,11 @@
      "trunks_dbus_service.cc",
      "trunks_metrics.cc",
    ]
@@ -24,7 +22,7 @@ index 664026e507..9b6d50724a 100644
    all_dependent_configs = [
      ":trunksd_lib_all_dependent_configs",
      ":trunksd_lib_all_dependent_pkg_deps",
-@@ -218,6 +226,9 @@ executable("trunksd") {
+@@ -222,6 +230,9 @@
      ":trunks",
      ":trunksd_lib",
    ]
@@ -34,8 +32,6 @@ index 664026e507..9b6d50724a 100644
  }
  
  executable("tpm_tunneld") {
-diff --git a/trunks/trunksd.cc b/trunks/trunksd.cc
-index d17cff2374..5141a1f085 100644
 --- a/trunks/trunksd.cc
 +++ b/trunks/trunksd.cc
 @@ -21,6 +21,9 @@
@@ -48,7 +44,7 @@ index d17cff2374..5141a1f085 100644
  #include "trunks/trunks_dbus_service.h"
  #include "trunks/trunks_factory_impl.h"
  #include "trunks/trunks_ftdi_spi.h"
-@@ -98,6 +101,11 @@ int main(int argc, char** argv) {
+@@ -98,6 +101,11 @@
    if (cl->HasSwitch("ftdi")) {
      LOG(INFO) << "Sending commands to FTDI SPI.";
      low_level_transceiver = new trunks::TrunksFtdiSpi();
