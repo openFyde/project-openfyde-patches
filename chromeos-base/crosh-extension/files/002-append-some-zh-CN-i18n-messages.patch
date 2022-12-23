@@ -1,0 +1,30 @@
+--- a/nassh/_locales/zh_CN/messages.json
++++ b/nassh/_locales/zh_CN/messages.json
+@@ -1004,15 +1004,27 @@
+ 	"terminal_home_import_identity": {
+ 		"message": "导入"
+ 	},
++	"terminal_home_linux_not_enabled": {
++		"message": "访问「开发者设置」来管理 Linux"
++	},
++	"terminal_home_manage": {
++		"message": "管理"
++	},
+ 	"terminal_home_new_ssh_connection": {
+ 		"message": "新建 SSH 连接"
+ 	},
++	"TERMINAL_HOME_SET_UP": {
++		"message": "设置"
++	},
+ 	"terminal_home_ssh_command": {
+ 		"message": "命令"
+ 	},
+ 	"terminal_home_ssh_specify_destination": {
+ 		"message": "请使用“username@hostname”指定目的地"
+ 	},
++	"terminal_home_ssh_empty": {
++		"message": "与远程设备的连接将显示在这里"
++	},
+ 	"terminal_home_terminal_settings": {
+ 		"message": "终端设置"
+ 	},
