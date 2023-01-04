@@ -267,6 +267,33 @@ src_prepare() {
   einfo "restore ${PN}.conf"
 }
 
+install_iwlwifi() {
+    local target_version=$1
+    local target
+    local prefix
+    local latest
+    local model
+    local models=("cc" "QuZ" "so" "Qu" "ty")
+
+    for f in iwlwifi*.ucode; do
+
+        local tmp=(${f//-/ })
+        model=${tmp[1]}
+
+
+        [[ ! " ${models[@]} " =~ " ${model} " ]] && continue
+
+        prefix="$(echo ${f} | sed 's/[0-9]*.ucode//g')"
+        target="${prefix}${target_version}.ucode"
+
+        [ -f $target ] && continue
+        [ -L $target ] && continue
+
+        latest=$(find . -name "${prefix}*ucode" -printf "%f\n" | sort | tail -n1)
+        ln -sf $latest $target
+    done
+}
+
 src_install() {
 	./copy-firmware.sh -v "${ED}/lib/firmware" || die
 
@@ -313,8 +340,7 @@ src_install() {
 	echo "# Remove files that shall not be installed from this list." > "${S}"/${PN}.conf || die
 	find * ! -type d >> "${S}"/${PN}.conf || die
 	save_config "${S}"/${PN}.conf
-	ln -s iwlwifi-cc-a0-71.ucode iwlwifi-cc-a0-72.ucode
-	ln -s iwlwifi-ty-a0-gf-a0-71.ucode iwlwifi-ty-a0-gf-a0-72.ucode
+	install_iwlwifi "72"
 	popd &>/dev/null || die
 
 	if use initramfs ; then
