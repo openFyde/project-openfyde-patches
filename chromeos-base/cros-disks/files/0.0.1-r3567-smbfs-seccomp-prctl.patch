@@ -1,0 +1,39 @@
+diff --git a/cros-disks/seccomp_policy/smbfs-seccomp-amd64.policy b/cros-disks/seccomp_policy/smbfs-seccomp-amd64.policy
+index 0d59a53cfc..2e5035fb26 100644
+--- a/cros-disks/seccomp_policy/smbfs-seccomp-amd64.policy
++++ b/cros-disks/seccomp_policy/smbfs-seccomp-amd64.policy
+@@ -75,7 +75,7 @@ openat: 1
+ pipe: 1
+ pipe2: 1
+ poll: 1
+-prctl: arg0 == PR_SET_NAME
++prctl: arg0 == PR_SET_NAME || arg0 == PR_CAPBSET_READ
+ pread64: 1
+ prlimit64: arg2 == 0 && arg3 != 0
+ pwrite64: 1
+diff --git a/cros-disks/seccomp_policy/smbfs-seccomp-arm.policy b/cros-disks/seccomp_policy/smbfs-seccomp-arm.policy
+index 1dffeb2919..de0c2e18bd 100644
+--- a/cros-disks/seccomp_policy/smbfs-seccomp-arm.policy
++++ b/cros-disks/seccomp_policy/smbfs-seccomp-arm.policy
+@@ -78,7 +78,7 @@ openat: 1
+ pipe: 1
+ pipe2: 1
+ poll: 1
+-prctl: arg0 == PR_SET_NAME
++prctl: arg0 == PR_SET_NAME || arg0 == PR_CAPBSET_READ
+ pread64: 1
+ prlimit64: 1
+ pwrite64: 1
+diff --git a/cros-disks/seccomp_policy/smbfs-seccomp-arm64.policy b/cros-disks/seccomp_policy/smbfs-seccomp-arm64.policy
+index b7a47b0898..87b7bff00e 100644
+--- a/cros-disks/seccomp_policy/smbfs-seccomp-arm64.policy
++++ b/cros-disks/seccomp_policy/smbfs-seccomp-arm64.policy
+@@ -62,7 +62,7 @@ openat: 1
+ pipe2: 1
+ ppoll: 1
+ pread64: 1
+-prctl: arg0 == PR_SET_NAME
++prctl: arg0 == PR_SET_NAME || arg0 == PR_CAPBSET_READ
+ prlimit64: 1
+ pwrite64: 1
+ read: 1
