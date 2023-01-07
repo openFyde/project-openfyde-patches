@@ -1,6 +1,8 @@
+diff --git a/nassh/_locales/zh_CN/messages.json b/nassh/_locales/zh_CN/messages.json
+index 1b0815f3..54675731 100644
 --- a/nassh/_locales/zh_CN/messages.json
 +++ b/nassh/_locales/zh_CN/messages.json
-@@ -1004,15 +1004,27 @@
+@@ -1004,15 +1004,30 @@
  	"terminal_home_import_identity": {
  		"message": "导入"
  	},
@@ -19,6 +21,9 @@
  	"terminal_home_ssh_command": {
  		"message": "命令"
  	},
++	"terminal_home_ssh_disabled_by_policy": {
++		"message": "SSH 被管理员禁用"
++  },
  	"terminal_home_ssh_specify_destination": {
  		"message": "请使用“username@hostname”指定目的地"
  	},
