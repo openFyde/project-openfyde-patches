@@ -1,8 +1,6 @@
-Index: kernel-5_15/drivers/input/touchscreen/goodix.c
-===================================================================
---- kernel-5_15.orig/drivers/input/touchscreen/goodix.c
-+++ kernel-5_15/drivers/input/touchscreen/goodix.c
-@@ -62,6 +62,7 @@
+--- a/drivers/input/touchscreen/goodix.c
++++ b/drivers/input/touchscreen/goodix.c
+@@ -46,6 +46,7 @@
  #define RESOLUTION_LOC		1
  #define MAX_CONTACTS_LOC	5
  #define TRIGGER_LOC		6
@@ -10,15 +8,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  
  /* Our special handling for GPIO accesses through ACPI is x86 specific */
  #if defined CONFIG_X86 && defined CONFIG_ACPI
-@@ -94,6 +95,7 @@ struct goodix_chip_id {
- struct goodix_ts_data {
- 	struct i2c_client *client;
- 	struct input_dev *input_dev;
-+	struct input_dev *pen_dev;
- 	const struct goodix_chip_data *chip;
- 	struct touchscreen_properties prop;
- 	unsigned int max_touch_num;
-@@ -344,34 +346,58 @@ static int goodix_ts_read_input_report(s
+@@ -283,34 +284,58 @@
  	return -ENOMSG;
  }
  
@@ -79,7 +69,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  }
  
  static void goodix_ts_report_key(struct goodix_ts_data *ts, u8 *data)
-@@ -416,13 +442,10 @@ static void goodix_process_events(struct
+@@ -355,13 +380,10 @@
  	for (i = 0; i < touch_num; i++)
  		if (ts->contact_size == 9)
  			goodix_ts_report_touch_9b(ts,
@@ -95,7 +85,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  }
  
  /**
-@@ -1009,6 +1032,29 @@ static int goodix_i2c_test(struct i2c_cl
+@@ -988,6 +1010,29 @@
  	return error;
  }
  
@@ -125,7 +115,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  /**
   * goodix_configure_dev - Finish device initialization
   *
-@@ -1055,10 +1101,14 @@ static int goodix_configure_dev(struct g
+@@ -1034,10 +1079,14 @@
  		input_set_capability(ts->input_dev, EV_KEY, ts->keymap[i]);
  	}
  
@@ -140,7 +130,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  
  	/* Read configuration and apply touchscreen parameters */
  	goodix_read_config(ts);
-@@ -1114,7 +1164,7 @@ static int goodix_configure_dev(struct g
+@@ -1093,7 +1142,7 @@
  		return error;
  	}
  
@@ -149,3 +139,13 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  }
  
  /**
+--- a/drivers/input/touchscreen/goodix.h
++++ b/drivers/input/touchscreen/goodix.h
+@@ -41,6 +41,7 @@
+ struct goodix_ts_data {
+ 	struct i2c_client *client;
+ 	struct input_dev *input_dev;
++	struct input_dev *pen_dev;
+ 	const struct goodix_chip_data *chip;
+ 	struct touchscreen_properties prop;
+ 	unsigned int max_touch_num;
