@@ -1,16 +1,17 @@
 --- a/init/upstart/cgroups.conf
 +++ b/init/upstart/cgroups.conf
-@@ -109,6 +109,7 @@
+@@ -112,13 +112,15 @@
+ 
    # Create a cpu cgroup for each VM type. Default cpu.shares is 1024. Limit the
    # VMs to 7/8ths of that initially.
-   cgroup_dir="/sys/fs/cgroup/cpu/vms"
+-  cgroup_dir="/sys/fs/cgroup/cpu"
++  cgroup_dir="/sys/fs/cgroup/cpu/vms"
 +if [ -d "${cgroup_dir}" ]; then
    for vm_type in termina plugin ; do
-     mkdir -p "${cgroup_dir}/${vm_type}"
+     mkdir -p "${cgroup_dir}/${vm_type}" \
+         "${cgroup_dir}/${vm_type}-vcpus" # croslint: disable
      echo 896 > "${cgroup_dir}/${vm_type}/cpu.shares"
-@@ -117,6 +118,7 @@
-       chmod g+w "${cgroup_dir}/${vm_type}/${entry}"
-     done
+     echo 896 > "${cgroup_dir}/${vm_type}-vcpus/cpu.shares"
    done
 +fi
  
