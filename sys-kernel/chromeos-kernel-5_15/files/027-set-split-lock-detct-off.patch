@@ -1,0 +1,13 @@
+Index: kernel-5_15/arch/x86/kernel/cpu/intel.c
+===================================================================
+--- kernel-5_15.orig/arch/x86/kernel/cpu/intel.c
++++ kernel-5_15/arch/x86/kernel/cpu/intel.c
+@@ -1038,7 +1038,7 @@ static bool split_lock_verify_msr(bool o
+ 
+ static void __init sld_state_setup(void)
+ {
+-	enum split_lock_detect_state state = sld_warn;
++	enum split_lock_detect_state state = sld_off;
+ 	char arg[20];
+ 	int i, ret;
+ 
