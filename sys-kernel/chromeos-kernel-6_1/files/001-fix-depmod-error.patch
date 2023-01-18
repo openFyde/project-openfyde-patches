@@ -1,0 +1,71 @@
+From 54c51b7591d047244edfc2925a03160916128e8f Mon Sep 17 00:00:00 2001
+From: Su Yue <glass@fydeos.io>
+Date: Fri, 13 Jan 2023 10:59:03 +0800
+Subject: [PATCH] Revert "FROMLIST: drm_bridge: register content protect
+ property"
+
+This reverts commit 302c6ba37d6dd60a1c68d79c5b50f4c3fe2ae203.
+---
+ drivers/gpu/drm/drm_bridge_connector.c | 9 ---------
+ include/drm/drm_bridge.h               | 4 ----
+ 2 files changed, 13 deletions(-)
+
+diff --git a/drivers/gpu/drm/drm_bridge_connector.c b/drivers/gpu/drm/drm_bridge_connector.c
+index 4147c6240110..1c7d936523df 100644
+--- a/drivers/gpu/drm/drm_bridge_connector.c
++++ b/drivers/gpu/drm/drm_bridge_connector.c
+@@ -7,7 +7,6 @@
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ 
+-#include <drm/display/drm_hdcp_helper.h>
+ #include <drm/drm_atomic_state_helper.h>
+ #include <drm/drm_bridge.h>
+ #include <drm/drm_bridge_connector.h>
+@@ -334,7 +333,6 @@ struct drm_connector *drm_bridge_connector_init(struct drm_device *drm,
+ 	struct i2c_adapter *ddc = NULL;
+ 	struct drm_bridge *bridge, *panel_bridge = NULL;
+ 	int connector_type;
+-	bool support_hdcp = false;
+ 
+ 	bridge_connector = kzalloc(sizeof(*bridge_connector), GFP_KERNEL);
+ 	if (!bridge_connector)
+@@ -378,9 +376,6 @@ struct drm_connector *drm_bridge_connector_init(struct drm_device *drm,
+ 
+ 		if (drm_bridge_is_panel(bridge))
+ 			panel_bridge = bridge;
+-
+-		if (bridge->support_hdcp)
+-			support_hdcp = true;
+ 	}
+ 
+ 	if (connector_type == DRM_MODE_CONNECTOR_Unknown) {
+@@ -403,10 +398,6 @@ struct drm_connector *drm_bridge_connector_init(struct drm_device *drm,
+ 	if (panel_bridge)
+ 		drm_panel_bridge_set_orientation(connector, panel_bridge);
+ 
+-	if (support_hdcp && IS_REACHABLE(CONFIG_DRM_DISPLAY_HELPER) &&
+-	    IS_ENABLED(CONFIG_DRM_DISPLAY_HDCP_HELPER))
+-		drm_connector_attach_content_protection_property(connector, true);
+-
+ 	return connector;
+ }
+ EXPORT_SYMBOL_GPL(drm_bridge_connector_init);
+diff --git a/include/drm/drm_bridge.h b/include/drm/drm_bridge.h
+index 1d2ab70f3436..6b65b0dfb4fb 100644
+--- a/include/drm/drm_bridge.h
++++ b/include/drm/drm_bridge.h
+@@ -768,10 +768,6 @@ struct drm_bridge {
+ 	 * modes.
+ 	 */
+ 	bool interlace_allowed;
+-	/**
+-	 * @support_hdcp: Indicate that the bridge supports HDCP.
+-	 */
+-	bool support_hdcp;
+ 	/**
+ 	 * @ddc: Associated I2C adapter for DDC access, if any.
+ 	 */
+-- 
+2.39.0
+
