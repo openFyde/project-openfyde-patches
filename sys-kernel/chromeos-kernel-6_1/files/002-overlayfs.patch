@@ -35,7 +35,7 @@ index 07d000bda174..caef3e23e612 100644
 + struct dentry *upperdentry = ovl_upperdentry_dereference(oi);
 + struct dentry *lowerdentry = oi->lowerpath.dentry;
 +
-+ printk("yooooooooo\n");
++ 
 + return upperdentry ? d_inode(upperdentry) :
 +	 (lowerdentry ? d_inode(lowerdentry) : NULL);
 +}
