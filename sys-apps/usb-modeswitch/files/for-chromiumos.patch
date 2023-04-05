@@ -1,0 +1,60 @@
+diff --git a/Makefile b/Makefile
+index bcd512fbd2cf..244920d760e9 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,7 +2,7 @@ PROG        = usb_modeswitch
+ VERS        = 2.6.1
+ CC          ?= gcc
+ CFLAGS      += -Wall -Wno-deprecated-declarations
+-LIBS        = `pkg-config --libs --cflags libusb-1.0`
++LIBS        = `${PKG-CONFIG} --libs --cflags libusb-1.0`
+ RM          = /bin/rm -f
+ OBJS        = usb_modeswitch.c
+ PREFIX      = $(DESTDIR)/usr
+@@ -60,8 +60,8 @@ install-common: $(PROG) $(DISPATCH)
+ 	install -D --mode=644 usb_modeswitch.1 $(MANDIR)/usb_modeswitch.1
+ 	install -D --mode=644 usb_modeswitch_dispatcher.1 $(MANDIR)/usb_modeswitch_dispatcher.1
+ 	install -D --mode=755 usb_modeswitch_dispatcher $(SBINDIR)/usb_modeswitch_dispatcher
+-	install -d $(DESTDIR)/var/lib/usb_modeswitch
+-	test -d $(UPSDIR) -a -e /sbin/initctl && install --mode=644 usb-modeswitch-upstart.conf $(UPSDIR) || test 1
++	install -d $(DESTDIR)/usr/share/usb_modeswitch
++	test -d $(UPSDIR) && install --mode=644 usb-modeswitch-upstart.conf $(UPSDIR) || test 1
+ 	test -d $(SYSDIR) -a \( -e /usr/bin/systemctl -o -e /bin/systemctl \) && install --mode=644 usb_modeswitch@.service $(SYSDIR) || test 1
+ 
+ install: install-script
+@@ -79,4 +79,3 @@ uninstall:
+ 	$(RM) $(ETCDIR)/usb_modeswitch.conf
+ 	$(RM) $(MANDIR)/usb_modeswitch.1
+ 	$(RM) -R $(DESTDIR)/var/lib/usb_modeswitch
+-	$(RM) $(SYSDIR)/usb_modeswitch@.service
+diff --git a/dispatcher.c b/dispatcher.c
+index 63d774c2a540..9f2fda9cb80a 100644
+--- a/dispatcher.c
++++ b/dispatcher.c
+@@ -27,6 +27,11 @@
+  *
+  * $Id$
+  */
++
++#define _FILE_OFFSET_BITS 64
++#define _LARGEFILE_SOURCE
++#define _LARGEFILE64_SOURCE
++
+ #include <assert.h>
+ #include <stdio.h>
+ #include <string.h>
+diff --git a/usb_modeswitch.c b/usb_modeswitch.c
+index 2d4c0aaa74be..2176c6b40952 100644
+--- a/usb_modeswitch.c
++++ b/usb_modeswitch.c
+@@ -45,6 +45,10 @@
+ 
+ /* Recommended tab size: 4 */
+ 
++#define _FILE_OFFSET_BITS 64
++#define _LARGEFILE_SOURCE
++#define _LARGEFILE64_SOURCE
++
+ #define VERSION "2.6.1"
+ 
+ #include <stdio.h>
