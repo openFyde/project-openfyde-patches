@@ -2436,3 +2436,6 @@ brcm/brcmfmac43430-sdio.sinovoip,bpi-m2-ultra.txt
 brcm/BCM-0a5c-6410.hcd
 brcm/brcmfmac43430-sdio.sinovoip,bpi-m2-zero.txt
 brcm/brcmfmac43430-sdio.sinovoip,bpi-m3.txt
+mediatek/BT_RAM_CODE_MT7961_1_2_hdr.bin
+mediatek/WIFI_MT7961_patch_mcu_1_2_hdr.bin
+mediatek/WIFI_RAM_CODE_MT7961_1.bin

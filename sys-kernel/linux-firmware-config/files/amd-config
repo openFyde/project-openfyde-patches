@@ -1968,3 +1968,6 @@ intel/ipu3-fw.bin
 rtlwifi/rtl8723bs_nic.bin
 rtlwifi/rtl8723bs_ap_wowlan.bin
 rtlwifi/rtl8192eefw.bin
+mediatek/BT_RAM_CODE_MT7961_1_2_hdr.bin
+mediatek/WIFI_MT7961_patch_mcu_1_2_hdr.bin
+mediatek/WIFI_RAM_CODE_MT7961_1.bin
