@@ -1,0 +1,24 @@
+diff --git a/crosh/src/main.rs b/crosh/src/main.rs
+index 893f75d2bc..55082cca0a 100644
+--- a/crosh/src/main.rs
++++ b/crosh/src/main.rs
+@@ -52,14 +52,13 @@ Options:
+ 
+ fn intro() {
+     println!(
+-        r#"Welcome to crosh, the ChromeOS developer shell.
++        r#"Welcome to crosh, the developer shell for openFyde/FydeOS, we hope you know what you are doing!
+ 
+-If you got here by mistake, don't panic!  Just close this tab and carry on.
++Please note that this is NOT the Linux subsystem:
++ - type 'help' for a list of commands available in crosh
++ - type 'shell' if you wish to enter the Bash shell for your openFyde/FydeOS
+ 
+-Type 'help' for a list of commands.
+-
+-If you want to customize the look/behavior, you can use the options page.
+-Load it by using the Ctrl-Shift-P keyboard shortcut.
++To get help, visit https://fydeos.io/help
+ "#
+     );
+ }
