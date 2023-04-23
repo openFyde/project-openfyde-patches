@@ -1091,3 +1091,18 @@ Index: kernel-5_15/drivers/iio/common/hid-sensors/hid-sensor-cros-compat.c
 +MODULE_LICENSE("GPL");
 +MODULE_IMPORT_NS(IIO_HID_ATTRIBUTES);
 +MODULE_IMPORT_NS(IIO_HID);
+Index: kernel-5_15/drivers/hid/hid-sensor-hub.c
+===================================================================
+--- kernel-5_15.orig/drivers/hid/hid-sensor-hub.c
++++ kernel-5_15/drivers/hid/hid-sensor-hub.c
+@@ -683,9 +683,7 @@ static int sensor_hub_probe(struct hid_d
+ 			if (last_hsdev)
+ 				last_hsdev->end_collection_index = i;
+ 			last_hsdev = hsdev;
+-			name = devm_kasprintf(&hdev->dev, GFP_KERNEL,
+-					      "HID-SENSOR-%x",
+-					      collection->usage);
++      name = devm_kasprintf(&hdev->dev, GFP_KERNEL, "cros-ec-compat");
+ 			if (name == NULL) {
+ 				hid_err(hdev, "Failed MFD device name\n");
+ 				ret = -ENOMEM;
