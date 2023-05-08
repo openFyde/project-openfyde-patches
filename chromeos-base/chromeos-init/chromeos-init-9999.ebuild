@@ -10,6 +10,8 @@ CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_SUBTREE="common-mk init metrics .gn"
 
 PLATFORM_NATIVE_TEST="yes"
+# Tests probe the root device.
+PLATFORM_HOST_DEV_TEST="yes"
 PLATFORM_SUBDIR="init"
 
 inherit tmpfiles cros-workon platform user
@@ -22,7 +24,7 @@ LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="~*"
 IUSE="
-	arcpp arcvm cros_embedded direncryption +encrypted_stateful
+	cros_embedded direncryption +encrypted_stateful
 	+encrypted_reboot_vault frecon fsverity lvm_stateful_partition
 	+oobe_config prjquota -s3halt +syslog systemd tpm2 +udev vivid vtconsole"
 
@@ -54,7 +56,7 @@ RDEPEND="${COMMON_DEPEND}
 	chromeos-base/tty
 	oobe_config? ( chromeos-base/oobe_config )
 	sys-apps/upstart
-	!systemd? ( sys-apps/systemd-tmpfiles )
+	!systemd? ( sys-apps/systemd-utils )
 	sys-process/lsof
 	virtual/chromeos-bootcomplete
 	!cros_embedded? (
@@ -119,12 +121,6 @@ src_install_upstart() {
 		doins upstart/*.conf
 		dotmpfiles tmpfiles.d/*.conf
 
-		if ! use arcpp && use arcvm; then
-			sed -i '/^env IS_ARCVM=/s:=0:=1:' \
-				"${D}/etc/init/rt-limits.conf" || \
-				die "Failed to replace is_arcvm in rt-limits.conf"
-		fi
-
 		dosbin chromeos-disk-metrics
 		dosbin chromeos-send-kernel-errors
 		dosbin display_low_battery_alert
@@ -144,6 +140,8 @@ src_install_upstart() {
 }
 
 src_install() {
+	platform_src_install
+
 	# Install helper to run periodic tasks.
 	dobin "${OUT}"/periodic_scheduler
 	dobin "${OUT}"/process_killer

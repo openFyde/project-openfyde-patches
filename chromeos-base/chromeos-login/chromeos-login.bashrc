@@ -2,7 +2,7 @@
 # Distributed under the license specified in the root directory of this project.
 
 cros_pre_src_prepare_openfyde_patches() {
-  eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/arc_sideload.patch
-  eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/login_manager_ui_pre_start.patch
+  eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/arc_sideload.patch
+  eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/login_manager_ui_pre_start.patch
   eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/write-machine-info-get-serial_number-by-vpd-first.patch
 }

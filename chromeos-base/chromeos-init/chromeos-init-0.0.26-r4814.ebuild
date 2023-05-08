@@ -1,12 +1,9 @@
-# Copyright (c) 2022 Fyde Innovations Limited and the openFyde Authors.
-# Distributed under the license specified in the root directory of this project.
-
 # Copyright 2011 The ChromiumOS Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="95cba42c3e39999a02c3534e6924cdd5b8cdc775"
-CROS_WORKON_TREE=("79cdd007ff69259efcaad08803ef2d1498374ec4" "cf309d680997762b7fc5077d9fcce880ff40e7d1" "eb510d666a66e6125e281499b649651b849a25f7" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="635ba60101db69c49eee7ba1d90c812f2a7eb858"
+CROS_WORKON_TREE=("c5a3f846afdfb5f37be5520c63a756807a6b31c4" "c0c9f1718969a3768c98bd68df3b88d8f0234d7f" "71b6668ea23fdcf5ce2c3889e3a3cc703e8cd6df" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -15,6 +12,8 @@ CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_SUBTREE="common-mk init metrics .gn"
 
 PLATFORM_NATIVE_TEST="yes"
+# Tests probe the root device.
+PLATFORM_HOST_DEV_TEST="yes"
 PLATFORM_SUBDIR="init"
 
 inherit tmpfiles cros-workon platform user
@@ -27,9 +26,9 @@ LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="*"
 IUSE="
-	arcpp arcvm cros_embedded direncryption +encrypted_stateful
+	cros_embedded direncryption +encrypted_stateful
 	+encrypted_reboot_vault frecon fsverity lvm_stateful_partition
-	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+  fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
 	+oobe_config prjquota -s3halt +syslog systemd tpm2 +udev vivid vtconsole"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
@@ -60,7 +59,7 @@ RDEPEND="${COMMON_DEPEND}
 	chromeos-base/tty
 	oobe_config? ( chromeos-base/oobe_config )
 	sys-apps/upstart
-	!systemd? ( sys-apps/systemd-tmpfiles )
+	!systemd? ( sys-apps/systemd-utils )
 	sys-process/lsof
 	virtual/chromeos-bootcomplete
 	!cros_embedded? (
@@ -125,12 +124,6 @@ src_install_upstart() {
 		doins upstart/*.conf
 		dotmpfiles tmpfiles.d/*.conf
 
-		if ! use arcpp && use arcvm; then
-			sed -i '/^env IS_ARCVM=/s:=0:=1:' \
-				"${D}/etc/init/rt-limits.conf" || \
-				die "Failed to replace is_arcvm in rt-limits.conf"
-		fi
-
 		dosbin chromeos-disk-metrics
 		dosbin chromeos-send-kernel-errors
 		dosbin display_low_battery_alert
@@ -150,6 +143,8 @@ src_install_upstart() {
 }
 
 src_install() {
+	platform_src_install
+
 	# Install helper to run periodic tasks.
 	dobin "${OUT}"/periodic_scheduler
 	dobin "${OUT}"/process_killer
@@ -228,11 +223,6 @@ pkg_preinst() {
 	enewgroup "debugfs-access"
 
 	# Create pstore-access group.
-
-	# added by fydeos.
-	# added in src_prepare before, but failed in r102:
-	#	'enewgroup()' called from 'prepare' phase which is not OK:
-	#	You may only call from pkg_{setup,preinst,postinst} functions.
 	enewgroup pstore-access
 }
 

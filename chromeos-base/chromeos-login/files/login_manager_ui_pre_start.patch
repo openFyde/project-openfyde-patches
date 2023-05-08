@@ -1,6 +1,8 @@
---- a/login_manager/init/scripts/ui-pre-start
-+++ b/login_manager/init/scripts/ui-pre-start
-@@ -234,6 +234,7 @@
+Index: login_manager/init/scripts/ui-pre-start
+===================================================================
+--- login_manager.orig/init/scripts/ui-pre-start
++++ login_manager/init/scripts/ui-pre-start
+@@ -182,6 +182,7 @@ if [ ! -d "${CHROME_FREEZER_CGROUP_DIR:-
    mkdir -p "${CHROME_FREEZER_CGROUP_DIR}"
    mkdir -p "${CHROME_FREEZER_CGROUP_DIR}/to_be_frozen"
    chown -R chronos "${CHROME_FREEZER_CGROUP_DIR}"
