@@ -1,6 +1,8 @@
+diff --git a/trunks/BUILD.gn b/trunks/BUILD.gn
+index 7556359a72..0a1be02ac0 100644
 --- a/trunks/BUILD.gn
 +++ b/trunks/BUILD.gn
-@@ -53,6 +53,9 @@
+@@ -62,6 +62,9 @@ config("target_defaults") {
      "BIOMETRICS_DEV=true",
    ]
    libs = [ "hwsec-foundation" ]
@@ -10,7 +12,7 @@
  }
  
  proto_library("interface_proto") {
-@@ -191,6 +194,11 @@
+@@ -203,6 +206,11 @@ static_library("trunksd_lib") {
      "trunks_dbus_service.cc",
      "trunks_metrics.cc",
    ]
@@ -22,20 +24,22 @@
    all_dependent_configs = [
      ":trunksd_lib_all_dependent_configs",
      ":trunksd_lib_all_dependent_pkg_deps",
-@@ -222,6 +230,9 @@
+@@ -235,6 +243,9 @@ executable("trunksd") {
      ":trunks",
      ":trunksd_lib",
    ]
 +  if (use.tpm2_simulator) {
-+    libs = [ "tpm2" ]
++    libs += [ "tpm2" ]
 +  }
  }
  
  executable("tpm_tunneld") {
+diff --git a/trunks/trunksd.cc b/trunks/trunksd.cc
+index dee990ea25..2d7f61f769 100644
 --- a/trunks/trunksd.cc
 +++ b/trunks/trunksd.cc
-@@ -21,6 +21,9 @@
- #include "trunks/power_manager.h"
+@@ -24,6 +24,9 @@
+ #include "trunks/resilience/write_error_tracker_impl.h"
  #include "trunks/resource_manager.h"
  #include "trunks/tpm_handle.h"
 +#if defined(USE_SIMULATOR)
@@ -44,7 +48,7 @@
  #include "trunks/trunks_dbus_service.h"
  #include "trunks/trunks_factory_impl.h"
  #include "trunks/trunks_ftdi_spi.h"
-@@ -98,6 +101,11 @@
+@@ -105,6 +108,11 @@ int main(int argc, char** argv) {
    if (cl->HasSwitch("ftdi")) {
      LOG(INFO) << "Sending commands to FTDI SPI.";
      low_level_transceiver = new trunks::TrunksFtdiSpi();
@@ -54,5 +58,5 @@
 +    low_level_transceiver = new trunks::TpmSimulatorHandle();
 +#endif
    } else {
-     low_level_transceiver = new trunks::TpmHandle();
+     low_level_transceiver = new trunks::TpmHandle(write_error_tracker);
    }

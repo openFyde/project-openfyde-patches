@@ -24,9 +24,9 @@ SLOT="0/0"
 KEYWORDS="~*"
 IUSE="+device_mapper -direncription_allow_v2 -direncryption
 	double_extend_pcr_issue +downloads_bind_mount fuzzer
-	generic_tpm2 kernel-5_15 kernel-5_10 kernel-5_4 kernel-upstream
+	generic_tpm2 kernel-6_1 kernel-5_15 kernel-5_10 kernel-5_4 kernel-upstream
 	lvm_application_containers lvm_stateful_partition mount_oop pinweaver
-	selinux slow_mount systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
+	profiling selinux slow_mount systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
 	tpm2_simulator uprev-4-to-5 user_session_isolation uss_migration
 	+vault_legacy_mount vtpm_proxy"
 
@@ -57,6 +57,7 @@ COMMON_DEPEND="
 	chromeos-base/cbor:=
 	chromeos-base/chaps:=
 	chromeos-base/chromeos-config-tools:=
+	chromeos-base/featured:=
 	chromeos-base/libhwsec:=[test?]
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
@@ -93,25 +94,25 @@ DEPEND="${COMMON_DEPEND}
 "
 
 src_install() {
+	# TODO(crbug/1184602): Move remaining install logic to GN.
+	platform_src_install
+
 	pushd "${OUT}" || die
 	dosbin cryptohomed cryptohome cryptohome-path homedirs_initializer \
 		lockbox-cache stateful-recovery
 	dosbin cryptohome-namespace-mounter
 	dosbin mount-encrypted
 	dosbin encrypted-reboot-vault
-	dosbin bootlockboxd bootlockboxtool
-
 	popd >/dev/null || die
 
 	insinto /etc/dbus-1/system.d
 	doins etc/org.chromium.UserDataAuth.conf
-	doins etc/BootLockbox.conf
 
-	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-upstream) || use uprev-4-to-5); then
+	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-upstream) || use uprev-4-to-5); then
 		die "direncription_allow_v2 is enabled where it shouldn't be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
-	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-upstream) && use !uprev-4-to-5; then
+	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-upstream) && use !uprev-4-to-5; then
 		die "direncription_allow_v2 is not enabled where it should be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
@@ -132,7 +133,6 @@ src_install() {
 		systemd_enable_service ui.target lockbox-cache.service
 	else
 		insinto /etc/init
-		doins bootlockbox/bootlockboxd.conf
 		doins init/cryptohomed-client.conf
 		doins init/cryptohomed.conf
 		doins init/init-homedirs.conf
@@ -180,14 +180,9 @@ src_install() {
 	# Install udev rules for cryptohome.
 	udev_dorules udev/50-dm-cryptohome.rules
 
-	# Install seccomp policy for bootlockboxd
-	insinto /usr/share/policy
-	newins "bootlockbox/seccomp/bootlockboxd-seccomp-${ARCH}.policy" \
-		bootlockboxd-seccomp.policy
-
 	dotmpfiles tmpfiles.d/cryptohome.conf
 
-	local fuzzer_component_id="1188704"
+	local fuzzer_component_id="1088399"
 	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_cryptolib_rsa_oaep_decrypt_fuzzer \
 		--comp "${fuzzer_component_id}" \
@@ -203,19 +198,24 @@ src_install() {
 		fuzzers/data/*
 
 	platform_fuzzer_install "${S}"/OWNERS \
+		"${OUT}"/cryptohome_userdataauth_fuzzer \
+		--comp "${fuzzer_component_id}"
+
+	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_user_secret_stash_parser_fuzzer \
+		--comp "${fuzzer_component_id}"
+
+	platform_fuzzer_install "${S}"/OWNERS \
+		"${OUT}"/cryptohome_recovery_id_fuzzer \
 		--comp "${fuzzer_component_id}"
 }
 
 pkg_preinst() {
-	enewuser "bootlockboxd"
-	enewgroup "bootlockboxd"
 	enewuser "cryptohome"
 	enewgroup "cryptohome"
 }
 
 platform_pkg_test() {
-	platform_test "run" "${OUT}/boot_lockbox_unittests"
 	platform_test "run" "${OUT}/cryptohome_testrunner"
 	platform_test "run" "${OUT}/fake_platform_unittest"
 	platform_test "run" "${OUT}/mount_encrypted_unittests"

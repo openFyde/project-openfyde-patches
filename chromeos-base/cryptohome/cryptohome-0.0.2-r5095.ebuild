@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Fyde Innovations Limited and the openFyde Authors.
+# Copyright (c) 2023 Fyde Innovations Limited and the openFyde Authors.
 # Distributed under the license specified in the root directory of this project.
 
 # Copyright 2014 The ChromiumOS Authors
@@ -6,8 +6,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="c9b2de00324b43cca454225620cfb27469283010"
-CROS_WORKON_TREE=("79cdd007ff69259efcaad08803ef2d1498374ec4" "4da12996f330009279430f009bdb2ac8309cc64f" "b112a735ae08e0bd176a25074e39643c83eaa31e" "53484d9a746662594836a32e203068e89c9eae63" "0cbf638bdbdbacc203abd3bcb0d31c738f9fd9ed" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="75fcf4259ca8d22a5b657ec98d3afa14b951f826"
+CROS_WORKON_TREE=("c5a3f846afdfb5f37be5520c63a756807a6b31c4" "2cb6bf89d18ada1e55d68d8308f262fed744eebe" "c0264ace18f901db759964a1f346331f593daaf7" "bdc2fe06e72f494e59d3000e9c660943df59f82c" "585af077146f2e4daaaec14eb5814cd8507e862c" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_DESTDIR="${S}/platform2"
@@ -29,9 +29,9 @@ SLOT="0/0"
 KEYWORDS="*"
 IUSE="+device_mapper -direncription_allow_v2 -direncryption
 	double_extend_pcr_issue +downloads_bind_mount fuzzer
-	generic_tpm2 kernel-5_15 kernel-5_10 kernel-5_4 kernel-upstream
+	generic_tpm2 kernel-6_1 kernel-5_15 kernel-5_10 kernel-5_4 kernel-upstream
 	lvm_application_containers lvm_stateful_partition mount_oop pinweaver
-	selinux slow_mount systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
+	profiling selinux slow_mount systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
 	tpm2_simulator uprev-4-to-5 user_session_isolation uss_migration
 	-tpm2_simulator_deprecated
 	+vault_legacy_mount vtpm_proxy"
@@ -64,6 +64,7 @@ COMMON_DEPEND="
 	chromeos-base/cbor:=
 	chromeos-base/chaps:=
 	chromeos-base/chromeos-config-tools:=
+	chromeos-base/featured:=
 	chromeos-base/libhwsec:=[test?]
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
@@ -100,25 +101,25 @@ DEPEND="${COMMON_DEPEND}
 "
 
 src_install() {
+	# TODO(crbug/1184602): Move remaining install logic to GN.
+	platform_src_install
+
 	pushd "${OUT}" || die
 	dosbin cryptohomed cryptohome cryptohome-path homedirs_initializer \
 		lockbox-cache stateful-recovery
 	dosbin cryptohome-namespace-mounter
 	dosbin mount-encrypted
 	dosbin encrypted-reboot-vault
-	dosbin bootlockboxd bootlockboxtool
-
 	popd >/dev/null || die
 
 	insinto /etc/dbus-1/system.d
 	doins etc/org.chromium.UserDataAuth.conf
-	doins etc/BootLockbox.conf
 
-	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-upstream) || use uprev-4-to-5); then
+	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-upstream) || use uprev-4-to-5); then
 		die "direncription_allow_v2 is enabled where it shouldn't be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
-	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-upstream) && use !uprev-4-to-5; then
+	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-upstream) && use !uprev-4-to-5; then
 		die "direncription_allow_v2 is not enabled where it should be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
@@ -139,7 +140,6 @@ src_install() {
 		systemd_enable_service ui.target lockbox-cache.service
 	else
 		insinto /etc/init
-		doins bootlockbox/bootlockboxd.conf
 		doins init/cryptohomed-client.conf
 		doins init/cryptohomed.conf
 		doins init/init-homedirs.conf
@@ -191,14 +191,9 @@ src_install() {
 	# Install udev rules for cryptohome.
 	udev_dorules udev/50-dm-cryptohome.rules
 
-	# Install seccomp policy for bootlockboxd
-	insinto /usr/share/policy
-	newins "bootlockbox/seccomp/bootlockboxd-seccomp-${ARCH}.policy" \
-		bootlockboxd-seccomp.policy
-
 	dotmpfiles tmpfiles.d/cryptohome.conf
 
-	local fuzzer_component_id="1188704"
+	local fuzzer_component_id="1088399"
 	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_cryptolib_rsa_oaep_decrypt_fuzzer \
 		--comp "${fuzzer_component_id}" \
@@ -214,19 +209,24 @@ src_install() {
 		fuzzers/data/*
 
 	platform_fuzzer_install "${S}"/OWNERS \
+		"${OUT}"/cryptohome_userdataauth_fuzzer \
+		--comp "${fuzzer_component_id}"
+
+	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_user_secret_stash_parser_fuzzer \
+		--comp "${fuzzer_component_id}"
+
+	platform_fuzzer_install "${S}"/OWNERS \
+		"${OUT}"/cryptohome_recovery_id_fuzzer \
 		--comp "${fuzzer_component_id}"
 }
 
 pkg_preinst() {
-	enewuser "bootlockboxd"
-	enewgroup "bootlockboxd"
 	enewuser "cryptohome"
 	enewgroup "cryptohome"
 }
 
 platform_pkg_test() {
-	platform_test "run" "${OUT}/boot_lockbox_unittests"
 	platform_test "run" "${OUT}/cryptohome_testrunner"
 	platform_test "run" "${OUT}/fake_platform_unittest"
 	platform_test "run" "${OUT}/mount_encrypted_unittests"

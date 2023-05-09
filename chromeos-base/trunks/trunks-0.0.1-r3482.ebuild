@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="7c777f8c612c8c5c65a66533ab320a13e099a7f2"
-CROS_WORKON_TREE=("79cdd007ff69259efcaad08803ef2d1498374ec4" "53484d9a746662594836a32e203068e89c9eae63" "eb510d666a66e6125e281499b649651b849a25f7" "34261f5753edf6cebef258a148897af911297046" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="635ba60101db69c49eee7ba1d90c812f2a7eb858"
+CROS_WORKON_TREE=("c5a3f846afdfb5f37be5520c63a756807a6b31c4" "bdc2fe06e72f494e59d3000e9c660943df59f82c" "71b6668ea23fdcf5ce2c3889e3a3cc703e8cd6df" "199cac0899daace8030b33f49dd183a5b5baf169" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -18,7 +18,7 @@ inherit cros-workon platform user
 DESCRIPTION="Trunks service for Chromium OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/HEAD/trunks/"
 
-LICENSE="Apache-2.0"
+LICENSE="BSD-Google"
 KEYWORDS="*"
 IUSE="
 	cr50_onboard
@@ -26,8 +26,8 @@ IUSE="
 	fuzzer
 	ftdi_tpm
 	generic_tpm2
-	hibernate
 	pinweaver_csme
+	profiling
 	test
 	ti50_onboard
 	tpm_dynamic
@@ -82,30 +82,15 @@ src_prepare() {
 }
 
 src_install() {
+	platform_src_install
+
 	insinto /etc/dbus-1/system.d
 	doins org.chromium.Trunks.conf
-
-	insinto /etc/init
-	if use cr50_onboard || use ti50_onboard; then
-		newins trunksd.conf.cr50 trunksd.conf
-	elif use tpm2_simulator_deprecated; then
-		newins ${FILESDIR}/trunksd.conf.tpm2_simulator trunksd.conf
-	else
-		doins trunksd.conf
-	fi
 
 	if use tpm_dynamic; then
 		sed -i '/env TPM_DYNAMIC=/s:=.*:=true:' \
 			"${D}/etc/init/trunksd.conf" ||
 			die "Can't activate tpm_dynamic in trunksd.conf"
-	fi
-
-	if use hibernate; then
-		# Replace the start on line with waiting on hiberman to either
-		# signal all clear or exit (eg crash).
-		sed -i 's/^start on .*/start on hibernate-tpm-done or stopped hiberman/' \
-			"${D}/etc/init/trunksd.conf" ||
-			die "Can't depend on hibernate in trunksd.conf"
 	fi
 
 	if use pinweaver_csme && use generic_tpm2; then
@@ -157,7 +142,7 @@ src_install() {
 
 	insinto "/usr/$(get_libdir)/pkgconfig"
 	doins "${OUT}"/obj/trunks/libtrunks.pc
-	local fuzzer_component_id="1188704"
+	local fuzzer_component_id="1281105"
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/trunks_creation_blob_fuzzer \
 		--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS \
@@ -172,6 +157,18 @@ src_install() {
 		--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/trunks_tpm_pinweaver_fuzzer \
 		--comp "${fuzzer_component_id}"
+	# Allow specific syscalls for profiling.
+	# TODO (b/242806964): Need a better approach for fixing up the seccomp policy
+	# related issues (i.e. fix with a single function call)
+	if use profiling; then
+		echo -e "\n# Syscalls added for profiling case only.\nmkdir: 1\nftruncate: 1\nuname: 1\n" >> \
+		"${D}/usr/share/policy/trunksd-seccomp.policy"
+	fi
+
+	insinto /etc/init
+	if use tpm2_simulator_deprecated; then
+		newins ${FILESDIR}/trunksd.conf.tpm2_simulator trunksd.conf
+	fi
 }
 
 platform_pkg_test() {

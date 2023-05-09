@@ -16,7 +16,7 @@ inherit cros-workon platform user
 DESCRIPTION="Trunks service for Chromium OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/HEAD/trunks/"
 
-LICENSE="Apache-2.0"
+LICENSE="BSD-Google"
 KEYWORDS="~*"
 IUSE="
 	cr50_onboard
@@ -24,8 +24,8 @@ IUSE="
 	fuzzer
 	ftdi_tpm
 	generic_tpm2
-	hibernate
 	pinweaver_csme
+	profiling
 	test
 	ti50_onboard
 	tpm_dynamic
@@ -68,28 +68,15 @@ DEPEND="
 	"
 
 src_install() {
+	platform_src_install
+
 	insinto /etc/dbus-1/system.d
 	doins org.chromium.Trunks.conf
-
-	insinto /etc/init
-	if use cr50_onboard || use ti50_onboard; then
-		newins trunksd.conf.cr50 trunksd.conf
-	else
-		doins trunksd.conf
-	fi
 
 	if use tpm_dynamic; then
 		sed -i '/env TPM_DYNAMIC=/s:=.*:=true:' \
 			"${D}/etc/init/trunksd.conf" ||
 			die "Can't activate tpm_dynamic in trunksd.conf"
-	fi
-
-	if use hibernate; then
-		# Replace the start on line with waiting on hiberman to either
-		# signal all clear or exit (eg crash).
-		sed -i 's/^start on .*/start on hibernate-tpm-done or stopped hiberman/' \
-			"${D}/etc/init/trunksd.conf" ||
-			die "Can't depend on hibernate in trunksd.conf"
 	fi
 
 	if use pinweaver_csme && use generic_tpm2; then
@@ -141,7 +128,7 @@ src_install() {
 
 	insinto "/usr/$(get_libdir)/pkgconfig"
 	doins "${OUT}"/obj/trunks/libtrunks.pc
-	local fuzzer_component_id="1188704"
+	local fuzzer_component_id="1281105"
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/trunks_creation_blob_fuzzer \
 		--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS \
@@ -156,6 +143,13 @@ src_install() {
 		--comp "${fuzzer_component_id}"
 	platform_fuzzer_install "${S}"/OWNERS "${OUT}"/trunks_tpm_pinweaver_fuzzer \
 		--comp "${fuzzer_component_id}"
+	# Allow specific syscalls for profiling.
+	# TODO (b/242806964): Need a better approach for fixing up the seccomp policy
+	# related issues (i.e. fix with a single function call)
+	if use profiling; then
+		echo -e "\n# Syscalls added for profiling case only.\nmkdir: 1\nftruncate: 1\nuname: 1\n" >> \
+		"${D}/usr/share/policy/trunksd-seccomp.policy"
+	fi
 }
 
 platform_pkg_test() {
