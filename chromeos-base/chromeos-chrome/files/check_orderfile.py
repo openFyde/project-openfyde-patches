@@ -102,34 +102,33 @@ def _parse_builtins_locations(chrome_binary: str) -> List[Tuple[int, str]]:
         List of (location, symbol_name): a list of tuples of the address and
         names of builtin functions
     """
-    cmd = subprocess.Popen(['readelf', '--symbols', '--wide', chrome_binary],
-                           stdout=subprocess.PIPE)
-
-    keys = (b'FUNC', b'LOCAL', b'DEFAULT')
+    keys = (b'FUNC', b'LOCAL')
     ok = True
-    try:
-        for line in cmd.stdout:
-            fields = line.split()
-            if not fields:
-                continue
+    with subprocess.Popen(['readelf', '--symbols', '--wide', chrome_binary],
+                          stdout=subprocess.PIPE) as cmd:
+      try:
+          for line in cmd.stdout:
+              fields = line.split()
+              if not fields:
+                  continue
 
-            symbol_name = fields[-1]
-            if not symbol_name.startswith(b'Builtins_'):
-                continue
+              symbol_name = fields[-1]
+              if not symbol_name.startswith(b'Builtins_'):
+                  continue
 
-            if any(key not in fields for key in keys):
-                continue
+              if any(key not in fields for key in keys):
+                  continue
 
-            location = int(fields[1], 16)
-            yield location, symbol_name
-    except:
-        ok = False
-        cmd.kill()
-        raise
-    finally:
-        exit_code = cmd.wait()
-        if ok and exit_code:
-            raise subprocess.CalledProcessError(exit_code, cmd.args)
+              location = int(fields[1], 16)
+              yield location, symbol_name
+      except:
+          ok = False
+          cmd.kill()
+          raise
+      finally:
+          exit_code = cmd.wait()
+          if ok and exit_code:
+              raise subprocess.CalledProcessError(exit_code, cmd.args)
 
 
 def _err(x):

@@ -28,6 +28,7 @@ LICENSE="BSD-Google chrome_internal? ( Google-TOS )"
 SLOT="0"
 KEYWORDS="*"
 IUSE="
+	afdo_generate
 	+afdo_use
 	afdo_verify
 	+accessibility
@@ -55,6 +56,7 @@ IUSE="
 	hibernate
 	hw_details
 	goma_thinlto
+	hevc_codec
 	+highdpi
 	iioservice
 	intel_oemcrypto
@@ -91,15 +93,6 @@ REQUIRED_USE="
 	afdo_verify? ( !afdo_use )
 	orderfile_generate? ( !orderfile_use )
 	"
-
-OZONE_PLATFORM_PREFIX=ozone_platform_
-OZONE_PLATFORMS=(gbm cast headless egltest caca)
-IUSE_OZONE_PLATFORMS="${OZONE_PLATFORMS[*]/#/${OZONE_PLATFORM_PREFIX}}"
-IUSE+=" ${IUSE_OZONE_PLATFORMS}"
-OZONE_PLATFORM_DEFAULT_PREFIX=ozone_platform_default_
-IUSE_OZONE_PLATFORM_DEFAULTS="${OZONE_PLATFORMS[*]/#/${OZONE_PLATFORM_DEFAULT_PREFIX}}"
-IUSE+=" ${IUSE_OZONE_PLATFORM_DEFAULTS}"
-REQUIRED_USE+=" ^^ ( ${IUSE_OZONE_PLATFORM_DEFAULTS} )"
 
 # The gclient hooks that run in src_prepare hit the network.
 # https://crbug.com/731905
@@ -152,6 +145,7 @@ RDEPEND="${RDEPEND}
 	~chromeos-base/chrome-icu-${PV}
 	chromeos-base/gestures
 	chromeos-base/libevdev:=
+	chromeos-base/mojo_service_manager
 	fonts? ( chromeos-base/chromeos-fonts )
 	chrome_internal? ( chromeos-base/quickoffice )
 	dev-libs/nspr
@@ -161,9 +155,9 @@ RDEPEND="${RDEPEND}
 	media-libs/fontconfig
 	media-libs/libsync
 	x11-libs/libdrm
-	ozone_platform_gbm? ( media-libs/minigbm )
+	media-libs/minigbm
 	v4lplugin? ( media-libs/libv4lplugins )
-	>=media-sound/adhd-0.0.1-r310
+	>=media-sound/adhd-0.0.6-r2908
 	net-print/cups
 	opengl? ( virtual/opengl )
 	opengles? ( virtual/opengles )
@@ -252,6 +246,9 @@ set_build_args() {
 	# shellcheck disable=SC2119
 	# suppressing the false warning not to specify the optional argument of 'echotf".
 	use_protected_av1=$(use intel_oemcrypto || use protected_av1; echotf)
+	# shellcheck disable=SC2119
+	# suppressing the false warning not to specify the optional argument of 'echotf".
+	use_hevc_codec=$(use hevc_codec && (use chrome_internal || use chrome_media); echotf)
 	BUILD_ARGS=(
 		"is_chromeos_device=true"
 		# is_official_build sometimes implies extra optimizations (e.g. it will allow
@@ -267,6 +264,7 @@ set_build_args() {
 		"use_arc_protected_media=$(usetf arc_hw_oemcrypto)"
 		"use_chromeos_protected_av1=${use_protected_av1}"
 		"use_chromeos_protected_media=$(usetf cdm_factory_daemon)"
+		"enable_hevc_parser_and_hw_decoder=${use_hevc_codec}"
 		"use_iioservice=$(usetf iioservice)"
 		"use_v4l2_codec=$(usetf v4l2_codec)"
 		"use_v4lplugin=$(usetf v4lplugin)"
@@ -290,14 +288,13 @@ set_build_args() {
 		"use_goma_thin_lto=${use_goma_thin_lto}"
 		"is_cfi=$(usetf cfi)"
 		"use_dwarf5=$(usetf dwarf5)"
+		# Disable use of debian sysroot for host builds.
+		"use_sysroot=false"
 
 		# Assistant integration tests are only run on the Chromium bots,
 		# but they increase the size of libassistant.so by 1.3MB so we
 		# disable them here.
 		"enable_assistant_integration_tests=false"
-
-		# Generate debug info necessary for AutoFDO.
-		"clang_emit_debug_info_for_profiling=true"
 
 		# Add libinput to handle touchpad.
 		"use_libinput=$(usetf libinput)"
@@ -322,25 +319,15 @@ set_build_args() {
 	use internal_gles_conform && BUILD_ARGS+=( "internal_gles2_conform_tests=true" )
 
 	# Ozone platforms.
-	local platform
-	for platform in "${OZONE_PLATFORMS[@]}"; do
-		local flag="${OZONE_PLATFORM_DEFAULT_PREFIX}${platform}"
-		if use "${flag}"; then
-			BUILD_STRING_ARGS+=( "ozone_platform=${platform}" )
-		fi
-	done
+	# TODO: Move this to browser side and delete these overrides.
+	BUILD_STRING_ARGS+=( "ozone_platform=gbm" )
 	BUILD_ARGS+=(
 		"ozone_auto_platforms=false"
+		"ozone_platform_gbm=true"
+		"ozone_platform_headless=true"
+		"use_system_minigbm=true"
+		"use_system_libdrm=true"
 	)
-	for platform in ${IUSE_OZONE_PLATFORMS}; do
-		if use "${platform}"; then
-			BUILD_ARGS+=( "${platform}=true" )
-		fi
-	done
-	if use "ozone_platform_gbm"; then
-		BUILD_ARGS+=( "use_system_minigbm=true" )
-		BUILD_ARGS+=( "use_system_libdrm=true" )
-	fi
 	if ! use "subpixel_rendering" || use "touchview"; then
 		BUILD_ARGS+=( "subpixel_font_rendering_disabled=true" )
 	fi
@@ -431,7 +418,15 @@ set_build_args() {
 			"use_remoteexec=true"
 		)
 		BUILD_STRING_ARGS+=(
+			# reclient configs in CHROME_ROOT are for simplechrome only. So for
+			# ebuilds, instead we override GN args here to specify the correct
+			# rewrapper config to use.
 			"rbe_cc_cfg_file=${CHROME_ROOT}/src/buildtools/reclient_cfgs/rewrapper_chroot_compile.cfg"
+			"rbe_py_cfg_file=${CHROME_ROOT}/src/buildtools/reclient_cfgs/rewrapper_chroot_python.cfg"
+
+			# For chroot based builds, this is overridden to be  '/'
+			# (where we run our build actions).
+			"rbe_exec_root=/"
 		)
 	fi
 
@@ -440,7 +435,7 @@ set_build_args() {
 		# Using -g1 causes problems with crash server (see crbug.com/601854).
 		# Disable debug_fission for bots which generate AFDO profile. (see crbug.com/704602).
 		local debug_level=2
-		if use arm && ! use debug_fission; then
+		if use arm && ! use debug_fission && use afdo_generate; then
 			# Limit debug info to -g1 to keep the binary size within 4GB.
 			# Production builds do not use "-debug_fission". But it is used
 			# by the AFDO builders and AFDO tools are fine with debug_level=1.
@@ -507,7 +502,7 @@ sandboxless_ensure_directory() {
 			# We need root access to create these directories, so we need to
 			# use sudo. This implicitly disables the sandbox.
 			sudo mkdir -p "${dir}" || die
-			sudo chown "${PORTAGE_USERNAME}:portage" "${dir}" || die
+			sudo chown "${PORTAGE_USERNAME}:${PORTAGE_GRPNAME}" "${dir}" || die
 			sudo chmod 0755 "${dir}" || die
 		fi
 	done
@@ -732,6 +727,7 @@ setup_test_lists() {
 		sandbox_linux_unittests
 		wayland_client_integration_tests
 		wayland_client_perftests
+		wayland_hdr_client
 	)
 
 	TEST_FILES+=( ppapi/examples/video_decode )
@@ -757,6 +753,7 @@ setup_test_lists() {
 	if use v4l2_codec; then
 		TEST_FILES+=(
 			v4l2_stateless_decoder
+			v4l2_unittest
 		)
 	fi
 
@@ -835,16 +832,6 @@ setup_compile_flags() {
 	# Add "-faddrsig" flag required to efficiently support "--icf=all".
 	append-flags -faddrsig
 	append-flags -Wno-unknown-warning-option
-
-	if use arm && use debug_fission; then
-		# FIXME(b/243982712)
-		# ChromeOS has reached the 4GB ceiling when compiling Chrome in debug
-		# mode on 32-bit systems. After some investigation, we learnt that we
-		# can remove 1.5GB of debug info by disabling debug info from libc++
-		# symbols. This is a workaround to disable those symbols until we can
-		# get dwp compression.
-		append-flags -D_LIBCPP_NO_DEBUG_INFO -Wno-backend-plugin
-	fi
 
 	export CXXFLAGS_host+=" -Wno-unknown-warning-option"
 	export CFLAGS_host+=" -Wno-unknown-warning-option"
@@ -1016,6 +1003,7 @@ chrome_make() {
 		-d "keeprsp"
 		"$@"
 	)
+
 	# If goma is used, log the command, cwd and env vars, which will be
 	# uploaded to the logging server.
 	if should_upload_build_logs; then
@@ -1405,8 +1393,9 @@ src_install() {
 
 	# Keep the .dwp files with debug fission.
 	if use chrome_debug && use debug_fission; then
+		# TODO(b/279648466): Replace GNU dwp with llvm-dwp.
+		DWP="${CHOST}-dwp"
 		mkdir -p "${D}/usr/lib/debug/${CHROME_DIR}"
-		DWP="${CHOST}"-dwp
 		cd "${D}/${CHROME_DIR}" || die
 		# Iterate over all ELF files in current directory
 		while read -r i; do
@@ -1425,6 +1414,7 @@ src_install() {
 				continue
 			fi
 			source="${i}"
+			# shellcheck disable=SC2154
 			${DWP} -e "${FROM}/${source}" -o "${D}/usr/lib/debug/${CHROME_DIR}/${i}.dwp" || die
 		done < <(scanelf -ByF '%F' ".")
 	fi
