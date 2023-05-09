@@ -1,0 +1,22 @@
+diff --git a/nassh/_locales/zh_CN/messages.json b/nassh/_locales/zh_CN/messages.json
+index 38d59b5a..1e251dff 100644
+--- a/nassh/_locales/zh_CN/messages.json
++++ b/nassh/_locales/zh_CN/messages.json
+@@ -1011,7 +1011,7 @@
+ 		"message": "导入"
+ 	},
+ 	"terminal_home_linux_not_enabled": {
+-		"message": "访问“开发者选项”即可管理 Linux"
++		"message": "访问「开发者选项」即可管理 Linux"
+ 	},
+ 	"terminal_home_manage": {
+ 		"message": "管理"
+@@ -1032,7 +1032,7 @@
+ 		"message": "连接名称"
+ 	},
+ 	"terminal_home_ssh_disabled_by_policy": {
+-		"message": "SSH 已被您的管理员停用"
++		"message": "SSH 已被你的管理员停用"
+ 	},
+ 	"terminal_home_ssh_empty": {
+ 		"message": "与远程设备的连接关系会显示在此处"

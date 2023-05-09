@@ -1,13 +1,17 @@
+diff --git a/cros/omaha_request_action.cc b/cros/omaha_request_action.cc
+index a97408ba..a7814f3e 100644
 --- a/cros/omaha_request_action.cc
 +++ b/cros/omaha_request_action.cc
-@@ -1258,10 +1258,6 @@
+@@ -1262,9 +1262,9 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(ErrorCode* error) const {
      }
    }
  
 -  if (!CheckForRepeatedFpValues(error)) {
 -    return true;
 -  }
--
-   if (SystemState::Get()->hardware()->IsOOBEEnabled() &&
-       !SystemState::Get()->hardware()->IsOOBEComplete(nullptr) &&
++  // if (!CheckForRepeatedFpValues(error)) {
++  //   return true;
++  // }
+ 
+   if (hardware->IsOOBEEnabled() && !hardware->IsOOBEComplete(nullptr) &&
        (response_.deadline.empty() ||

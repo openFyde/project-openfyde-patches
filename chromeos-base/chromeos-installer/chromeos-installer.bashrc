@@ -7,5 +7,5 @@ cros_post_src_install_openfyde_mark_clean_overlay() {
 }
 
 cros_pre_src_prepare_openfyde_patches() {
-  epatch ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/postinst.patch
+  eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/postinst.patch
 }
