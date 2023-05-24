@@ -1,0 +1,54 @@
+diff --git a/dlcservice/dlc.cc b/dlcservice/dlc.cc
+index 886edffad1..299130f9fb 100644
+--- a/dlcservice/dlc.cc
++++ b/dlcservice/dlc.cc
+@@ -550,6 +550,12 @@ bool DlcBase::Install(ErrorPtr* err) {
+         break;
+       }
+ 
++      if (TryToCopyFromInactiveToActive() && Verify()) {
++        LOG(INFO) << "Verified image copied from inactive to active slot DLC="
++                  << id_;
++        break;
++      }
++
+       // By now the image is not verified, so it needs to be installed
+       // through update_engine. So don't go any further.
+       return true;
+@@ -881,4 +887,23 @@ bool DlcBase::SetReserve(std::optional<bool> reserve) {
+   return reserve_;
+ }
+ 
++bool DlcBase::TryToCopyFromInactiveToActive() {
++  const FilePath& inactive_image_path =
++      GetImagePath(SystemState::Get()->inactive_boot_slot());
++  const FilePath& active_image_path =
++      GetImagePath(SystemState::Get()->active_boot_slot());
++  if (!base::PathExists(inactive_image_path)
++      || !base::PathExists(active_image_path)) {
++    return false;
++  }
++  vector<uint8_t> image_sha256;
++  if (!CopyAndHashFile(inactive_image_path, active_image_path,
++                       manifest_->size(), &image_sha256)) {
++    LOG(WARNING) << "Failed to copy inactive image of DLC (" << id_
++                 << ") into path " << active_image_path;
++    return false;
++  }
++  return true;
++}
++
+ }  // namespace dlcservice
+diff --git a/dlcservice/dlc.h b/dlcservice/dlc.h
+index 597acb1048..ceca466c80 100644
+--- a/dlcservice/dlc.h
++++ b/dlcservice/dlc.h
+@@ -203,6 +203,8 @@ class DlcBase {
+   // Sets the DLC as being active or not based on |active| value.
+   void SetActiveValue(bool active);
+ 
++  bool TryToCopyFromInactiveToActive();
++
+   DlcId id_;
+   std::string package_;
+ 
