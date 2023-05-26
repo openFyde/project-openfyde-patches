@@ -1,7 +1,7 @@
-Index: kernel-5_15/security/selinux/hooks.c
+Index: linux/security/selinux/hooks.c
 ===================================================================
---- kernel-5_15.orig/security/selinux/hooks.c
-+++ kernel-5_15/security/selinux/hooks.c
+--- linux.orig/security/selinux/hooks.c
++++ linux/security/selinux/hooks.c
 @@ -103,6 +103,9 @@
  #include "netlabel.h"
  #include "audit.h"
@@ -12,26 +12,29 @@ Index: kernel-5_15/security/selinux/hooks.c
  
  struct selinux_state selinux_state;
  
-@@ -466,10 +469,32 @@ static int selinux_is_genfs_special_hand
+@@ -466,10 +469,35 @@ static int selinux_is_genfs_special_hand
  		  !strcmp(sb->s_type->name, "cgroup2")));
  }
  
 +static bool is_overlay_sb(struct super_block *sb)
 +{
-+ const char* fstype = sb->s_type->name;
-+ return strcmp(fstype, "overlay") == 0;
++	const char* fstype = sb->s_type->name;
++	return strcmp(fstype, "overlay") == 0;
 +}
 +
 +static bool is_overlay_inode(struct inode *inode)
 +{
-+ return is_overlay_sb(inode->i_sb);
++	return is_overlay_sb(inode->i_sb);
 +}
 +
 +#ifdef CONFIG_OVERLAY_FS
 +static struct inode *get_real_inode_from_ovl(struct inode *inode) {
-+ struct ovl_inode *oi = OVL_I(inode);
-+ struct dentry *upperdentry = ovl_upperdentry_dereference(oi);
-+ return upperdentry ? d_inode(upperdentry) : oi->lower;
++	struct ovl_inode *oi = OVL_I(inode);
++	struct dentry *upperdentry = ovl_upperdentry_dereference(oi);
++	struct dentry *lowerdentry = oi->lowerpath.dentry;
++
++	return upperdentry ? d_inode(upperdentry) :
++		(lowerdentry ? d_inode(lowerdentry) : NULL);
 +}
 +#endif
 +
@@ -46,7 +49,7 @@ Index: kernel-5_15/security/selinux/hooks.c
  	/*
  	 * IMPORTANT: Double-check logic in this function when adding a new
  	 * SECURITY_FS_USE_* definition!
-@@ -3515,7 +3540,15 @@ static int selinux_inode_getsecurity(str
+@@ -3515,7 +3543,15 @@ static int selinux_inode_getsecurity(str
  	 * and lack of permission just means that we fall back to the
  	 * in-core context value, not a denial.
  	 */
