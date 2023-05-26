@@ -27,7 +27,7 @@ SRC_URI=""
 LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="*"
-IUSE="+device_mapper -direncription_allow_v2 -direncryption
+IUSE="+device_mapper +direncription_allow_v2 -direncryption
 	double_extend_pcr_issue +downloads_bind_mount fuzzer
 	generic_tpm2 kernel-6_1 kernel-5_15 kernel-5_10 kernel-5_4 kernel-upstream
 	lvm_application_containers lvm_stateful_partition mount_oop pinweaver
