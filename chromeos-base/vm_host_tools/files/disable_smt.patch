@@ -1,8 +1,8 @@
-diff --git a/vm_tools/concierge/service.cc b/vm_tools/concierge/service.cc
-index 86ab00c7b..05772f37c 100644
---- a/vm_tools/concierge/service.cc
-+++ b/vm_tools/concierge/service.cc
-@@ -146,7 +146,7 @@ constexpr base::TimeDelta kDiskOpReportInterval =
+Index: vm_tools/concierge/service.cc
+===================================================================
+--- vm_tools.orig/concierge/service.cc
++++ vm_tools/concierge/service.cc
+@@ -208,7 +208,7 @@ constexpr base::TimeDelta kDiskOpReportI
  // The minimum kernel version of the host which supports untrusted VMs or a
  // trusted VM with nested VM support.
  constexpr KernelVersionAndMajorRevision
@@ -11,3 +11,12 @@ index 86ab00c7b..05772f37c 100644
  
  // The minimum kernel version of the host which supports virtio-pmem.
  constexpr KernelVersionAndMajorRevision kMinKernelVersionForVirtioPmem =
+@@ -431,6 +431,8 @@ void SetVmCpuArgs(int32_t cpus, VmBuilde
+ 
+   if (!vm_cpu_args.cpu_clusters.empty()) {
+     for (const auto& cluster : vm_cpu_args.cpu_clusters) {
++      if (cluster.empty())
++        continue;
+       auto cpu_list = base::JoinString(cluster, ",");
+       vm_builder.AppendCustomParam("--cpu-cluster", cpu_list);
+     }
