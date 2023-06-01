@@ -1,0 +1,32 @@
+diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
+index 72f580f922..1e3c092df4 100644
+--- a/login_manager/chrome_setup.cc
++++ b/login_manager/chrome_setup.cc
+@@ -232,14 +232,24 @@ bool AddWallpaperFlags(
+     const std::string& flag_type,
+     const std::string& file_type,
+     const base::RepeatingCallback<bool(const base::FilePath&)>& path_exists) {
+-  const base::FilePath large_path(base::StringPrintf(
++  base::FilePath large_path(base::StringPrintf(
+       "/usr/share/chromeos-assets/wallpaper/%s_large.jpg", file_type.c_str()));
+-  const base::FilePath small_path(base::StringPrintf(
++  base::FilePath small_path(base::StringPrintf(
+       "/usr/share/chromeos-assets/wallpaper/%s_small.jpg", file_type.c_str()));
+   if (!path_exists.Run(large_path) || !path_exists.Run(small_path)) {
+     LOG(WARNING) << "Could not find both paths: " << large_path.MaybeAsASCII()
+                  << " and " << small_path.MaybeAsASCII();
+-    return false;
++    large_path = base::FilePath(base::StringPrintf(
++        "/usr/share/chromeos-assets/wallpaper/%s_large.png",
++        file_type.c_str()));
++    small_path = base::FilePath(base::StringPrintf(
++        "/usr/share/chromeos-assets/wallpaper/%s_small.png",
++        file_type.c_str()));
++    if (!path_exists.Run(large_path) || !path_exists.Run(small_path)) {
++      LOG(WARNING) << "Could not find both paths: " << large_path.MaybeAsASCII()
++                  << " and " << small_path.MaybeAsASCII();
++      return false;
++    }
+   }
+ 
+   builder->AddArg(base::StringPrintf("--%s-wallpaper-large=%s",
