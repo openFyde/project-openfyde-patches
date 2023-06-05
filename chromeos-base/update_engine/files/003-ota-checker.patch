@@ -1,0 +1,88 @@
+diff --git a/cros/fydeos_toggle_ota.cc b/cros/fydeos_toggle_ota.cc
+index c0397652d4bf..92b9f3b139a0 100644
+--- a/cros/fydeos_toggle_ota.cc
++++ b/cros/fydeos_toggle_ota.cc
+@@ -1,10 +1,14 @@
+ #include "update_engine/cros/fydeos_toggle_ota.h"
+ #include <base/files/file_util.h>
+ 
++#include "update_engine/common/subprocess.h"
++
+ namespace fydeos {
+ namespace {
+   // keep it the same with chromium src fydeos/misc/fydeos_toggle_ota.cc
+   const char kFydeOSOTAIndicatorFile[] = "/mnt/stateful_partition/unencrypted/preserve/.disable_fydeos_ota";
++
++  const char kShellCmd[] = "/usr/share/fydeos-ota-checker/ota-checker.sh";
+ }
+ 
+ bool OTAEnabled() {
+@@ -12,4 +16,24 @@ bool OTAEnabled() {
+   return enabled;
+ }
+ 
++bool OTANeeded(std::string version) {
++  int exit_code = 0;
++  std::string out, err;
++  std::vector<std::string> cmd = {kShellCmd, version.c_str()};
++
++  if (!chromeos_update_engine::Subprocess::SynchronousExec(cmd, &exit_code, &out, &err)) {
++    LOG(ERROR) << kShellCmd << " error";
++    return true;
++  }
++
++  LOG(INFO) << kShellCmd << " exit code: " << exit_code
++            << "\n stdout: \n"<< out
++            << "\n stderr: \n"<< err;
++
++  if (exit_code == EEXIST)
++    return false;
++
++  return true;
++}
++
+ } // fydeos
+diff --git a/cros/fydeos_toggle_ota.h b/cros/fydeos_toggle_ota.h
+index 2c0fbb05df8c..56e7cf5b2417 100644
+--- a/cros/fydeos_toggle_ota.h
++++ b/cros/fydeos_toggle_ota.h
+@@ -1,8 +1,12 @@
+ #ifndef FYDEOS_TOGGLE_OTA_H_
+ #define FYDEOS_TOGGLE_OTA_H_
+ 
++#include <base/files/file_util.h>
++
+ namespace fydeos {
+   bool OTAEnabled();
++
++  bool OTANeeded(std::string version);
+ }
+ 
+ #endif // ifndef FYDEOS_TOGGLE_OTA_H_
+diff --git a/cros/omaha_response_handler_action.cc b/cros/omaha_response_handler_action.cc
+index 239c92690ce7..8dfff0f4135a 100644
+--- a/cros/omaha_response_handler_action.cc
++++ b/cros/omaha_response_handler_action.cc
+@@ -38,6 +38,7 @@
+ #include "update_engine/update_manager/update_can_be_applied_policy.h"
+ #include "update_engine/update_manager/update_can_be_applied_policy_data.h"
+ #include "update_engine/update_manager/update_manager.h"
++#include "update_engine/cros/fydeos_toggle_ota.h"
+ 
+ using chromeos_update_manager::kRollforwardInfinity;
+ using chromeos_update_manager::UpdateCanBeAppliedPolicy;
+@@ -83,6 +84,14 @@ void OmahaResponseHandlerAction::PerformAction() {
+   install_plan_.download_url = current_url;
+   install_plan_.version = response.version;
+ 
++  // ---***FYDEOS BEGIN***---
++  if (!fydeos::OTANeeded(response.version)) {
++    LOG(INFO) << "fydeos ota unnedded, refuse to continue update";
++    completer.set_code(ErrorCode::kDownloadNewPartitionInfoError);
++    return ;
++  }
++  // ---***FYDEOS END***---
++
+   OmahaRequestParams* const params = SystemState::Get()->request_params();
+   PayloadStateInterface* const payload_state =
+       SystemState::Get()->payload_state();
