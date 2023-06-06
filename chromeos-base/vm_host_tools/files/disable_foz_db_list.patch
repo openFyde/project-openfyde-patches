@@ -1,0 +1,12 @@
+index 0d89a7fd4e..82f85d9fb0 100644
+--- vm_tools/concierge/service.cc
++++ vm_tools/concierge/service.cc
+@@ -2080,7 +2080,7 @@ StartVmResponse Service::StartVm(StartVmRequest request,
+   const bool enable_render_server = request.enable_vulkan();
+   // Enable foz db list (dynamic un/loading for RO mesa shader cache) only for
+   // Borealis, for now.
+-  const bool enable_foz_db_list = classification == VmInfo::BOREALIS;
++  const bool enable_foz_db_list = false;
+ 
+   VMGpuCacheSpec gpu_cache_spec;
+   if (request.enable_gpu()) {
