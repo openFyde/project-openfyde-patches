@@ -1,0 +1,50 @@
+diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
+index 1e3c092df4..ddd18171ff 100644
+--- a/login_manager/chrome_setup.cc
++++ b/login_manager/chrome_setup.cc
+@@ -261,6 +261,36 @@ bool AddWallpaperFlags(
+   return true;
+ }
+ 
++bool AddDynamicDefaultWallpaperFlags(
++    ChromiumCommandBuilder* builder,
++    const base::RepeatingCallback<bool(const base::FilePath&)>& path_exists) {
++  const std::string base_path = "/usr/share/chromeos-assets/wallpaper";
++  std::vector<std::string> filenames = {
++      "default_large", "default_large.dark", "default_large.light",
++      "default_small", "default_small.dark", "default_small.light",
++  };
++  std::vector<std::string> filetypes = { "jpg", "png" };
++  bool support = false;
++  for (const auto& filetype : filetypes) {
++    support = true;
++    for (const auto& filename : filenames) {
++      base::FilePath path(base::StringPrintf("%s/%s.%s",
++                                             base_path.c_str(),
++                                             filename.c_str(),
++                                             filetype.c_str()));
++      if (!path_exists.Run(path)) {
++        support = false;
++        break;
++      }
++    }
++    if (support) {
++      builder->AddArg("--fyde-dynamic-default-wallpaper");
++      break;
++    }
++  }
++  return support;
++}
++
+ // Adds ARC related flags.
+ void AddArcFlags(ChromiumCommandBuilder* builder,
+                  std::set<std::string>* disallowed_params_out,
+@@ -798,6 +828,8 @@ void SetUpWallpaperFlags(
+ 
+   // Fall back to default.
+   AddWallpaperFlags(builder, "default", "default", path_exists);
++
++  AddDynamicDefaultWallpaperFlags(builder, path_exists);
+ }
+ 
+ void SetUpInternalStylusFlag(ChromiumCommandBuilder* builder,
