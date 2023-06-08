@@ -1,8 +1,8 @@
 diff --git a/installer/chromeos-postinst b/installer/chromeos-postinst
-index 9fbae9c195..db78ab8d23 100755
+index 875a85b4f62e..4c9fbbbfafe3 100755
 --- a/installer/chromeos-postinst
 +++ b/installer/chromeos-postinst
-@@ -29,6 +29,21 @@ cleanup() {
+@@ -37,6 +37,26 @@ cleanup() {
    done
  }
  
@@ -21,10 +21,15 @@ index 9fbae9c195..db78ab8d23 100755
 +  echo ${version#*=}
 +}
 +
++mark_parition_updated() {
++  touch etc/.fydeos_updated
++  return 0
++}
++
  main() {
    cd "${INSTALL_ROOT}" || exit 1
  
-@@ -41,6 +56,11 @@ main() {
+@@ -49,8 +69,14 @@ main() {
    done
  
    local install_dev="$1"
@@ -36,3 +41,6 @@ index 9fbae9c195..db78ab8d23 100755
    shift
    chroot . /usr/bin/cros_installer --type="postinst" \
           --install_dev="${install_dev}" --install_dir="/" "$@"
++  [ "$?" -eq 0 ] && mark_parition_updated
+ }
+ main "$@"
