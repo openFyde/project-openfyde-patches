@@ -1,0 +1,12 @@
+[{
+  "app_name": "termina",
+  "exec_info": {
+    "CrosPath": [
+      "/run/imageloader/termina-dlc/package/root/vm_kernel",
+      @kernel_digest@
+    ]
+  },
+  "sandbox_type": "VirtualMachine",
+  "secrets_parameters": null,
+  "storage_parameters": null
+}]
