@@ -1,0 +1,27 @@
+diff --git a/login_manager/init/scripts/ui-post-stop b/login_manager/init/scripts/ui-post-stop
+index 69e51598c7..f365e10d28 100755
+--- a/login_manager/init/scripts/ui-post-stop
++++ b/login_manager/init/scripts/ui-post-stop
+@@ -81,3 +81,8 @@ bootstat cryptohome-unmounted
+ # unmount: lazy unmount cleans up mounts from the root namespace and
+ # newly launched processes will no be able to clone the mount.
+ process_killer --session --mount_holders
++
++MOUNT_POINT="/opt/google/chrome/WidevineCdm/_platform_specific"
++if [ -n "$(findmnt --mountpoint $MOUNT_POINT)" ]; then
++  umount $MOUNT_POINT || true
++fi
+diff --git a/login_manager/init/scripts/ui-pre-start b/login_manager/init/scripts/ui-pre-start
+index fb219cb72a..3b94ac27fb 100755
+--- a/login_manager/init/scripts/ui-pre-start
++++ b/login_manager/init/scripts/ui-pre-start
+@@ -308,3 +308,9 @@ DARK_RESUME_ALWAYS_FILE=/sys/power/dark_resume_always
+ if [ -e "${DARK_RESUME_ALWAYS_FILE}" ]; then
+   chown chronos "${DARK_RESUME_ALWAYS_FILE}"
+ fi
++
++WIDEVINE_DIR="/mnt/stateful_partition/unencrypted/widevine/WidevineCdm/_platform_specific"
++MOUNT_POINT="/opt/google/chrome/WidevineCdm/_platform_specific"
++if [ -d $WIDEVINE_DIR ] && [ -d $MOUNT_POINT ]; then
++  mount --bind -o ro,exec $WIDEVINE_DIR $MOUNT_POINT || true
++fi
