@@ -1,8 +1,8 @@
-diff --git a/vboot_reference/host/lib/crossystem.c b/vboot_reference/host/lib/crossystem.c
-index 63f20c42..6ea41d02 100644
---- a/vboot_reference/host/lib/crossystem.c
-+++ b/vboot_reference/host/lib/crossystem.c
-@@ -458,7 +458,7 @@ int VbGetSystemPropertyInt(const char *name)
+diff --git a/host/lib/crossystem.c b/host/lib/crossystem.c
+index a7b04b99..8aa16aea 100644
+--- a/host/lib/crossystem.c
++++ b/host/lib/crossystem.c
+@@ -503,13 +503,13 @@ int VbGetSystemPropertyInt(const char *name)
  			const char *fwtype = VbGetSystemPropertyString(
  				"mainfw_type", fwtype_buf, sizeof(fwtype_buf));
  			if (fwtype && !strcasecmp(fwtype, "nonchrome")) {
@@ -11,3 +11,10 @@ index 63f20c42..6ea41d02 100644
  			}
  		} else {
  			value = 0;
+ 		}
+ 	} else if (!strcasecmp(name, "post_ec_sync_delay")) {
+-		value = vb2_get_nv_storage(VB2_NV_POST_EC_SYNC_DELAY);
++		value = 0;
+ 	}
+ 
+ 	return value;
