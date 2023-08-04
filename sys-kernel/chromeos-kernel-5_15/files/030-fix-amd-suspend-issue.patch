@@ -1,0 +1,156 @@
+Index: kernel-5_15/drivers/acpi/x86/s2idle.c
+===================================================================
+--- kernel-5_15.orig/drivers/acpi/x86/s2idle.c
++++ kernel-5_15/drivers/acpi/x86/s2idle.c
+@@ -131,7 +131,7 @@ static void lpi_device_get_constraints_a
+ 					union acpi_object *obj = &info_obj->package.elements[k];
+ 
+ 					list = &lpi_constraints_table[lpi_constraints_table_size];
+-					list->min_dstate = -1;
++					list->min_dstate = -EINVAL;
+ 
+ 					switch (k) {
+ 					case 0:
+@@ -242,7 +242,7 @@ static void lpi_device_get_constraints(v
+ 		acpi_handle_debug(lps0_device_handle,
+ 				  "index:%d Name:%s\n", i, info.name);
+ 
+-		constraint->min_dstate = -1;
++		constraint->min_dstate = -EINVAL;
+ 
+ 		for (j = 0; j < package_count; ++j) {
+ 			union acpi_object *info_obj = &info.package[j];
+@@ -289,6 +289,30 @@ free_acpi_buffer:
+ 	ACPI_FREE(out_obj);
+ }
+ 
++/*
++ * acpi_get_lps0_constraint - get any LPS0 constraint for an acpi device
++ * @handle: ACPI handle of the device
++ *
++ * If a constraint has been specified in the _DSM method for the device,
++ * return it.  Otherwise, return -ENODEV.
++ */
++int acpi_get_lps0_constraint(struct device *dev)
++{
++	acpi_handle handle = ACPI_HANDLE(dev);
++	int i;
++
++	if (!handle)
++		return -ENODEV;
++
++	for (i = 0; i < lpi_constraints_table_size; ++i) {
++		if (lpi_constraints_table[i].handle != handle)
++			continue;
++		return lpi_constraints_table[i].min_dstate;
++	}
++
++	return -ENODEV;
++}
++
+ static void lpi_check_constraints(void)
+ {
+ 	int i;
+Index: kernel-5_15/drivers/pci/pci-acpi.c
+===================================================================
+--- kernel-5_15.orig/drivers/pci/pci-acpi.c
++++ kernel-5_15/drivers/pci/pci-acpi.c
+@@ -1027,6 +1027,25 @@ static bool acpi_pci_bridge_d3(struct pc
+ 	return false;
+ }
+ 
++/*
++ * acpi_pci_device_constraint_d3 - determine if device constraints require D3
++ * @dev: PCI device to check
++ *
++ * Returns true if the PEP constraints for the device is enabled and
++ * requires D3.
++ */
++bool acpi_pci_device_constraint_d3(struct pci_dev *dev)
++{
++ int constraint = acpi_get_lps0_constraint(&dev->dev);
++
++ if (constraint < 0) {
++   pci_dbg(dev, "ACPI device constraint not present\n");
++   return false;
++ }
++
++ return constraint >= 3;
++}
++
+ static int acpi_pci_set_power_state(struct pci_dev *dev, pci_power_t state)
+ {
+ 	struct acpi_device *adev = ACPI_COMPANION(&dev->dev);
+Index: kernel-5_15/drivers/pci/pci.c
+===================================================================
+--- kernel-5_15.orig/drivers/pci/pci.c
++++ kernel-5_15/drivers/pci/pci.c
+@@ -1147,6 +1147,14 @@ static int pci_raw_set_power_state(struc
+ 	return 0;
+ }
+ 
++static inline bool platform_constraint_d3(struct pci_dev *dev)
++{
++	if (pci_use_mid_pm())
++		return false;
++
++	return acpi_pci_device_constraint_d3(dev);
++}
++
+ /**
+  * pci_update_current_state - Read power state of given device and cache it
+  * @dev: PCI device to handle.
+@@ -2978,11 +2986,8 @@ bool pci_bridge_d3_possible(struct pci_d
+ 		if (dmi_check_system(bridge_d3_blacklist))
+ 			return false;
+ 
+-		/*
+-		 * It should be safe to put PCIe ports from 2015 or newer
+-		 * to D3.
+-		 */
+-		if (dmi_get_bios_year() >= 2015)
++		/* the platform indicates in a device constraint that D3 is needed */
++		if (platform_constraint_d3(bridge))
+ 			return true;
+ 		break;
+ 	}
+Index: kernel-5_15/drivers/pci/pci.h
+===================================================================
+--- kernel-5_15.orig/drivers/pci/pci.h
++++ kernel-5_15/drivers/pci/pci.h
+@@ -727,12 +727,18 @@ int pci_acpi_program_hp_params(struct pc
+ extern const struct attribute_group pci_dev_acpi_attr_group;
+ void pci_set_acpi_fwnode(struct pci_dev *dev);
+ int pci_dev_acpi_reset(struct pci_dev *dev, bool probe);
++bool acpi_pci_device_constraint_d3(struct pci_dev *dev);
+ #else
+ static inline int pci_dev_acpi_reset(struct pci_dev *dev, bool probe)
+ {
+ 	return -ENOTTY;
+ }
+ 
++static inline bool acpi_pci_device_constraint_d3(struct pci_dev *dev)
++{
++ return false;
++}
++
+ static inline void pci_set_acpi_fwnode(struct pci_dev *dev) {}
+ static inline int pci_acpi_program_hp_params(struct pci_dev *dev)
+ {
+Index: kernel-5_15/include/linux/acpi.h
+===================================================================
+--- kernel-5_15.orig/include/linux/acpi.h
++++ kernel-5_15/include/linux/acpi.h
+@@ -1020,6 +1020,12 @@ struct acpi_s2idle_dev_ops {
+ };
+ int acpi_register_lps0_dev(struct acpi_s2idle_dev_ops *arg);
+ void acpi_unregister_lps0_dev(struct acpi_s2idle_dev_ops *arg);
++int acpi_get_lps0_constraint(struct device *dev);
++#else
++static inline int acpi_get_lps0_constraint(struct device *dev)
++{
++	return false;
++}
+ #endif /* CONFIG_X86 */
+ #ifndef CONFIG_IA64
+ void arch_reserve_mem_area(acpi_physical_address addr, size_t size);
