@@ -1,7 +1,7 @@
-diff --git a/host/lib/crossystem.c b/host/lib/crossystem.c
+diff --git a/vboot_reference/host/lib/crossystem.c b/vboot_reference/host/lib/crossystem.c
 index a7b04b99..8aa16aea 100644
---- a/host/lib/crossystem.c
-+++ b/host/lib/crossystem.c
+--- a/vboot_reference/host/lib/crossystem.c
++++ b/vboot_reference/host/lib/crossystem.c
 @@ -503,13 +503,13 @@ int VbGetSystemPropertyInt(const char *name)
  			const char *fwtype = VbGetSystemPropertyString(
  				"mainfw_type", fwtype_buf, sizeof(fwtype_buf));
