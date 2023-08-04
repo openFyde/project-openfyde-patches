@@ -118,7 +118,20 @@ Index: kernel-5_15/drivers/pci/pci.h
 ===================================================================
 --- kernel-5_15.orig/drivers/pci/pci.h
 +++ kernel-5_15/drivers/pci/pci.h
-@@ -727,12 +727,18 @@ int pci_acpi_program_hp_params(struct pc
+@@ -721,18 +721,31 @@ static inline void pci_aer_clear_fatal_s
+ static inline int pci_aer_clear_status(struct pci_dev *dev) { return -EINVAL; }
+ static inline int pci_aer_raw_clear_status(struct pci_dev *dev) { return -EINVAL; }
+ #endif
++#ifdef CONFIG_X86_INTEL_MID
++bool pci_use_mid_pm(void);
++#else
++static inline bool pci_use_mid_pm(void) {
++  return false;
++}
++#endif //CONFIG_X86_INTEL_MID
+ 
+ #ifdef CONFIG_ACPI
+ int pci_acpi_program_hp_params(struct pci_dev *dev);
  extern const struct attribute_group pci_dev_acpi_attr_group;
  void pci_set_acpi_fwnode(struct pci_dev *dev);
  int pci_dev_acpi_reset(struct pci_dev *dev, bool probe);
@@ -154,3 +167,33 @@ Index: kernel-5_15/include/linux/acpi.h
  #endif /* CONFIG_X86 */
  #ifndef CONFIG_IA64
  void arch_reserve_mem_area(acpi_physical_address addr, size_t size);
+Index: kernel-5_15/drivers/pci/pci-mid.c
+===================================================================
+--- kernel-5_15.orig/drivers/pci/pci-mid.c
++++ kernel-5_15/drivers/pci/pci-mid.c
+@@ -16,6 +16,13 @@
+ 
+ #include "pci.h"
+ 
++static bool pci_mid_pm_enabled __read_mostly;
++
++bool pci_use_mid_pm(void)
++{
++	return pci_mid_pm_enabled;
++}
++
+ static bool mid_pci_power_manageable(struct pci_dev *dev)
+ {
+ 	return true;
+@@ -70,8 +77,10 @@ static int __init mid_pci_init(void)
+ 	const struct x86_cpu_id *id;
+ 
+ 	id = x86_match_cpu(lpss_cpu_ids);
+-	if (id)
++	if (id) {
++		pci_mid_pm_enabled = true;
+ 		pci_set_platform_pm(&mid_pci_platform_pm);
++  }
+ 	return 0;
+ }
+ arch_initcall(mid_pci_init);
