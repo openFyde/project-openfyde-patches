@@ -1,0 +1,204 @@
+Index: kernel-5_4/include/net/cfg80211.h
+===================================================================
+--- kernel-5_4.orig/include/net/cfg80211.h
++++ kernel-5_4/include/net/cfg80211.h
+@@ -936,6 +936,7 @@ struct cfg80211_crypto_settings {
+ 	const u8 *psk;
+ 	const u8 *sae_pwd;
+ 	u8 sae_pwd_len;
++  u8 sae_pwe;
+ };
+ 
+ /**
+Index: kernel-5_4/include/uapi/linux/nl80211.h
+===================================================================
+--- kernel-5_4.orig/include/uapi/linux/nl80211.h
++++ kernel-5_4/include/uapi/linux/nl80211.h
+@@ -2892,15 +2892,72 @@ enum nl80211_attrs {
+ 	NL80211_ATTR_WIPHY_EDMG_CHANNELS,
+ 	NL80211_ATTR_WIPHY_EDMG_BW_CONFIG,
+ 
+-	NL80211_ATTR_SAR_SPEC = 300,
++	NL80211_ATTR_VLAN_ID/*= 300*/,
+ 
+ 	NL80211_ATTR_HE_BSS_COLOR,
+ 
++  NL80211_ATTR_IFTYPE_AKM_SUITES,
++
++	NL80211_ATTR_TID_CONFIG,
++
++  NL80211_ATTR_CONTROL_PORT_NO_PREAUTH,
++
++  NL80211_ATTR_PMK_LIFETIME,
++  NL80211_ATTR_PMK_REAUTH_THRESHOLD,
++
++  NL80211_ATTR_RECEIVE_MULTICAST,
++  NL80211_ATTR_WIPHY_FREQ_OFFSET,
++  NL80211_ATTR_CENTER_FREQ1_OFFSET,
++  NL80211_ATTR_SCAN_FREQ_KHZ,
++
++  NL80211_ATTR_HE_6GHZ_CAPABILITY,
++
++  NL80211_ATTR_FILS_DISCOVERY,
++
++  NL80211_ATTR_UNSOL_BCAST_PROBE_RESP,
++
++  NL80211_ATTR_S1G_CAPABILITY,
++  NL80211_ATTR_S1G_CAPABILITY_MASK,
++
++  NL80211_ATTR_SAE_PWE,
++
+ 	NL80211_ATTR_RECONNECT_REQUESTED,
+ 
+-	NL80211_ATTR_IFTYPE_AKM_SUITES,
++  NL80211_ATTR_SAR_SPEC,
+ 
+-	NL80211_ATTR_TID_CONFIG,
++  NL80211_ATTR_DISABLE_HE,
++
++  NL80211_ATTR_OBSS_COLOR_BITMAP,
++
++  NL80211_ATTR_COLOR_CHANGE_COUNT,
++  NL80211_ATTR_COLOR_CHANGE_COLOR,
++  NL80211_ATTR_COLOR_CHANGE_ELEMS,
++
++  NL80211_ATTR_MBSSID_CONFIG,
++  NL80211_ATTR_MBSSID_ELEMS,
++
++  NL80211_ATTR_RADAR_BACKGROUND,
++
++  NL80211_ATTR_AP_SETTINGS_FLAGS,
++
++  NL80211_ATTR_EHT_CAPABILITY,
++
++  NL80211_ATTR_DISABLE_EHT,
++
++  NL80211_ATTR_MLO_LINKS,
++  NL80211_ATTR_MLO_LINK_ID,
++  NL80211_ATTR_MLD_ADDR,
++
++  NL80211_ATTR_MLO_SUPPORT,
++
++  NL80211_ATTR_MAX_NUM_AKM_SUITES,
++
++  NL80211_ATTR_EML_CAPABILITY,
++  NL80211_ATTR_MLD_CAPA_AND_OPS,
++
++  NL80211_ATTR_TX_HW_TIMESTAMP,
++  NL80211_ATTR_RX_HW_TIMESTAMP,
++  NL80211_ATTR_TD_BITMAP,
+ 
+ 	/* add attributes here, update the policy in nl80211.c */
+ 
+@@ -6877,4 +6934,84 @@ enum nl80211_iftype_akm_attributes {
+ 	NL80211_IFTYPE_AKM_ATTR_MAX = __NL80211_IFTYPE_AKM_ATTR_LAST - 1,
+ };
+ 
++/**
++ * enum nl80211_fils_discovery_attributes - FILS discovery configuration
++ * from IEEE Std 802.11ai-2016, Annex C.3 MIB detail.
++ *
++ * @__NL80211_FILS_DISCOVERY_ATTR_INVALID: Invalid
++ *
++ * @NL80211_FILS_DISCOVERY_ATTR_INT_MIN: Minimum packet interval (u32, TU).
++ *  Allowed range: 0..10000 (TU = Time Unit)
++ * @NL80211_FILS_DISCOVERY_ATTR_INT_MAX: Maximum packet interval (u32, TU).
++ *  Allowed range: 0..10000 (TU = Time Unit)
++ * @NL80211_FILS_DISCOVERY_ATTR_TMPL: Template data for FILS discovery action
++ *  frame including the headers.
++ *
++ * @__NL80211_FILS_DISCOVERY_ATTR_LAST: Internal
++ * @NL80211_FILS_DISCOVERY_ATTR_MAX: highest attribute
++ */
++enum nl80211_fils_discovery_attributes {
++  __NL80211_FILS_DISCOVERY_ATTR_INVALID,
++
++  NL80211_FILS_DISCOVERY_ATTR_INT_MIN,
++  NL80211_FILS_DISCOVERY_ATTR_INT_MAX,
++  NL80211_FILS_DISCOVERY_ATTR_TMPL,
++
++  /* keep last */
++  __NL80211_FILS_DISCOVERY_ATTR_LAST,
++  NL80211_FILS_DISCOVERY_ATTR_MAX = __NL80211_FILS_DISCOVERY_ATTR_LAST - 1
++};
++
++/*
++ * FILS discovery template minimum length with action frame headers and
++ * mandatory fields.
++ */
++#define NL80211_FILS_DISCOVERY_TMPL_MIN_LEN 42
++
++/**
++ * enum nl80211_unsol_bcast_probe_resp_attributes - Unsolicited broadcast probe
++ *  response configuration. Applicable only in 6GHz.
++ *
++ * @__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INVALID: Invalid
++ *
++ * @NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INT: Maximum packet interval (u32, TU).
++ *  Allowed range: 0..20 (TU = Time Unit). IEEE P802.11ax/D6.0
++ *  26.17.2.3.2 (AP behavior for fast passive scanning).
++ * @NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_TMPL: Unsolicited broadcast probe response
++ *  frame template (binary).
++ *
++ * @__NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST: Internal
++ * @NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX: highest attribute
++ */
++enum nl80211_unsol_bcast_probe_resp_attributes {
++  __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INVALID,
++
++  NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_INT,
++  NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_TMPL,
++
++  /* keep last */
++  __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST,
++  NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_MAX =
++    __NL80211_UNSOL_BCAST_PROBE_RESP_ATTR_LAST - 1
++};
++
++/**
++ * enum nl80211_sae_pwe_mechanism - The mechanism(s) allowed for SAE PWE
++ *  derivation. Applicable only when WPA3-Personal SAE authentication is
++ *  used.
++ *
++ * @NL80211_SAE_PWE_UNSPECIFIED: not specified, used internally to indicate that
++ *  attribute is not present from userspace.
++ * @NL80211_SAE_PWE_HUNT_AND_PECK: hunting-and-pecking loop only
++ * @NL80211_SAE_PWE_HASH_TO_ELEMENT: hash-to-element only
++ * @NL80211_SAE_PWE_BOTH: both hunting-and-pecking loop and hash-to-element
++ *  can be used.
++ */
++enum nl80211_sae_pwe_mechanism {
++  NL80211_SAE_PWE_UNSPECIFIED,
++  NL80211_SAE_PWE_HUNT_AND_PECK,
++  NL80211_SAE_PWE_HASH_TO_ELEMENT,
++  NL80211_SAE_PWE_BOTH,
++};
++
+ #endif /* __LINUX_NL80211_H */
+Index: kernel-5_4/net/wireless/nl80211.c
+===================================================================
+--- kernel-5_4.orig/net/wireless/nl80211.c
++++ kernel-5_4/net/wireless/nl80211.c
+@@ -666,6 +666,9 @@ const struct nla_policy nl80211_policy[N
+ 	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
+ 	[NL80211_ATTR_TID_CONFIG] =
+ 		NLA_POLICY_NESTED_ARRAY(nl80211_tid_config_attr_policy),
++  [NL80211_ATTR_SAE_PWE] =
++    NLA_POLICY_RANGE(NLA_U8, NL80211_SAE_PWE_HUNT_AND_PECK,
++      NL80211_SAE_PWE_BOTH),
+ };
+ 
+ /* policy for the key attributes */
+@@ -9491,6 +9494,12 @@ static int nl80211_crypto_settings(struc
+ 			nla_len(info->attrs[NL80211_ATTR_SAE_PASSWORD]);
+ 	}
+ 
++  if (info->attrs[NL80211_ATTR_SAE_PWE])
++    settings->sae_pwe =
++      nla_get_u8(info->attrs[NL80211_ATTR_SAE_PWE]);
++  else
++    settings->sae_pwe = NL80211_SAE_PWE_UNSPECIFIED;
++
+ 	return 0;
+ }
+ 
