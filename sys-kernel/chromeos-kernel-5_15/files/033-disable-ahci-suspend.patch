@@ -1,0 +1,13 @@
+Index: kernel-5_15/drivers/ata/ahci.c
+===================================================================
+--- kernel-5_15.orig/drivers/ata/ahci.c
++++ kernel-5_15/drivers/ata/ahci.c
+@@ -136,7 +136,7 @@ static const struct ata_port_info ahci_p
+ 		.port_ops	= &ahci_ops,
+ 	},
+ 	[board_ahci_mobile] = {
+-		AHCI_HFLAGS	(AHCI_HFLAG_IS_MOBILE),
++		AHCI_HFLAGS	(AHCI_HFLAG_IS_MOBILE | AHCI_HFLAG_NO_SUSPEND),
+ 		.flags		= AHCI_FLAG_COMMON,
+ 		.pio_mask	= ATA_PIO4,
+ 		.udma_mask	= ATA_UDMA6,
