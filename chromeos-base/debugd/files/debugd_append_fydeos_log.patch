@@ -1,0 +1,12 @@
+diff --git a/debugd/src/log_tool.cc b/debugd/src/log_tool.cc
+index cdb91c4eed..987d01a5af 100644
+--- a/debugd/src/log_tool.cc
++++ b/debugd/src/log_tool.cc
+@@ -550,6 +550,7 @@ const std::array kVarLogFileLogs {
+   Log{kFile, "ec_info", "/var/log/ec_info.txt"},
+   Log{kFile, "eventlog", "/var/log/eventlog.txt"},
+   Log{kFile, "fwupd_log", "/var/log/fwupd.log"},
++  Log{kFile, "fydeos.log", "/var/log/fydeos.log"},
+   Log{kFile, "hammerd", "/var/log/hammerd.log"},
+   Log{kFile, "hypervisor.log", "/var/log/hypervisor.log"},
+   Log{kGlob, "memd clips", "/var/log/memd/memd.clip*"},
