@@ -1,0 +1,54 @@
+Index: v6.1/drivers/input/mouse/vmmouse.c
+===================================================================
+--- v6.1.orig/drivers/input/mouse/vmmouse.c
++++ v6.1/drivers/input/mouse/vmmouse.c
+@@ -194,18 +194,22 @@ static psmouse_ret_t vmmouse_report_even
+ 		/* Xorg seems to ignore wheel events on absolute devices */
+ 		input_report_rel(rel_dev, REL_WHEEL, -(s8)((u8) z));
+ 
++    vmmouse_report_button(psmouse, abs_dev, rel_dev,
++              pref_dev, BTN_TOOL_PEN, 1);
+ 		vmmouse_report_button(psmouse, abs_dev, rel_dev,
+-				      pref_dev, BTN_LEFT,
++				      pref_dev, BTN_TOUCH,
+ 				      status & VMMOUSE_LEFT_BUTTON);
+ 		vmmouse_report_button(psmouse, abs_dev, rel_dev,
+-				      pref_dev, BTN_RIGHT,
++				      pref_dev, BTN_STYLUS2,
+ 				      status & VMMOUSE_RIGHT_BUTTON);
+ 		vmmouse_report_button(psmouse, abs_dev, rel_dev,
+-				      pref_dev, BTN_MIDDLE,
++				      pref_dev, BTN_STYLUS,
+ 				      status & VMMOUSE_MIDDLE_BUTTON);
+ 		input_sync(abs_dev);
+ 		input_sync(rel_dev);
+ 	}
++  input_report_key(abs_dev, BTN_TOOL_PEN, 0);
++  input_sync(abs_dev);
+ 
+ 	return PSMOUSE_FULL_PACKET;
+ }
+@@ -460,18 +464,19 @@ int vmmouse_init(struct psmouse *psmouse
+ 		 VMMOUSE_PSNAME, VMMOUSE_VENDOR, VMMOUSE_NAME);
+ 	abs_dev->phys = priv->phys;
+ 	abs_dev->name = priv->dev_name;
+-	abs_dev->id.bustype = BUS_I8042;
++	abs_dev->id.bustype = BUS_USB;
+ 	abs_dev->id.vendor = 0x0002;
+ 	abs_dev->id.product = PSMOUSE_VMMOUSE;
+ 	abs_dev->id.version = psmouse->model;
+ 	abs_dev->dev.parent = &psmouse->ps2dev.serio->dev;
+ 
+ 	/* Set absolute device capabilities */
+-	input_set_capability(abs_dev, EV_KEY, BTN_LEFT);
+-	input_set_capability(abs_dev, EV_KEY, BTN_RIGHT);
+-	input_set_capability(abs_dev, EV_KEY, BTN_MIDDLE);
++  input_set_capability(abs_dev, EV_KEY, BTN_TOUCH);
++	input_set_capability(abs_dev, EV_KEY, BTN_STYLUS2);
++	input_set_capability(abs_dev, EV_KEY, BTN_STYLUS);
+ 	input_set_capability(abs_dev, EV_ABS, ABS_X);
+ 	input_set_capability(abs_dev, EV_ABS, ABS_Y);
++  input_set_capability(abs_dev, EV_KEY, BTN_TOOL_PEN);
+ 	input_set_abs_params(abs_dev, ABS_X, 0, VMMOUSE_MAX_X, 0, 0);
+ 	input_set_abs_params(abs_dev, ABS_Y, 0, VMMOUSE_MAX_Y, 0, 0);
+ 
