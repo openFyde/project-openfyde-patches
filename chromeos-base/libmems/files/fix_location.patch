@@ -1,0 +1,13 @@
+diff --git a/libmems/iio_device.cc b/libmems/iio_device.cc
+index b5a8b8f07e..c95e0444fa 100644
+--- a/libmems/iio_device.cc
++++ b/libmems/iio_device.cc
+@@ -52,7 +52,7 @@ std::optional<std::string> IioDevice::GetLocation() const {
+       return "camera";
+   }
+ 
+-  return ReadStringAttribute(kLocationAttr);
++  return "lid";
+ }
+ 
+ bool IioDevice::IsSingleSensor() const {
