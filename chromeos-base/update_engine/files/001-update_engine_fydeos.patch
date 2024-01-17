@@ -12,20 +12,18 @@ index 2dbedac0..02e8b14e 100644
      "metrics_utils.cc",
      "update_boot_flags_action.cc",
 diff --git a/cros/daemon_chromeos.cc b/cros/daemon_chromeos.cc
-index 51bed34e..9cf9ae50 100644
+index 51bed34e..7491a156 100644
 --- a/cros/daemon_chromeos.cc
 +++ b/cros/daemon_chromeos.cc
-@@ -38,6 +38,10 @@ int DaemonChromeOS::OnInit() {
-   // handler.
-   subprocess_.Init(this);
+@@ -86,7 +86,7 @@ void DaemonChromeOS::OnDBusRegistered(bool succeeded) {
+           TelemetryCategoryEnum::kBus,
+       },
+       base::BindOnce(
+-          []() { SystemState::Get()->update_attempter()->StartUpdater(); }));
++          []() { fydeos::FydeLicenseChecker::Get().Init(); SystemState::Get()->update_attempter()->StartUpdater(); }));
+ }
  
-+  // ---***FYDEOS BEGIN***---
-+  license_checker_.Init();
-+  // ---***FYDEOS END***---
-+
-   int exit_code = Daemon::OnInit();
-   if (exit_code != EX_OK)
-     return exit_code;
+ }  // namespace chromeos_update_engine
 diff --git a/cros/daemon_chromeos.h b/cros/daemon_chromeos.h
 index 4a114765..cf0cfb2d 100644
 --- a/cros/daemon_chromeos.h

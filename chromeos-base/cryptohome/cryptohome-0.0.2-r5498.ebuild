@@ -6,26 +6,27 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="759635cf334285c52b12a0ebd304988c4bb1329f"
-CROS_WORKON_TREE=("c5a3f846afdfb5f37be5520c63a756807a6b31c4" "2cb6bf89d18ada1e55d68d8308f262fed744eebe" "c0264ace18f901db759964a1f346331f593daaf7" "bdc2fe06e72f494e59d3000e9c660943df59f82c" "585af077146f2e4daaaec14eb5814cd8507e862c" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="04097b9df3be67662e26f4a7452ddbf989a7158b"
+CROS_WORKON_TREE=("8d6f8fdce76674dc4f63f7b19f50a8b8b141218f" "d97327a644cd7be26f0c00bdc6e2f6c7781d8939" "7f3b3b01a5e0579ccc6272030ea26e45c3bc3140" "6d2e5c63a225d587ac97104c5edd96819e6a95a2" "1268480d08437246442187941fe41c4d00a5c3df" "585af077146f2e4daaaec14eb5814cd8507e862c" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+PYTHON_COMPAT=( python3_{8..11} )
+
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_DESTDIR="${S}/platform2"
 CROS_WORKON_INCREMENTAL_BUILD=1
 # TODO(crbug.com/809389): Avoid directly including headers from other packages.
-CROS_WORKON_SUBTREE="common-mk cryptohome libhwsec libhwsec-foundation secure_erase_file .gn"
+CROS_WORKON_SUBTREE="common-mk cryptohome libcrossystem libhwsec libhwsec-foundation secure_erase_file .gn"
 
 PLATFORM_NATIVE_TEST="yes"
 PLATFORM_SUBDIR="cryptohome"
 
-inherit tmpfiles cros-workon cros-unibuild platform systemd udev user
+inherit python-any-r1 tmpfiles cros-workon cros-unibuild platform systemd udev user
 
 DESCRIPTION="Encrypted home directories for Chromium OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/HEAD/cryptohome/"
 SRC_URI=""
 
 LICENSE="BSD-Google"
-SLOT="0/0"
 KEYWORDS="*"
 IUSE="+device_mapper +direncription_allow_v2 -direncryption
 	double_extend_pcr_issue +downloads_bind_mount fuzzer
@@ -66,12 +67,15 @@ COMMON_DEPEND="
 	chromeos-base/chromeos-config-tools:=
 	chromeos-base/featured:=
 	chromeos-base/libhwsec:=[test?]
+	chromeos-base/libhwsec-foundation:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
 	chromeos-base/tpm_manager:=
+	dev-cpp/abseil-cpp:=
 	>=dev-libs/flatbuffers-2.0.0-r1:=
 	dev-libs/openssl:=
 	dev-libs/protobuf:=
+	sys-apps/dbus:=
 	sys-apps/flashmap:=
 	sys-apps/keyutils:=
 	sys-apps/rootdev:=
@@ -91,6 +95,8 @@ DEPEND="${COMMON_DEPEND}
 	tpm2? ( chromeos-base/trunks:=[test?] )
 	chromeos-base/attestation-client:=
 	chromeos-base/cryptohome-client:=
+	chromeos-base/device_management-client:=
+	chromeos-base/libcrossystem:=[test?]
 	chromeos-base/power_manager-client:=
 	chromeos-base/protofiles:=
 	chromeos-base/shill-client:=
@@ -99,6 +105,20 @@ DEPEND="${COMMON_DEPEND}
 	chromeos-base/vboot_reference:=
 	chromeos-base/libhwsec:=
 "
+
+# shellcheck disable=SC2016
+BDEPEND="
+	chromeos-base/chromeos-dbus-bindings
+	dev-libs/flatbuffers
+	dev-libs/protobuf
+	$(python_gen_any_dep '
+		dev-python/flatbuffers[${PYTHON_USEDEP}]
+	')
+"
+
+python_check_deps() {
+	python_has_version -b "dev-python/flatbuffers[${PYTHON_USEDEP}]"
+}
 
 src_install() {
 	# TODO(crbug/1184602): Move remaining install logic to GN.
@@ -195,18 +215,8 @@ src_install() {
 
 	local fuzzer_component_id="1088399"
 	platform_fuzzer_install "${S}"/OWNERS \
-		"${OUT}"/cryptohome_cryptolib_rsa_oaep_decrypt_fuzzer \
-		--comp "${fuzzer_component_id}" \
-		fuzzers/data/*
-
-	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_cryptolib_blob_to_hex_fuzzer \
 		--comp "${fuzzer_component_id}"
-
-	platform_fuzzer_install "${S}"/OWNERS \
-		"${OUT}"/cryptohome_tpm1_cmk_migration_parser_fuzzer \
-		--comp "${fuzzer_component_id}" \
-		fuzzers/data/*
 
 	platform_fuzzer_install "${S}"/OWNERS \
 		"${OUT}"/cryptohome_userdataauth_fuzzer \

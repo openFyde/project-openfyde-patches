@@ -14,15 +14,15 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{6..9} )
-inherit autotest-deponly binutils-funcs chromium-source cros-credentials cros-constants cros-sanitizers eutils flag-o-matic git-2 multilib toolchain-funcs user python-any-r1 multiprocessing
+PYTHON_COMPAT=( python3_{8..11} )
+inherit autotest-deponly binutils-funcs chromium-source cros-credentials cros-constants cros-sanitizers eutils flag-o-matic multilib toolchain-funcs user python-any-r1 multiprocessing
 
 DESCRIPTION="Open-source version of Google Chrome web browser"
 HOMEPAGE="http://www.chromium.org/"
 SRC_URI=""
 
 LICENSE="BSD-Google chrome_internal? ( Google-TOS )"
-SLOT="0"
+SLOT="0/${PVR}"
 KEYWORDS="~*"
 IUSE="
 	afdo_generate
@@ -32,7 +32,6 @@ IUSE="
 	app_shell
 	arc_hw_oemcrypto
 	asan
-	+authpolicy
 	+build_tests
 	cdm_factory_daemon
 	+chrome_debug
@@ -52,10 +51,10 @@ IUSE="
 	+fonts
 	hibernate
 	hw_details
+	feature_management
 	goma_thinlto
 	hevc_codec
 	+highdpi
-	iioservice
 	intel_oemcrypto
 	internal_gles_conform
 	+libcxx
@@ -67,10 +66,8 @@ IUSE="
 	+oobe_config
 	opengl
 	opengles
-	orderfile_generate
-	+orderfile_use
-	orderfile_verify
 	protected_av1
+	remoteexec
 	+runhooks
 	strict_toolchain_checks
 	subpixel_rendering
@@ -85,10 +82,13 @@ IUSE="
 	vtable_verify
 	xkbcommon
 	"
+# CFI is coupled with ThinLTO.
+# AFDO generate does not support debug_fission.
+# AFDO verify does not use production AFDO.
 REQUIRED_USE="
 	cfi? ( thinlto )
+	afdo_generate? ( !debug_fission )
 	afdo_verify? ( !afdo_use )
-	orderfile_generate? ( !orderfile_use )
 	"
 
 # The gclient hooks that run in src_prepare hit the network.
@@ -118,33 +118,22 @@ BUILD_OUT="${BUILD_OUT:-out_${BOARD}}"
 # Unsetting BUILD_OUT_SYM will revert this behavior
 BUILD_OUT_SYM="c"
 
-UNVETTED_ORDERFILE_LOCATION=${AFDO_GS_DIRECTORY:-"gs://chromeos-toolchain-artifacts/orderfile/unvetted"}
-
-# The following entry will be modified automatically for verifying orderfile or AFDO profile.
-UNVETTED_ORDERFILE=""
+# The following entry will be modified automatically for verifying AFDO profile.
 UNVETTED_AFDO_FILE=""
-
-add_orderfiles() {
-	# For verify orderfile, only for a toolchain special build.
-	if [[ -n ${UNVETTED_ORDERFILE} ]]; then
-		SRC_URI+=" orderfile_verify? ( ${UNVETTED_ORDERFILE_LOCATION}/${UNVETTED_ORDERFILE}.xz )"
-	fi
-}
-
-add_orderfiles
 
 RDEPEND="${RDEPEND}
 	app-arch/bzip2
 	app-arch/sharutils
 	app-crypt/mit-krb5
 	app-misc/edid-decode
-	authpolicy? ( chromeos-base/authpolicy )
 	~chromeos-base/chrome-icu-${PV}
 	chromeos-base/gestures
 	chromeos-base/libevdev:=
 	chromeos-base/mojo_service_manager
 	fonts? ( chromeos-base/chromeos-fonts )
 	chrome_internal? ( chromeos-base/quickoffice )
+	dev-libs/expat
+	dev-libs/libffi
 	dev-libs/nspr
 	>=dev-libs/nss-3.12.2
 	libinput? ( dev-libs/libinput:= )
@@ -163,7 +152,7 @@ RDEPEND="${RDEPEND}
 	virtual/udev
 	sys-libs/libcap
 	chrome_remoting? ( sys-libs/pam )
-	vaapi? ( x11-libs/libva )
+	vaapi? ( x11-libs/libva:= )
 	xkbcommon? (
 		x11-libs/libxkbcommon
 		x11-misc/xkeyboard-config
@@ -177,7 +166,7 @@ RDEPEND="${RDEPEND}
 		sys-libs/libcxx
 	)
 	oobe_config? ( chromeos-base/oobe_config )
-	iioservice? ( chromeos-base/iioservice )
+	chromeos-base/iioservice
 	hibernate? ( chromeos-base/hiberman )
 	"
 
@@ -187,6 +176,29 @@ DEPEND="${DEPEND}
 	>=dev-util/gperf-3.0.3
 	arm? ( x11-libs/libdrm )
 "
+
+# shellcheck disable=SC2016
+BDEPEND="
+	app-crypt/mit-krb5
+	dev-libs/glib
+	dev-util/gperf
+	$(python_gen_any_dep '
+		dev-python/chardet[${PYTHON_USEDEP}]
+	')
+	dev-vcs/git
+	media-libs/fontconfig
+	arm64? (
+		cross-armv7a-cros-linux-gnueabihf/binutils
+		cross-armv7a-cros-linux-gnueabihf/compiler-rt
+		cross-armv7a-cros-linux-gnueabihf/glibc
+		cross-armv7a-cros-linux-gnueabihf/linux-headers
+		cross-armv7a-cros-linux-gnueabihf/llvm-libunwind
+	)
+"
+
+python_check_deps() {
+	python_has_version -b "dev-python/chardet[${PYTHON_USEDEP}]"
+}
 
 PATCHES=()
 
@@ -219,12 +231,18 @@ echox() {
 echotf() { echox "${1:-$?}" true false ; }
 usetf()  { usex "$1" true false ; }
 
+# Can only turn on either remoteexec or goma
 use_remoteexec() {
-	[[ -n "${USE_REMOTEEXEC}" && "${USE_REMOTEEXEC}" == "true" ]]
+	[[ "${USE_REMOTEEXEC:-$(usetf remoteexec)}" == "true" && \
+		$(cros-fetch_google_app_credentials) == "true" ]]
 }
 
 use_goma() {
-	[[ -n "${USE_GOMA}" && "${USE_GOMA}" == "true" ]]
+	if use_remoteexec; then
+		false
+	else
+		[[ -n "${USE_GOMA}" && "${USE_GOMA}" == "true" ]]
+	fi
 }
 
 should_upload_build_logs() {
@@ -246,6 +264,7 @@ set_build_args() {
 	# shellcheck disable=SC2119
 	# suppressing the false warning not to specify the optional argument of 'echotf".
 	use_hevc_codec=$(use hevc_codec && (use chrome_internal || use chrome_media); echotf)
+
 	BUILD_ARGS=(
 		"is_chromeos_device=true"
 		# is_official_build sometimes implies extra optimizations (e.g. it will allow
@@ -262,7 +281,7 @@ set_build_args() {
 		"use_chromeos_protected_av1=${use_protected_av1}"
 		"use_chromeos_protected_media=$(usetf cdm_factory_daemon)"
 		"enable_hevc_parser_and_hw_decoder=${use_hevc_codec}"
-		"use_iioservice=$(usetf iioservice)"
+		"use_runtime_vlog=$(usetf build_tests)"
 		"use_v4l2_codec=$(usetf v4l2_codec)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"use_vaapi=$(usetf vaapi)"
@@ -271,7 +290,6 @@ set_build_args() {
 		# shellcheck disable=SC2119
 		# suppressing the false warning not to specify the optional argument of 'echotf".
 		"enable_nacl=$(use_nacl; echotf)"
-		"enable_hibernate=$(usetf hibernate)"
 		# use_system_minigbm is set below.
 
 		"is_cfm=$(usetf cfm)"
@@ -301,6 +319,10 @@ set_build_args() {
 
 		# Add hardware information to feedback logs and chrome://system.
 		"is_chromeos_with_hw_details=$(usetf hw_details)"
+
+		# Whether the target board has any device models supporting the
+		# "time of day" wallpaper and screensaver collections.
+		"is_time_of_day_supported=$(usetf feature_management)"
 	)
 
 	# BUILD_STRING_ARGS needs appropriate quoting. So, we keep them separate and
@@ -411,6 +433,8 @@ set_build_args() {
 	fi
 
 	if use_remoteexec; then
+		einfo "!!!! Using reclient to speed up builds !!!!"
+
 		BUILD_ARGS+=(
 			"use_remoteexec=true"
 		)
@@ -418,13 +442,46 @@ set_build_args() {
 			# reclient configs in CHROME_ROOT are for simplechrome only. So for
 			# ebuilds, instead we override GN args here to specify the correct
 			# rewrapper config to use.
-			"rbe_cc_cfg_file=${CHROME_ROOT}/src/buildtools/reclient_cfgs/rewrapper_chroot_compile.cfg"
-			"rbe_py_cfg_file=${CHROME_ROOT}/src/buildtools/reclient_cfgs/rewrapper_chroot_python.cfg"
+			"rbe_cfg_dir=${CHROME_ROOT}/src/buildtools/reclient_cfgs/linux_chroot"
 
 			# For chroot based builds, this is overridden to be  '/'
 			# (where we run our build actions).
 			"rbe_exec_root=/"
 		)
+
+		# Startup reproxy. ============================================
+
+		# How overall reclient build works in a nutshell:
+		# 1) Startup reproxy (this is a local client used to send builds to RBE)
+		# 2) On chromium's GN setup, we are passing in a GN arg: use_remoteexec, which
+		#    wraps build commands (eg. clang++) with rewrapper so that it looks like (eg. rewrapper clang++ ...)
+		#    rewrapper then communicates with the local reproxy client, which then communicates with RBE for the build.
+
+		# 1. Check if a builder is running this or local dev. Switch to the RBE env accordingly
+		# TODO(b/281097251): Reused ugly hack to determine if local dev is invoking versus from a CI builder.
+		# Need to restrict RBE access depending on above.
+		if [[ -z ${CHROMEOS_CI_USERNAME} ]]; then
+			die "FATAL - CHROMEOS_CI_USERNAME is undefined. Should be defined in make.common"
+		fi
+
+		if [[ $(whoami) == "${CHROMEOS_CI_USERNAME}" ]]; then
+			REPROXY_CFG_FILENAME="reproxy.cfg"
+			einfo "Using production reproxy.cfg config for user: $(whoami) "
+		else
+			REPROXY_CFG_FILENAME="reproxy_experimental.cfg"
+			einfo "Using developer reproxy_experimental.cfg config for user: $(whoami) "
+		fi
+
+		# 2. Bootstrap is used to startup reproxy. This is used to route local builds to RBE.
+
+		# 2a. reclient and proxy generates a lot of logs. Put it into a subfolder
+		mkdir -p /tmp/reclient-chromeos-chrome || die
+
+		einfo "Starting reproxy"
+		"${DEPOT_TOOLS}/.cipd_bin/reclient/bootstrap" \
+			--cfg="/mnt/host/source/chromite/sdk/reclient_cfgs/${REPROXY_CFG_FILENAME}" \
+			--re_proxy "${DEPOT_TOOLS}/.cipd_bin/reclient/reproxy" \
+			|| die "Fatal - cannot start reproxy for distributed builds."
 	fi
 
 	if use chrome_debug; then
@@ -432,10 +489,12 @@ set_build_args() {
 		# Using -g1 causes problems with crash server (see crbug.com/601854).
 		# Disable debug_fission for bots which generate AFDO profile. (see crbug.com/704602).
 		local debug_level=2
-		if use arm && ! use debug_fission && use afdo_generate; then
+		if use afdo_generate; then
 			# Limit debug info to -g1 to keep the binary size within 4GB.
 			# Production builds do not use "-debug_fission". But it is used
 			# by the AFDO builders and AFDO tools are fine with debug_level=1.
+			# Excessive debug info size is also becoming a problem on amd64,
+			# so it's applicable now to all archs.
 			debug_level=1
 		fi
 		BUILD_ARGS+=(
@@ -456,9 +515,6 @@ set_build_args() {
 }
 
 unpack_chrome() {
-	# Add depot_tools to PATH, local chroot builds fail otherwise.
-	export PATH=${PATH}:${DEPOT_TOOLS}
-
 	local cmd=( "${CHROMITE_BIN_DIR}"/sync_chrome )
 	use chrome_internal && cmd+=( --internal )
 	if [[ "${CHROME_VERSION}" != "9999" ]]; then
@@ -526,16 +582,16 @@ src_unpack() {
 		CHROME_SRC+="-internal"
 	fi
 
-	# CHROME_CACHE_DIR is used for storing output artifacts, and is always a
-	# regular directory inside the chroot (i.e. it's never mounted in, so it's
-	# always safe to use cp -al for these artifacts).
+	# Add depot_tools to PATH, local chroot builds fail otherwise. Also used
+	# for cipd, which is used to fetch reclient build cfg files.
+	export PATH=${PATH}:${DEPOT_TOOLS}
+
+	# CHROME_CACHE_DIR is used for storing output artifacts.
 	: "${CHROME_CACHE_DIR:="/var/cache/chromeos-chrome/${CHROME_SRC}"}"
 	addwrite "${CHROME_CACHE_DIR}"
 
 	# CHROME_DISTDIR is used for storing the source code, if any source code
-	# needs to be unpacked at build time (e.g. in the SERVER_SOURCE scenario.)
-	# It will be mounted into the chroot, so it is never safe to use cp -al
-	# for these files.
+	# needs to be unpacked at build time (e.g. in the SERVER_SOURCE scenario).
 	: "${CHROME_DISTDIR:="${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/${CHROME_SRC}"}"
 	addwrite "${CHROME_DISTDIR}"
 
@@ -558,8 +614,7 @@ src_unpack() {
 	# Prepare and set CHROME_ROOT based on CHROME_ORIGIN.
 	# CHROME_ROOT is the location where the source code is used for compilation.
 	# If we're in SERVER_SOURCE mode, CHROME_ROOT is CHROME_DISTDIR. In LOCAL_SOURCE
-	# mode, this directory may be set manually to any directory. It may be mounted
-	# into the chroot, so it is not safe to use cp -al for these files.
+	# mode, this directory may be set manually to any directory.
 	# These are set here because $(whoami) returns the proper user here,
 	# but 'root' at the root level of the file
 	case "${CHROME_ORIGIN}" in
@@ -596,14 +651,14 @@ src_unpack() {
 	# FIXME: This is the normal path where ebuild stores its working data.
 	# Chrome builds inside distfiles because of speed, so we at least make
 	# a symlink here to add compatibility with autotest eclass which uses this.
-	ln -sf "${CHROME_ROOT}" "${WORKDIR}/${P}"
+	ln -sf "${CHROME_ROOT}" "${WORKDIR}/${P}" || die
 
 	if use internal_gles_conform; then
 		local CHROME_GLES2_CONFORM=${CHROME_ROOT}/src/third_party/gles2_conform
 		local CROS_GLES2_CONFORM=/home/${WHOAMI}/trunk/src/third_party/gles2_conform
 		if [[ ! -d "${CHROME_GLES2_CONFORM}" ]]; then
 			if [[ -d "${CROS_GLES2_CONFORM}" ]]; then
-				ln -s "${CROS_GLES2_CONFORM}" "${CHROME_GLES2_CONFORM}"
+				ln -s "${CROS_GLES2_CONFORM}" "${CHROME_GLES2_CONFORM}" || die
 				einfo "Using GLES2 conformance test suite from ${CROS_GLES2_CONFORM}"
 			else
 				die "Trying to build GLES2 conformance test suite without ${CHROME_GLES2_CONFORM} or ${CROS_GLES2_CONFORM}"
@@ -626,25 +681,6 @@ src_unpack() {
 			die "Cannot find ${UNVETTED_AFDO_FILE} to build Chrome."
 		fi
 		BUILD_STRING_ARGS+=( "clang_sample_profile_path=${UNVETTED_AFDO_FILE}" )
-	fi
-
-	# Unpack unvetted orderfile.
-	if use orderfile_verify; then
-		local orderfile_dir="${WORKDIR}/orderfile"
-		mkdir "${orderfile_dir}"
-		local orderfile_file=${UNVETTED_ORDERFILE}
-		(cd "${orderfile_dir}" && unpack "${orderfile_file}.xz") || die
-
-		local orderfile_loc="${orderfile_dir}/${orderfile_file}"
-		einfo "Using ${orderfile_loc} as orderfile for ordering Chrome"
-
-		# Pass the path to orderfile to GN args.
-		BUILD_STRING_ARGS+=( "chrome_orderfile_path=${orderfile_loc}" )
-	fi
-
-	if ! use orderfile_use; then
-		# If not using orderfile, override the default orderfile path to empty.
-		BUILD_STRING_ARGS+=( "chrome_orderfile_path=" )
 	fi
 }
 
@@ -675,7 +711,7 @@ src_prepare() {
 	cd "${CHROME_ROOT}/src" || die "Cannot chdir to ${CHROME_ROOT}"
 
 	# We do symlink creation here if appropriate.
-	mkdir -p "${CHROME_CACHE_DIR}/src/${BUILD_OUT}"
+	mkdir -p "${CHROME_CACHE_DIR}/src/${BUILD_OUT}" || die
 	if [[ -n "${BUILD_OUT_SYM}" ]]; then
 		rm -rf "${BUILD_OUT_SYM}" || die "Could not remove symlink"
 		ln -sfT "${CHROME_CACHE_DIR}/src/${BUILD_OUT}" "${BUILD_OUT_SYM}" ||
@@ -711,6 +747,7 @@ setup_test_lists() {
 		dawn_end2end_tests
 		dawn_unittests
 		fake_dmserver
+		libtest_trace_processor.so
 		gl_tests
 		jpeg_decode_accelerator_unittest
 		ozone_gl_unittests
@@ -720,8 +757,6 @@ setup_test_lists() {
 		wayland_client_perftests
 		wayland_hdr_client
 	)
-
-	TEST_FILES+=( ppapi/examples/video_decode )
 
 	if use vaapi || use v4l2_codec; then
 		TEST_FILES+=(
@@ -745,6 +780,7 @@ setup_test_lists() {
 		TEST_FILES+=(
 			v4l2_stateless_decoder
 			v4l2_unittest
+			image_processor_perf_test
 		)
 	fi
 
@@ -753,17 +789,6 @@ setup_test_lists() {
 		bitmaptools
 		clear_system_cache
 		minidump_stackwalk
-	)
-
-	PPAPI_TEST_FILES=(
-		lib{32,64}
-		mock_nacl_gdb
-		ppapi_nacl_tests_{newlib,glibc}.nmf
-		ppapi_nacl_tests_{newlib,glibc}_{x32,x64,arm,arm64}.nexe
-		test_case.html
-		test_case.html.mock-http-headers
-		test_page.css
-		test_url_loader_data
 	)
 }
 
@@ -803,13 +828,6 @@ setup_compile_flags() {
 		# Non-ThinLTO builds with symbol_level=2 may have out-of-range
 		# relocations, too: crbug.com/1050819.
 		append-flags -fdebug-types-section
-	fi
-
-	if use orderfile_generate; then
-		local chrome_outdir="${CHROME_CACHE_DIR}/src/${BUILD_OUT}/${BUILDTYPE}"
-		BUILD_STRING_ARGS+=( "dump_call_chain_clustering_order=${chrome_outdir}/chrome.orderfile.txt" )
-		# Enable call graph profile sort (C3) to generate orderfile.
-		BUILD_ARGS+=( "enable_call_graph_profile_sort=true" )
 	fi
 
 	# Enable std::vector []-operator bounds checking.
@@ -875,8 +893,8 @@ src_configure() {
 	export OBJCOPY="llvm-objcopy"
 
 	# Set binutils path for goma.
-	CC_host+=" -B$(get_binutils_path "${LD_host}")"
-	CXX_host+=" -B$(get_binutils_path "${LD_host}")"
+	CFLAGS_host+=" -B$(get_binutils_path "${LD_host}")"
+	CXXFLAGS_host+=" -B$(get_binutils_path "${LD_host}")"
 
 	setup_compile_flags
 
@@ -998,24 +1016,18 @@ chrome_make() {
 	# If goma is used, log the command, cwd and env vars, which will be
 	# uploaded to the logging server.
 	if should_upload_build_logs; then
-		env --null > "${GLOG_log_dir}/ninja_env"
-		pwd > "${GLOG_log_dir}/ninja_cwd"
-		echo "${command[@]}" > "${GLOG_log_dir}/ninja_command"
+		env --null > "${GLOG_log_dir}/ninja_env" || die
+		pwd > "${GLOG_log_dir}/ninja_cwd" || die
+		echo "${command[@]}" > "${GLOG_log_dir}/ninja_command" || die
 	fi
 	PATH=${PATH}:${DEPOT_TOOLS} "${command[@]}"
 	local ret=$?
 	if should_upload_build_logs; then
 		echo "${ret}" > "${GLOG_log_dir}/ninja_exit"
-		cp -p "${BUILD_OUT_SYM}/${BUILDTYPE}/.ninja_log" "${GLOG_log_dir}/ninja_log"
+		cp -p "${BUILD_OUT_SYM}/${BUILDTYPE}/.ninja_log" \
+			"${GLOG_log_dir}/ninja_log" || die
 	fi
 	[[ "${ret}" -eq 0 ]] || die
-
-	# Still use a script to check if the orderfile is used properly, i.e.
-	# Builtin_ functions are placed between the markers, etc.
-	if use strict_toolchain_checks && (use orderfile_use || use orderfile_verify); then
-		einfo "Verifying orderfile..."
-		"${FILESDIR}/check_orderfile.py" "${build_dir}/chrome" || die
-	fi
 }
 
 src_compile() {
@@ -1056,10 +1068,11 @@ src_compile() {
 		local deps="${WORKDIR}/${P}/${AUTOTEST_DEPS}"
 
 		rm -rf "${deps}/chrome_test/test_src"
-		mv "${WORKDIR}/test_src" "${deps}/chrome_test/"
+		mv "${WORKDIR}/test_src" "${deps}/chrome_test/" || die
 
 		rm -rf "${deps}/telemetry_dep/test_src"
-		mv "${WORKDIR}/telemetry_src" "${deps}/telemetry_dep/test_src"
+		mv "${WORKDIR}/telemetry_src" "${deps}/telemetry_dep/test_src" \
+			|| die
 
 		# The autotest eclass wants this for some reason.
 		get_paths() { :; }
@@ -1070,9 +1083,17 @@ src_compile() {
 
 		# Remove .git dirs
 		# shellcheck disable=SC2154 # this is a bug in the linter.
-		find "${AUTOTEST_WORKDIR}" -type d -name .git -prune -exec rm -rf {} +
+		find "${AUTOTEST_WORKDIR}" -type d -name .git -prune \
+			-exec rm -rf {} + || die
 
 		autotest_src_compile
+	fi
+
+	if use_remoteexec; then
+		"${DEPOT_TOOLS}/.cipd_bin/reclient/bootstrap" --shutdown \
+			--cfg="/mnt/host/source/chromite/sdk/reclient_cfgs/${REPROXY_CFG_FILENAME}" \
+			--re_proxy /mnt/host/source/src/chromium/depot_tools/reclient/reproxy
+		einfo "Shutting down reproxy"
 	fi
 }
 
@@ -1087,33 +1108,31 @@ install_test_resources() {
 	# To speed things up, we write the list of files to a temporary file so
 	# we can use rsync with --files-from.
 	local tmp_list_file="${T}/${test_dir##*/}.files"
-	printf "%s\n" "$@" > "${tmp_list_file}"
+	printf "%s\n" "$@" > "${tmp_list_file}" || die
 
 	# Copy the specific files to the cache from the source directory.
 	# Note: we need to specify -r when using --files-from and -a to get a
 	# recursive copy.
-	# TODO(ihf): Make failures here fatal.
 	rsync -r -a --delete --exclude=.git --exclude="*.pyc" \
 		--files-from="${tmp_list_file}" "${CHROME_ROOT}/src/" \
-		"${CHROME_CACHE_DIR}/src/"
+		"${CHROME_CACHE_DIR}/src/" || die
 
-	# Create hard links in the destination based on the cache.
+	# Sync files to the destination based on the cache.
 	# Note: we need to specify -r when using --files-from and -a to get a
 	# recursive copy.
-	# TODO(ihf): Make failures here fatal.
-	rsync -r -a --link-dest="${CHROME_CACHE_DIR}/src" \
-		--files-from="${tmp_list_file}" "${CHROME_CACHE_DIR}/src/" "${test_dir}/"
+	rsync -r -a --files-from="${tmp_list_file}" "${CHROME_CACHE_DIR}/src/" \
+		"${test_dir}/" || die
 }
 
 test_strip_install() {
 	local from="${1}"
 	local dest="${2}"
 	shift 2
-	mkdir -p "${dest}"
+	mkdir -p "${dest}" || die
 	local f
 	for f in "$@"; do
 		$(tc-getSTRIP) --strip-debug \
-			"${from}/${f}" -o "${dest}/$(basename "${f}")"
+			"${from}/${f}" -o "${dest}/$(basename "${f}")" || die
 	done
 }
 
@@ -1130,23 +1149,10 @@ install_chrome_test_resources() {
 	# everything but the symbol names. Developers who need more detailed debug
 	# info on the tests can use the original unstripped tests from the ${from}
 	# directory.
-	TEST_INSTALL_TARGETS=(
-		"${TEST_FILES[@]}"
-		"libppapi_tests.so" )
+	TEST_INSTALL_TARGETS=( "${TEST_FILES[@]}" )
 
 	einfo "Installing test targets: ${TEST_INSTALL_TARGETS[*]}"
 	test_strip_install "${from}" "${dest}" "${TEST_INSTALL_TARGETS[@]}"
-
-	# Copy Chrome test data.
-	mkdir -p "${dest}"/test_data
-	# WARNING: Only copy subdirectories of |test_data|.
-	# The full |test_data| directory is huge and kills our VMs.
-	# Example:
-	# cp -al "${from}"/test_data/<subdir> "${test_dir}"/out/Release/<subdir>
-
-	for f in "${PPAPI_TEST_FILES[@]}"; do
-		cp -al "${from}/${f}" "${dest}"
-	done
 
 	# Install Chrome test resources.
 	# WARNING: Only install subdirectories of |chrome/test|.
@@ -1154,16 +1160,11 @@ install_chrome_test_resources() {
 	install_test_resources "${test_dir}" \
 		base/base_paths_posix.cc \
 		chrome/test/data/chromeos \
-		chrome/test/functional \
-		chrome/third_party/mock4js/mock4js.js  \
-		content/common/gpu/testdata \
 		media/test/data \
 		content/test/data \
 		net/data/ssl/certificates \
 		ppapi/tests/test_case.html \
-		ppapi/tests/test_url_loader_data \
-		third_party/bidichecker/bidichecker_packaged.js \
-		third_party/accessibility-developer-tools/gen/axs_testing.js
+		ppapi/tests/test_url_loader_data
 
 	# Add the pdf test data if needed.
 	if use chrome_internal; then
@@ -1175,7 +1176,7 @@ install_chrome_test_resources() {
 	fi
 
 	cp -a "${CHROME_ROOT}"/"${AUTOTEST_DEPS}"/chrome_test/setup_test_links.sh \
-		"${dest}"
+		"${dest}" || die
 }
 
 install_telemetry_dep_resources() {
@@ -1184,10 +1185,10 @@ install_telemetry_dep_resources() {
 	TELEMETRY=${CHROME_ROOT}/src/third_party/catapult/telemetry
 	if [[ -r "${TELEMETRY}" ]]; then
 		echo "Copying Telemetry Framework into ${test_dir}"
-		mkdir -p "${test_dir}"
+		mkdir -p "${test_dir}" || die
 		# We are going to call chromium code but can't trust that it is clean
 		# of precompiled code. See crbug.com/590762.
-		find "${TELEMETRY}" -name "*.pyc" -type f -delete
+		find "${TELEMETRY}" -name "*.pyc" -type f -delete || die
 		# Get deps from Chrome.
 		FIND_DEPS=${CHROME_ROOT}/src/tools/perf/find_dependencies
 		PERF_DEPS=${CHROME_ROOT}/src/tools/perf/bootstrap_deps
@@ -1197,12 +1198,6 @@ install_telemetry_dep_resources() {
 		DEPS_LIST=$(${FIND_DEPS} "${PERF_DEPS}" "${CROS_DEPS}" | \
 			sed -e "s|^${CHROME_ROOT}/src/||"; assert)
 		install_test_resources "${test_dir}" "${DEPS_LIST}"
-		# For crosperf, which uses some tests only available on internal builds.
-		if use chrome_internal; then
-			install_test_resources "${test_dir}" \
-				data/page_cycler/morejs \
-				data/page_cycler/moz
-		fi
 	fi
 
 	local from="${CHROME_CACHE_DIR}/src/${BUILD_OUT}/${BUILDTYPE}"
@@ -1213,13 +1208,14 @@ install_telemetry_dep_resources() {
 	# When copying only a portion of the Chrome source that telemetry needs,
 	# some symlinks can end up broken. Thus clean these up before packaging.
 	einfo "Cleaning up broken symlinks in telemetry"
-	find -L "${test_dir}" -type l -delete
+	find -L "${test_dir}" -type l -delete || die
 
 	# Unfortunately we are sometimes provided with unrelated upstream directories
 	# and binaries taking a lot of space. Clean these up manually. Notice
 	# that Android and Linux directories might be needed so keep those.
 	einfo "Cleaning up non-Chrome OS directories in telemetry"
-	find -L "${test_dir}" -type d -regex ".*/\(mac\|mips\|mips64\|win\)" -exec rm -rfv {} \;
+	find -L "${test_dir}" -type d -regex ".*/\(mac\|mips\|mips64\|win\)" \
+		-exec rm -rfv {} \;
 	einfo "Finished installing telemetry dep resources"
 }
 
@@ -1240,7 +1236,7 @@ src_install() {
 		export PORTAGE_STRIP_FLAGS="--strip-debug"
 	fi
 	einfo "PORTAGE_STRIP_FLAGS=${PORTAGE_STRIP_FLAGS}"
-	LS=$(ls -alhS "${FROM}")
+	LS=$(ls -alhS "${FROM}") || die
 	einfo "CHROME_DIR after build\n${LS}"
 
 	insinto /etc/init
@@ -1307,21 +1303,16 @@ src_install() {
 		"${CHROME_ORIGIN}" == "SERVER_SOURCE" ]]; then
 		autotest-deponly_src_install
 		#env -uRESTRICT prepstrip "${D}${AUTOTEST_BASE}"
-	fi
 
-	# Copy input_methods.txt for XkbToKcmConverter & auto-test.
-	if [[ "${CHROME_ORIGIN}" == "LOCAL_SOURCE" ||
-			"${CHROME_ORIGIN}" == "SERVER_SOURCE" ]]; then
+		# Copy input_methods.txt for auto-test.
 		insinto /usr/share/chromeos-assets/input_methods
-		sed -E -e '/^#/d' -e '/^$/d' -e 's:  +: :g' \
-			"${CHROME_ROOT}"/src/chromeos/ime/input_methods.txt > "${T}/input_methods.txt" || die
-		doins "${T}/input_methods.txt"
+		doins "${CHROME_ROOT}"/src/chromeos/ime/input_methods.txt
 	fi
 
 	# Fix some perms.
 	# TODO(rcui): Remove this - shouldn't be needed, and is just covering up
 	# potential permissions bugs.
-	chmod -R a+r "${D}"
+	chmod -R a+r "${D}" || die
 	find "${D}" -perm /111 -print0 | xargs -0 chmod a+x
 
 	# The following symlinks are needed in order to run chrome.
@@ -1337,18 +1328,6 @@ src_install() {
 	# Create the main Chrome install directory.
 	dodir "${CHROME_DIR}"
 	insinto "${CHROME_DIR}"
-
-	# Install the orderfile into the chrome directory
-	if use orderfile_generate; then
-		[[ -f "${FROM}/chrome.orderfile.txt" ]] || die "No orderfile generated."
-		doins "${FROM}/chrome.orderfile.txt"
-	fi
-
-	# Install the unvetted orderfile into the chrome directory for upload.
-	if use orderfile_verify; then
-		[[ -f "${DISTDIR}/${UNVETTED_ORDERFILE}.xz" ]] || die "Lost the unvetted orderfile."
-		doins "${DISTDIR}/${UNVETTED_ORDERFILE}.xz"
-	fi
 
 	# Use the deploy_chrome from the *Chrome* checkout.  The benefit of
 	# doing this is if a new buildspec of Chrome requires a non-backwards
@@ -1386,15 +1365,14 @@ src_install() {
 	if use chrome_debug && use debug_fission; then
 		# TODO(b/279648466): Replace GNU dwp with llvm-dwp.
 		DWP="${CHOST}-dwp"
-		mkdir -p "${D}/usr/lib/debug/${CHROME_DIR}"
+		mkdir -p "${D}/usr/lib/debug/${CHROME_DIR}" || die
 		cd "${D}/${CHROME_DIR}" || die
 		# Iterate over all ELF files in current directory
 		while read -r i; do
 			cd "${FROM}" || die
 			# These files do not build with -gsplit-dwarf,
 			# so we do not need to get a .dwp file from them.
-			if [[ "${i}" == "./libassistant.so"		|| \
-				"${i}" == "./nacl_helper_nonsfi"	|| \
+			if [[ "${i}" == "./nacl_helper_nonsfi"	|| \
 				"${i}" == "./nacl_helper_bootstrap"	|| \
 				"${i}" == "./nacl_irt_arm.nexe"		|| \
 				"${i}" == "./nacl_irt_x86_64.exe"	|| \
@@ -1404,6 +1382,8 @@ src_install() {
 				"${i}" == "./libwidevinecdm.so" ]] ; then
 				continue
 			fi
+			# Same for nacl_helper, though only on arm64.
+			[[ "${ARCH}" == "arm64" && "${i}" == "./nacl_helper" ]] && continue
 			source="${i}"
 			# shellcheck disable=SC2154
 			${DWP} -e "${FROM}/${source}" -o "${D}/usr/lib/debug/${CHROME_DIR}/${i}.dwp" || die
@@ -1428,10 +1408,9 @@ src_install() {
 	fi
 
 	if use chrome_internal; then
-		# Copy LibAssistant v1 and v2 libraries to a temp build folder for later
+		# Copy LibAssistant V2 library to a temp build folder for later
 		# installation of `assistant-dlc`.
 		exeinto /build/share/libassistant
-		doexe "${FROM}/libassistant.so"
 		doexe "${FROM}/libassistant_v2.so"
 	fi
 

@@ -1,6 +1,6 @@
 --- a/init/upstart/cgroups.conf
 +++ b/init/upstart/cgroups.conf
-@@ -112,13 +112,15 @@
+@@ -126,13 +126,15 @@
  
    # Create a cpu cgroup for each VM type. Default cpu.shares is 1024. Limit the
    # VMs to 7/8ths of that initially.

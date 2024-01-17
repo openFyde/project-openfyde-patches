@@ -1,3 +1,5 @@
+R120 notes: chromeos_startup.sh does not exist in R120, this patch is invalid
+
 --- a/init/chromeos_startup.sh
 +++ b/init/chromeos_startup.sh
 @@ -776,6 +776,8 @@

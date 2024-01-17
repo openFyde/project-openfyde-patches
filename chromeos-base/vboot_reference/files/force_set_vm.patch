@@ -1,11 +1,11 @@
 diff --git a/vboot_reference/host/lib/crossystem.c b/vboot_reference/host/lib/crossystem.c
-index a7b04b99..8aa16aea 100644
+index 2dd4b525..93c202b1 100644
 --- a/vboot_reference/host/lib/crossystem.c
 +++ b/vboot_reference/host/lib/crossystem.c
-@@ -503,13 +503,13 @@ int VbGetSystemPropertyInt(const char *name)
- 			const char *fwtype = VbGetSystemPropertyString(
+@@ -550,13 +550,13 @@ int VbGetSystemPropertyInt(const char *name)
  				"mainfw_type", fwtype_buf, sizeof(fwtype_buf));
- 			if (fwtype && !strcasecmp(fwtype, "nonchrome")) {
+ 			if (fwtype_ret == 0 &&
+ 			    !strcasecmp(fwtype_buf, "nonchrome")) {
 -				value = 1;
 +				value = 0;
  			}

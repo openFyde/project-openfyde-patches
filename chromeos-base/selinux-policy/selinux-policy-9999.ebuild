@@ -42,6 +42,13 @@ RDEPEND="
 	sys-process/audit
 "
 
+BDEPEND="
+	dev-lang/perl
+	sys-apps/checkpolicy
+	sys-apps/secilc
+	sys-devel/m4
+"
+
 SELINUX_VERSION="30"
 SEPOLICY_FILENAME="policy.${SELINUX_VERSION}"
 

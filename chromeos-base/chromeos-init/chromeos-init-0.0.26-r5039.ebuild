@@ -2,14 +2,14 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="759635cf334285c52b12a0ebd304988c4bb1329f"
-CROS_WORKON_TREE=("c5a3f846afdfb5f37be5520c63a756807a6b31c4" "c0c9f1718969a3768c98bd68df3b88d8f0234d7f" "71b6668ea23fdcf5ce2c3889e3a3cc703e8cd6df" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="04097b9df3be67662e26f4a7452ddbf989a7158b"
+CROS_WORKON_TREE=("8d6f8fdce76674dc4f63f7b19f50a8b8b141218f" "1a73f4b309dfeea34580ac116a1d9ad3d8a887aa" "bc984148bea08c5e98bdb3f99b0ed95881dd3332" "3d1f38846b6a24fef4c3cf1d775033f2a16914f1" "7f3b3b01a5e0579ccc6272030ea26e45c3bc3140" "1268480d08437246442187941fe41c4d00a5c3df" "959c1e97be6bae86cb10faba3c2f864a7b3f842b" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_INCREMENTAL_BUILD=1
 # TODO(crbug.com/809389): Avoid #include-ing platform2 headers directly.
-CROS_WORKON_SUBTREE="common-mk init metrics .gn"
+CROS_WORKON_SUBTREE="common-mk dlcservice imageloader init libcrossystem libhwsec-foundation metrics .gn"
 
 PLATFORM_NATIVE_TEST="yes"
 # Tests probe the root device.
@@ -27,26 +27,31 @@ SLOT="0/0"
 KEYWORDS="*"
 IUSE="
 	cros_embedded direncryption +encrypted_stateful
-	+encrypted_reboot_vault frecon fsverity lvm_stateful_partition
-  fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
+	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
 	+oobe_config prjquota -s3halt +syslog systemd tpm2 +udev vivid vtconsole"
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 # re2 is needed for process_killer.
 COMMON_DEPEND="
 	chromeos-base/bootstat:=
+	chromeos-base/dlcservice:=
+	chromeos-base/imageloader-client:=
+	chromeos-base/libcrossystem:=[test?]
+	chromeos-base/libhwsec-foundation:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
+	chromeos-base/system_api:=
 	chromeos-base/vboot_reference:=
+	dev-libs/openssl:=
 	dev-libs/re2:=
 	sys-apps/rootdev:=
+	sys-libs/libselinux:=
 "
 
 DEPEND="${COMMON_DEPEND}
 	test? (
-		sys-process/psmisc
 		dev-util/shflags
-		dev-util/shunit2
 		sys-apps/diffutils
 	)
 "
@@ -56,6 +61,7 @@ RDEPEND="${COMMON_DEPEND}
 	app-misc/jq
 	!chromeos-base/chromeos-disableecho
 	chromeos-base/chromeos-common-script
+	lvm_migration? ( chromeos-base/thinpool_migrator )
 	chromeos-base/tty
 	oobe_config? ( chromeos-base/oobe_config )
 	sys-apps/upstart
@@ -65,7 +71,7 @@ RDEPEND="${COMMON_DEPEND}
 	!cros_embedded? (
 		chromeos-base/common-assets
 		chromeos-base/chromeos-storage-info
-		chromeos-base/swap-init
+		chromeos-base/swap_management
 		sys-fs/e2fsprogs
 	)
 	frecon? (
@@ -75,7 +81,6 @@ RDEPEND="${COMMON_DEPEND}
 
 platform_pkg_test() {
 	local shell_tests=(
-		killers_unittest
 		tests/chromeos-disk-metrics-test.sh
 		tests/send-kernel-errors-test.sh
 	)
@@ -165,9 +170,6 @@ src_install() {
 
 	into /	# We want /sbin, not /usr/sbin, etc.
 
-	# Install various utility files.
-	dosbin killers
-
 	# Install various helper programs.
 	dosbin "${OUT}"/cros_sysrq_init
 	dosbin "${OUT}"/static_node_tool
@@ -177,22 +179,7 @@ src_install() {
 
 	# Install startup/shutdown scripts.
 	dosbin "${OUT}"/chromeos_startup
-	dosbin chromeos_startup.sh
 	dosbin chromeos_shutdown
-
-	# Disable encrypted reboot vault if it is not used.
-	if ! use encrypted_reboot_vault; then
-		sed -i '/USE_ENCRYPTED_REBOOT_VAULT=/s:=1:=0:' \
-			"${D}/sbin/chromeos_startup.sh" ||
-			die "Failed to replace USE_ENCRYPTED_REBOOT_VAULT in chromeos_startup"
-	fi
-
-	# Enable lvm stateful partition.
-	if use lvm_stateful_partition; then
-		sed -i '/USE_LVM_STATEFUL_PARTITION=/s:=0:=1:' \
-			"${D}/sbin/chromeos_startup.sh" ||
-			die "Failed to replace USE_LVM_STATEFUL_PARTITION in chromeos_startup"
-	fi
 
 	dosbin "${OUT}"/clobber-state
 

@@ -1,8 +1,8 @@
-diff --git a/dlcservice/dlc.cc b/dlcservice/dlc.cc
-index 886edffad1..299130f9fb 100644
---- a/dlcservice/dlc.cc
-+++ b/dlcservice/dlc.cc
-@@ -550,6 +550,12 @@ bool DlcBase::Install(ErrorPtr* err) {
+diff --git a/dlcservice/dlc_base.cc b/dlcservice/dlc_base.cc
+index b67fa4e763..eac891d9ce 100644
+--- a/dlcservice/dlc_base.cc
++++ b/dlcservice/dlc_base.cc
+@@ -596,6 +596,12 @@ bool DlcBase::Install(ErrorPtr* err) {
          break;
        }
  
@@ -15,8 +15,8 @@ index 886edffad1..299130f9fb 100644
        // By now the image is not verified, so it needs to be installed
        // through update_engine. So don't go any further.
        return true;
-@@ -881,4 +887,23 @@ bool DlcBase::SetReserve(std::optional<bool> reserve) {
-   return reserve_;
+@@ -982,4 +988,23 @@ bool DlcBase::Deploy(ErrorPtr* err) {
+   }
  }
  
 +bool DlcBase::TryToCopyFromInactiveToActive() {
@@ -39,13 +39,13 @@ index 886edffad1..299130f9fb 100644
 +}
 +
  }  // namespace dlcservice
-diff --git a/dlcservice/dlc.h b/dlcservice/dlc.h
-index 597acb1048..ceca466c80 100644
---- a/dlcservice/dlc.h
-+++ b/dlcservice/dlc.h
-@@ -203,6 +203,8 @@ class DlcBase {
-   // Sets the DLC as being active or not based on |active| value.
-   void SetActiveValue(bool active);
+diff --git a/dlcservice/dlc_base.h b/dlcservice/dlc_base.h
+index 2a97aa5ce5..f5fc1af027 100644
+--- a/dlcservice/dlc_base.h
++++ b/dlcservice/dlc_base.h
+@@ -150,6 +150,8 @@ class DlcBase : public DlcInterface {
+   void OnSetActiveValueSuccess();
+   void OnSetActiveValueError(brillo::Error* err);
  
 +  bool TryToCopyFromInactiveToActive();
 +

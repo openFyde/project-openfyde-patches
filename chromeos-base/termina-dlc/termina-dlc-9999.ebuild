@@ -35,7 +35,7 @@ SLOT="0"
 KEYWORDS="~*"
 S="${WORKDIR}"
 
-IUSE="kvm_host dlc amd64 arm manatee"
+IUSE="kvm_host dlc amd64 arm"
 REQUIRED_USE="
 	dlc
 	kvm_host
@@ -43,16 +43,16 @@ REQUIRED_USE="
 "
 
 # Termina now contains 2 copies of LXD, pulling the image size up to
-# ~135 MiB. Test builds need extra space for test utilities.
+# ~185 MiB. Test builds need extra space for test utilities.
 #
 # To check the current size, run "file" on a deployed DLC image. The
 # output will tell you the size of the squashfs filesystem.
 #
 # 1MiB = 256 x 4KiB blocks
 if [[ ${PV} == 9999 ]]; then
-	DLC_PREALLOC_BLOCKS="$((200 * 256))"
+	DLC_PREALLOC_BLOCKS="$((250 * 256))"
 else
-	DLC_PREALLOC_BLOCKS="$((150 * 256))"
+	DLC_PREALLOC_BLOCKS="$((200 * 256))"
 fi
 
 DLC_PRELOAD=true
@@ -85,25 +85,9 @@ src_compile() {
 
 		/mnt/host/source/src/platform/container-guest-tools/termina/termina_build_image.py "${image_path}" "${S}/vm"
 	fi
-
-	if use manatee; then
-		local subdir=guest-vm-base
-		if [[ ${PV} == 9999 ]]; then
-			subdir=vm
-		fi
-		local digest
-		digest="$(sha256sum "${WORKDIR}/${subdir}/vm_kernel" | cut -f1 -d' ' | grep -o .. | \
-			awk 'BEGIN { printf "[" } NR!=1 { printf ", " } { printf("%d", strtonum("0x"$0)) } END { printf "]" }')"
-		sed -e "s/@kernel_digest@/${digest}/" "${FILESDIR}/termina.json.in" > termina.json
-	fi
 }
 
 src_install() {
-	if use manatee; then
-		insinto "/usr/share/manatee/templates"
-		doins termina.json
-	fi
-
 	# This is the subpath underneath the location that dlc mounts the image,
 	# so we dont need additional directories.
 	local install_dir="/"

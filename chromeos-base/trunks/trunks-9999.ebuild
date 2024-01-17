@@ -46,6 +46,8 @@ COMMON_DEPEND="
 	ftdi_tpm? ( dev-embedded/libftdi:= )
 	test? ( chromeos-base/tpm2:=[test] )
 	tpm2_simulator? ( chromeos-base/tpm2-simulator:= )
+	dev-cpp/abseil-cpp:=
+	dev-libs/openssl:=
 	dev-libs/protobuf:=
 	fuzzer? (
 		dev-cpp/gtest:=
@@ -66,6 +68,11 @@ DEPEND="
 	${COMMON_DEPEND}
 	chromeos-base/chromeos-ec-headers:=
 	"
+
+BDEPEND="
+	chromeos-base/minijail
+	dev-libs/protobuf
+"
 
 src_install() {
 	platform_src_install

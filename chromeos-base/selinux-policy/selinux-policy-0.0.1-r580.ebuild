@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="759635cf334285c52b12a0ebd304988c4bb1329f"
-CROS_WORKON_TREE="92a11a3dd71d66192c97ca44c685d89d94f6c2ea"
+CROS_WORKON_COMMIT="04097b9df3be67662e26f4a7452ddbf989a7158b"
+CROS_WORKON_TREE="7cab21a3c2a05421b90c9804b255fd8a0229d14a"
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -42,6 +42,13 @@ RDEPEND="
 	${DEPEND}
 	sys-apps/restorecon
 	sys-process/audit
+"
+
+BDEPEND="
+	dev-lang/perl
+	sys-apps/checkpolicy
+	sys-apps/secilc
+	sys-devel/m4
 "
 
 SELINUX_VERSION="30"

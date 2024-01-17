@@ -1,17 +1,6 @@
-Index: vm_tools/concierge/service.cc
-===================================================================
---- vm_tools.orig/concierge/service.cc
-+++ vm_tools/concierge/service.cc
-@@ -208,7 +208,7 @@ constexpr base::TimeDelta kDiskOpReportI
- // The minimum kernel version of the host which supports untrusted VMs or a
- // trusted VM with nested VM support.
- constexpr KernelVersionAndMajorRevision
--    kMinKernelVersionForUntrustedAndNestedVM = std::make_pair(4, 19);
-+    kMinKernelVersionForUntrustedAndNestedVM = std::make_pair(5, 19);
- 
- // The minimum kernel version of the host which supports virtio-pmem.
- constexpr KernelVersionAndMajorRevision kMinKernelVersionForVirtioPmem =
-@@ -431,6 +431,8 @@ void SetVmCpuArgs(int32_t cpus, VmBuilde
+--- a/concierge/service.cc
++++ b/concierge/service.cc
+@@ -462,6 +462,8 @@
  
    if (!vm_cpu_args.cpu_clusters.empty()) {
      for (const auto& cluster : vm_cpu_args.cpu_clusters) {
@@ -20,3 +9,14 @@ Index: vm_tools/concierge/service.cc
        auto cpu_list = base::JoinString(cluster, ",");
        vm_builder.AppendCustomParam("--cpu-cluster", cpu_list);
      }
+--- a/concierge/vm_util.h
++++ b/concierge/vm_util.h
+@@ -412,7 +412,7 @@
+ // The minimum kernel version of the host which supports untrusted VMs or a
+ // trusted VM with nested VM support.
+ constexpr KernelVersionAndMajorRevision
+-    kMinKernelVersionForUntrustedAndNestedVM = std::make_pair(4, 19);
++    kMinKernelVersionForUntrustedAndNestedVM = std::make_pair(5, 19);
+ 
+ }  // namespace concierge
+ }  // namespace vm_tools

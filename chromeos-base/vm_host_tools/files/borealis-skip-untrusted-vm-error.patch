@@ -1,33 +1,6 @@
-Index: vm_tools/concierge/service.cc
-===================================================================
---- vm_tools.orig/concierge/service.cc
-+++ vm_tools/concierge/service.cc
-@@ -797,7 +797,7 @@ bool IsUntrustedVM(bool run_as_untrusted
-   // |kMinKernelVersionForUntrustedAndNestedVM|. This means that even with a
-   // trusted image the VM started will essentially be untrusted.
-   if (host_kernel_version >= kMinKernelVersionForUntrustedAndNestedVM)
--    return true;
-+     return true;
- 
-   // Any untrusted image definitely results in an unstrusted VM.
-   if (!is_trusted_image)
-@@ -1941,6 +1941,7 @@ StartVmResponse Service::StartVm(StartVm
-       response.set_failure_reason(reason);
-       return response;
-     }
-+    LOG(WARNING) << __func__ << ":[UntrustedVM] " << reason;
-   }
- 
-   // Track the next available virtio-blk device name.
-@@ -4845,6 +4846,7 @@ std::unique_ptr<dbus::Response> Service:
-                     request.has_custom_kernel_params(), host_kernel_version_);
-   if (is_untrusted) {
-     allowed = IsUntrustedVMAllowed(host_kernel_version_, &reason);
-+    LOG(WARNING) << "Untrusted VM:" << reason;
-   }
- 
-   response.set_allowed(allowed);
-@@ -5166,7 +5168,7 @@ bool Service::IsUntrustedVMAllowed(
+--- a/concierge/untrusted_vm_utils.cc
++++ b/concierge/untrusted_vm_utils.cc
+@@ -154,7 +154,7 @@
        // l1tf and mds mitigations then fail to start an untrusted VM.
        case UntrustedVMUtils::MitigationStatus::VULNERABLE:
          *reason = "Host vulnerable against untrusted VM";
@@ -36,7 +9,7 @@ Index: vm_tools/concierge/service.cc
  
        // At this point SMT should not be a security issue. As
        // |kMinKernelVersionForUntrustedAndNestedVM| has security patches to
-@@ -5192,7 +5194,7 @@ bool Service::IsUntrustedVMAllowed(
+@@ -180,7 +180,7 @@
       << kMinKernelVersionForUntrustedAndNestedVM.second
       << ", or the device must be in the developer mode";
    *reason = ss.str();
@@ -44,4 +17,31 @@ Index: vm_tools/concierge/service.cc
 +  return true;
  }
  
- }  // namespace concierge
+ bool IsUntrustedVM(bool run_as_untrusted,
+@@ -191,7 +191,7 @@
+   // |kMinKernelVersionForUntrustedAndNestedVM|. This means that even with a
+   // trusted image the VM started will essentially be untrusted.
+   if (host_kernel_version >= kMinKernelVersionForUntrustedAndNestedVM)
+-    return true;
++     return true;
+ 
+   // Any untrusted image definitely results in an untrusted VM.
+   if (!is_trusted_image)
+--- a/concierge/service.cc
++++ b/concierge/service.cc
+@@ -1888,6 +1888,7 @@
+       response.set_failure_reason(reason);
+       return response;
+     }
++    LOG(WARNING) << __func__ << ":[UntrustedVM] " << reason;
+   }
+ 
+   // Track the next available virtio-blk device name.
+@@ -4771,6 +4772,7 @@
+   if (is_untrusted) {
+     allowed = untrusted_vm_utils_->IsUntrustedVMAllowed(host_kernel_version_,
+                                                         &reason);
++    LOG(WARNING) << "Untrusted VM:" << reason;
+   }
+ 
+   response.set_allowed(allowed);

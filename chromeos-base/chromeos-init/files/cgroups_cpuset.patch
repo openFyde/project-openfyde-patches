@@ -1,6 +1,6 @@
 --- a/init/upstart/cgroups.conf
 +++ b/init/upstart/cgroups.conf
-@@ -80,7 +80,7 @@
+@@ -83,7 +83,7 @@
    # (all cpus, all mems).
    cpuset_root_dir="/sys/fs/cgroup/cpuset"
    if [ -d "${cpuset_root_dir}" ]; then

@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="759635cf334285c52b12a0ebd304988c4bb1329f"
-CROS_WORKON_TREE=("c5a3f846afdfb5f37be5520c63a756807a6b31c4" "bdc2fe06e72f494e59d3000e9c660943df59f82c" "71b6668ea23fdcf5ce2c3889e3a3cc703e8cd6df" "199cac0899daace8030b33f49dd183a5b5baf169" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="04097b9df3be67662e26f4a7452ddbf989a7158b"
+CROS_WORKON_TREE=("8d6f8fdce76674dc4f63f7b19f50a8b8b141218f" "1268480d08437246442187941fe41c4d00a5c3df" "959c1e97be6bae86cb10faba3c2f864a7b3f842b" "0d345aa95a2088afd12e25fd820a24ad6fb19c4a" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -53,6 +53,8 @@ COMMON_DEPEND="
 		!tpm2_simulator_deprecated? ( chromeos-base/tpm2-simulator:= )
 		tpm2_simulator_deprecated? ( chromeos-base/tpm2:= )
 	)
+	dev-cpp/abseil-cpp:=
+	dev-libs/openssl:=
 	dev-libs/protobuf:=
 	fuzzer? (
 		dev-cpp/gtest:=
@@ -73,6 +75,11 @@ DEPEND="
 	${COMMON_DEPEND}
 	chromeos-base/chromeos-ec-headers:=
 	"
+
+BDEPEND="
+	chromeos-base/minijail
+	dev-libs/protobuf
+"
 
 src_prepare() {
 	default
