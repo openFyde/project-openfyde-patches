@@ -736,7 +736,7 @@ src_prepare() {
 	local WHOAMI=$(whoami)
 	# Get the credentials to fake home directory so that the version of chromium
 	# we build can access Google services. First, check for Chrome credentials.
-	if [[ ! -d google_apis/internal ]]; then
+	if [[ ! -d google_apis/internal ]] || [[ -z "$(ls -A google_apis/internal)" ]]; then
 		# Then look for Chrome OS supplied credentials.
 		local PRIVATE_OVERLAYS_DIR=/home/${WHOAMI}/trunk/src/private-overlays
 		local GAPI_CONFIG_FILE=${PRIVATE_OVERLAYS_DIR}/chromeos-overlay/googleapikeys
