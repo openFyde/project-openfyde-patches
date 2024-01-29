@@ -2,6 +2,9 @@
 # Distributed under the license specified in the root directory of this project.
 
 cros_pre_src_prepare_openfyde_patches() {
+  if [[ "$PV" = "9999" ]]; then
+    return
+  fi
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/001-update_engine_fydeos.patch
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/002-bypass_should_ignore_update_fp_check.patch
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/003-ota-checker.patch
