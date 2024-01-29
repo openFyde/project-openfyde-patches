@@ -226,32 +226,19 @@
  
  using base::FilePath;
  using base::Time;
-@@ -250,6 +251,11 @@
-     return false;
-   }
+@@ -1298,6 +1299,12 @@
+       current_update_flags_ = update_flags_;
+     }
  
-+  if (!fydeos::OTAEnabled()) {
-+    LOG(INFO) << "fydeos ota disabled, skip scheduling updates";
-+    return false;
-+  }
++    if (!fydeos::OTAEnabled() && pm_ == ProcessMode::UPDATE) {
++      LOG(INFO) << "fydeos ota disabled";
++      ResetUpdateStatus();
++      return;
++    }
 +
-   // We limit the async policy request to a reasonably short time, to avoid a
-   // starvation due to a transient bug.
-   policy_data_.reset(new UpdateCheckAllowedPolicyData());
-@@ -1086,6 +1092,13 @@
-     LOG(INFO) << "Update check is only going to query server for update, will "
-               << "not be applying any updates.";
-   }
-+  // ---***FYDEOS BEGIN***---
-+  if (!fydeos::OTAEnabled()) {
-+    LOG(INFO) << "fydeos ota disabled, refuse to check for update";
-+    BroadcastStatus();
-+    return false;
-+  }
-+  // ---***FYDEOS END***---
- 
-   LOG(INFO) << "Forced update check requested.";
-   forced_app_version_.clear();
+     switch (pm_) {
+       case ProcessMode::UPDATE:
+       case ProcessMode::INSTALL:
 --- a/update_manager/official_build_check_policy_impl.cc
 +++ b/update_manager/official_build_check_policy_impl.cc
 @@ -26,6 +26,8 @@
