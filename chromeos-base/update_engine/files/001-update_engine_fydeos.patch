@@ -1,8 +1,6 @@
-diff --git a/BUILD.gn b/BUILD.gn
-index 2dbedac0..02e8b14e 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -212,6 +212,8 @@ static_library("libupdate_engine") {
+@@ -207,6 +207,8 @@
      "cros/requisition_util.cc",
      "cros/shill_proxy.cc",
      "cros/update_attempter.cc",
@@ -11,11 +9,18 @@ index 2dbedac0..02e8b14e 100644
      "libcurl_http_fetcher.cc",
      "metrics_utils.cc",
      "update_boot_flags_action.cc",
-diff --git a/cros/daemon_chromeos.cc b/cros/daemon_chromeos.cc
-index 51bed34e..7491a156 100644
 --- a/cros/daemon_chromeos.cc
 +++ b/cros/daemon_chromeos.cc
-@@ -86,7 +86,7 @@ void DaemonChromeOS::OnDBusRegistered(bool succeeded) {
+@@ -75,6 +75,8 @@
+     return;
+   }
+ 
++  license_checker_.Setup();
++
+   // Update the telemetry information before starting the updater, to request
+   // once and continue caching on boot.
+   SystemState::Get()->cros_healthd()->ProbeTelemetryInfo(
+@@ -86,7 +88,7 @@
            TelemetryCategoryEnum::kBus,
        },
        base::BindOnce(
@@ -24,8 +29,6 @@ index 51bed34e..7491a156 100644
  }
  
  }  // namespace chromeos_update_engine
-diff --git a/cros/daemon_chromeos.h b/cros/daemon_chromeos.h
-index 4a114765..cf0cfb2d 100644
 --- a/cros/daemon_chromeos.h
 +++ b/cros/daemon_chromeos.h
 @@ -24,6 +24,9 @@
@@ -38,7 +41,7 @@ index 4a114765..cf0cfb2d 100644
  
  namespace chromeos_update_engine {
  
-@@ -48,6 +51,8 @@ class DaemonChromeOS : public DaemonBase {
+@@ -48,6 +51,8 @@
    // dependency.
    Subprocess subprocess_;
  
@@ -47,12 +50,9 @@ index 4a114765..cf0cfb2d 100644
    // |SystemState| is a global context, but we can't have a static singleton of
    // its object because the style guide does not allow that (it has non-trivial
    // dtor). We need an instance of |SystemState| in this class instead and have
-diff --git a/cros/fydeos_license_checker.cc b/cros/fydeos_license_checker.cc
-new file mode 100644
-index 00000000..29512f66
 --- /dev/null
 +++ b/cros/fydeos_license_checker.cc
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,47 @@
 +#include "update_engine/cros/fydeos_license_checker.h"
 +
 +#include <base/logging.h>
@@ -78,12 +78,14 @@ index 00000000..29512f66
 +  }
 +}
 +
-+void FydeLicenseChecker::Init() {
++void FydeLicenseChecker::Setup() {
 +  if (license_checker_singleton_ == this)
 +    return;
 +  CHECK(license_checker_singleton_ == nullptr);
 +  license_checker_singleton_ = this;
++}
 +
++void FydeLicenseChecker::Init() {
 +  int exit_code = 0;
 +  std::string value, error;
 +  std::vector<std::string> cmd = {kShellCmd, kParamId};
@@ -98,12 +100,9 @@ index 00000000..29512f66
 +FydeLicenseChecker* FydeLicenseChecker::license_checker_singleton_ = nullptr;
 +
 +} // namespace fydeos
-diff --git a/cros/fydeos_license_checker.h b/cros/fydeos_license_checker.h
-new file mode 100644
-index 00000000..110e47fe
 --- /dev/null
 +++ b/cros/fydeos_license_checker.h
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,26 @@
 +#ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H
 +#define UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H
 +
@@ -118,6 +117,7 @@ index 00000000..110e47fe
 +    ~FydeLicenseChecker();
 +
 +    static FydeLicenseChecker& Get() { return *license_checker_singleton_; }
++    void Setup();
 +    void Init();
 +    std::string GetLicenseId() const { return license_id_; };
 +
@@ -129,9 +129,6 @@ index 00000000..110e47fe
 +
 +} // namespace fydeos
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
-diff --git a/cros/fydeos_toggle_ota.cc b/cros/fydeos_toggle_ota.cc
-new file mode 100644
-index 00000000..c0397652
 --- /dev/null
 +++ b/cros/fydeos_toggle_ota.cc
 @@ -0,0 +1,15 @@
@@ -150,9 +147,6 @@ index 00000000..c0397652
 +}
 +
 +} // fydeos
-diff --git a/cros/fydeos_toggle_ota.h b/cros/fydeos_toggle_ota.h
-new file mode 100644
-index 00000000..2c0fbb05
 --- /dev/null
 +++ b/cros/fydeos_toggle_ota.h
 @@ -0,0 +1,8 @@
@@ -164,8 +158,6 @@ index 00000000..2c0fbb05
 +}
 +
 +#endif // ifndef FYDEOS_TOGGLE_OTA_H_
-diff --git a/cros/omaha_request_action.cc b/cros/omaha_request_action.cc
-index a97408ba..d0a53805 100644
 --- a/cros/omaha_request_action.cc
 +++ b/cros/omaha_request_action.cc
 @@ -55,6 +55,9 @@
@@ -178,7 +170,7 @@ index a97408ba..d0a53805 100644
  
  using base::Time;
  using base::TimeDelta;
-@@ -1300,6 +1303,11 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(ErrorCode* error) const {
+@@ -1318,6 +1321,11 @@
      LOG(ERROR) << "All packages were excluded.";
    }
  
@@ -190,8 +182,6 @@ index a97408ba..d0a53805 100644
    // Note: We could technically delete the UpdateFirstSeenAt state when we
    // return true. If we do, it'll mean a device has to restart the
    // UpdateFirstSeenAt and thus help scattering take effect when the AU is
-diff --git a/cros/omaha_request_builder_xml.cc b/cros/omaha_request_builder_xml.cc
-index 9eeb8302..291878cb 100644
 --- a/cros/omaha_request_builder_xml.cc
 +++ b/cros/omaha_request_builder_xml.cc
 @@ -36,6 +36,9 @@
@@ -204,7 +194,7 @@ index 9eeb8302..291878cb 100644
  
  using std::string;
  
-@@ -302,6 +305,11 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+@@ -308,6 +311,11 @@
      app_versions = "version=\"" +
                     XmlEncodeWithDefault(app_data.version, kNoVersion) + "\" ";
    }
@@ -216,7 +206,7 @@ index 9eeb8302..291878cb 100644
  
    string download_channel = params->download_channel();
    string app_channels =
-@@ -410,6 +418,9 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+@@ -416,6 +424,9 @@
        // DLC excluded for installs and updates.
        (app_data.is_dlc ? "" : requisition_arg) +
  
@@ -226,11 +216,9 @@ index 9eeb8302..291878cb 100644
        ">\n" +
           app_body +
        "    </app>\n";
-diff --git a/cros/update_attempter.cc b/cros/update_attempter.cc
-index 184f9453..3a0b0330 100644
 --- a/cros/update_attempter.cc
 +++ b/cros/update_attempter.cc
-@@ -71,6 +71,7 @@
+@@ -73,6 +73,7 @@
  #include "update_engine/update_manager/omaha_request_params_policy.h"
  #include "update_engine/update_manager/update_manager.h"
  #include "update_engine/update_status_utils.h"
@@ -238,7 +226,7 @@ index 184f9453..3a0b0330 100644
  
  using base::FilePath;
  using base::Time;
-@@ -208,6 +209,11 @@ bool UpdateAttempter::ScheduleUpdates(const ScheduleUpdatesParams& params) {
+@@ -250,6 +251,11 @@
      return false;
    }
  
@@ -250,7 +238,7 @@ index 184f9453..3a0b0330 100644
    // We limit the async policy request to a reasonably short time, to avoid a
    // starvation due to a transient bug.
    policy_data_.reset(new UpdateCheckAllowedPolicyData());
-@@ -1044,6 +1050,13 @@ bool UpdateAttempter::CheckForUpdate(
+@@ -1086,6 +1092,13 @@
      LOG(INFO) << "Update check is only going to query server for update, will "
                << "not be applying any updates.";
    }
@@ -264,11 +252,9 @@ index 184f9453..3a0b0330 100644
  
    LOG(INFO) << "Forced update check requested.";
    forced_app_version_.clear();
-diff --git a/update_manager/official_build_check_policy_impl.cc b/update_manager/official_build_check_policy_impl.cc
-index e1c55e31..263f72a9 100644
 --- a/update_manager/official_build_check_policy_impl.cc
 +++ b/update_manager/official_build_check_policy_impl.cc
-@@ -26,6 +26,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::Evaluate(
+@@ -26,6 +26,8 @@
      State* state,
      std::string* error,
      PolicyDataInterface* data) const {
@@ -277,7 +263,7 @@ index e1c55e31..263f72a9 100644
    const bool* is_official_build_p =
        ec->GetValue(state->system_provider()->var_is_official_build());
    if (is_official_build_p != nullptr && !(*is_official_build_p)) {
-@@ -40,6 +42,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolicyImpl::Evaluate(
+@@ -40,6 +42,8 @@
      LOG(INFO) << "Unofficial build, but periodic update check interval "
                << "timeout is defined, so update is not blocked.";
    }
