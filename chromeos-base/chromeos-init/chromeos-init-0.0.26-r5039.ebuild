@@ -196,6 +196,8 @@ src_install() {
 	# Install LVM conf files.
 	insinto /etc/lvm
 	doins lvm.conf
+  insinto /usr/share/chromeos-assets
+  doins ${FILESDIR}/splash_background
 }
 
 pkg_preinst() {
@@ -228,7 +230,6 @@ src_prepare() {
   if use fixcgroup-memory; then
     eapply -p2 ${FILESDIR}/fix_cgroup_memory.patch
   fi
-  eapply -p2 ${FILESDIR}/change_splash_background_color_black.patch
   if ! use kvm_host; then
     eapply -p2 ${FILESDIR}/remove_cgroup_crosvm.patch
   fi
