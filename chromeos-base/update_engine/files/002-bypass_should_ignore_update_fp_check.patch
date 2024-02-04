@@ -1,8 +1,6 @@
-diff --git a/cros/omaha_request_action.cc b/cros/omaha_request_action.cc
-index a97408ba..a7814f3e 100644
 --- a/cros/omaha_request_action.cc
 +++ b/cros/omaha_request_action.cc
-@@ -1262,9 +1262,9 @@ bool OmahaRequestAction::ShouldIgnoreUpdate(ErrorCode* error) const {
+@@ -1280,9 +1280,9 @@
      }
    }
  

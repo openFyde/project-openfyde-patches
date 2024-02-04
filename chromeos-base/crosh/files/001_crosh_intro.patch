@@ -1,8 +1,6 @@
-diff --git a/crosh/src/main.rs b/crosh/src/main.rs
-index 893f75d2bc..55082cca0a 100644
 --- a/crosh/src/main.rs
 +++ b/crosh/src/main.rs
-@@ -52,14 +52,13 @@ Options:
+@@ -53,14 +53,13 @@
  
  fn intro() {
      println!(

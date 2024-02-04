@@ -1,5 +1,3 @@
-diff --git a/cros/fydeos_toggle_ota.cc b/cros/fydeos_toggle_ota.cc
-index 92b9f3b139a0..51e2a79f00f7 100644
 --- a/cros/fydeos_toggle_ota.cc
 +++ b/cros/fydeos_toggle_ota.cc
 @@ -2,6 +2,10 @@
@@ -13,7 +11,7 @@ index 92b9f3b139a0..51e2a79f00f7 100644
  
  namespace fydeos {
  namespace {
-@@ -9,6 +13,8 @@ namespace {
+@@ -9,6 +13,8 @@
    const char kFydeOSOTAIndicatorFile[] = "/mnt/stateful_partition/unencrypted/preserve/.disable_fydeos_ota";
  
    const char kShellCmd[] = "/usr/share/fydeos-ota-checker/ota-checker.sh";
@@ -22,7 +20,7 @@ index 92b9f3b139a0..51e2a79f00f7 100644
  }
  
  bool OTAEnabled() {
-@@ -36,4 +42,103 @@ bool OTANeeded(std::string version) {
+@@ -36,4 +42,103 @@
    return true;
  }
  
@@ -126,8 +124,6 @@ index 92b9f3b139a0..51e2a79f00f7 100644
 +}
 +
  } // fydeos
-diff --git a/cros/fydeos_toggle_ota.h b/cros/fydeos_toggle_ota.h
-index 56e7cf5b2417..ef2765c048cf 100644
 --- a/cros/fydeos_toggle_ota.h
 +++ b/cros/fydeos_toggle_ota.h
 @@ -2,11 +2,15 @@
@@ -146,11 +142,9 @@ index 56e7cf5b2417..ef2765c048cf 100644
  }
  
  #endif // ifndef FYDEOS_TOGGLE_OTA_H_
-diff --git a/cros/omaha_request_action.cc b/cros/omaha_request_action.cc
-index 00a1db0033b5..a5387ba09dba 100644
 --- a/cros/omaha_request_action.cc
 +++ b/cros/omaha_request_action.cc
-@@ -683,6 +683,13 @@ bool OmahaRequestAction::ParseParams(ScopedActionCompleter* completer) {
+@@ -693,6 +693,13 @@
  void OmahaRequestAction::TransferComplete(HttpFetcher* fetcher,
                                            bool successful) {
    ScopedActionCompleter completer(processor_, this);
