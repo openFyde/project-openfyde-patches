@@ -233,4 +233,5 @@ src_prepare() {
   if ! use kvm_host; then
     eapply -p2 ${FILESDIR}/remove_cgroup_crosvm.patch
   fi
+  eapply -p2 ${FILESDIR}/set_use_tpm_insecure_fallback.patch
 }
