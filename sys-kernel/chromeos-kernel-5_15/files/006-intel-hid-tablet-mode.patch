@@ -1,9 +1,9 @@
-diff --git a/drivers/platform/x86/intel/hid.c b/drivers/platform/x86/intel/hid.c
-index d7d6782c40c2..ec4c6e922521 100644
---- a/drivers/platform/x86/intel/hid.c
-+++ b/drivers/platform/x86/intel/hid.c
-@@ -135,6 +135,12 @@ static const struct dmi_system_id dmi_vgbs_allow_list[] = {
- 			DMI_MATCH(DMI_PRODUCT_NAME, "Surface Go"),
+Index: kernel-5_15/drivers/platform/x86/intel/hid.c
+===================================================================
+--- kernel-5_15.orig/drivers/platform/x86/intel/hid.c
++++ kernel-5_15/drivers/platform/x86/intel/hid.c
+@@ -144,6 +144,12 @@ static const struct dmi_system_id dmi_vg
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "HP Elite Dragonfly G2 Notebook PC"),
  		},
  	},
 +  {

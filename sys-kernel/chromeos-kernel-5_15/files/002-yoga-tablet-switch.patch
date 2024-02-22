@@ -197,7 +197,7 @@ Index: kernel-5_15/drivers/platform/x86/Makefile
 ===================================================================
 --- kernel-5_15.orig/drivers/platform/x86/Makefile
 +++ kernel-5_15/drivers/platform/x86/Makefile
-@@ -120,3 +120,4 @@ obj-$(CONFIG_INTEL_SCU_PLATFORM)	+= inte
+@@ -119,3 +119,4 @@ obj-$(CONFIG_INTEL_SCU_PLATFORM)	+= inte
  obj-$(CONFIG_INTEL_SCU_WDT)		+= intel_scu_wdt.o
  obj-$(CONFIG_INTEL_SCU_IPC_UTIL)	+= intel_scu_ipcutil.o
  obj-$(CONFIG_PMC_ATOM)			+= pmc_atom.o

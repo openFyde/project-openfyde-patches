@@ -2,25 +2,24 @@ Index: kernel-5_15/drivers/acpi/x86/s2idle.c
 ===================================================================
 --- kernel-5_15.orig/drivers/acpi/x86/s2idle.c
 +++ kernel-5_15/drivers/acpi/x86/s2idle.c
-@@ -131,7 +131,7 @@ static void lpi_device_get_constraints_a
+@@ -134,6 +134,7 @@ static void lpi_device_get_constraints_a
+ 				acpi_status status;
+ 
+ 				list = &lpi_constraints_table[lpi_constraints_table_size];
++        dev_info.min_dstate = -EINVAL;
+ 
+ 				for (k = 0; k < info_obj->package.count; k++) {
  					union acpi_object *obj = &info_obj->package.elements[k];
- 
- 					list = &lpi_constraints_table[lpi_constraints_table_size];
--					list->min_dstate = -1;
-+					list->min_dstate = -EINVAL;
- 
- 					switch (k) {
- 					case 0:
-@@ -242,7 +242,7 @@ static void lpi_device_get_constraints(v
+@@ -241,7 +242,7 @@ static void lpi_device_get_constraints(v
  		acpi_handle_debug(lps0_device_handle,
  				  "index:%d Name:%s\n", i, info.name);
  
 -		constraint->min_dstate = -1;
 +		constraint->min_dstate = -EINVAL;
  
- 		for (j = 0; j < package_count; ++j) {
+ 		for (j = 0; j < package_count; j++) {
  			union acpi_object *info_obj = &info.package[j];
-@@ -289,6 +289,30 @@ free_acpi_buffer:
+@@ -288,6 +289,30 @@ free_acpi_buffer:
  	ACPI_FREE(out_obj);
  }
  
@@ -85,8 +84,8 @@ Index: kernel-5_15/drivers/pci/pci.c
 ===================================================================
 --- kernel-5_15.orig/drivers/pci/pci.c
 +++ kernel-5_15/drivers/pci/pci.c
-@@ -1147,6 +1147,14 @@ static int pci_raw_set_power_state(struc
- 	return 0;
+@@ -1027,6 +1027,14 @@ static inline bool platform_pci_bridge_d
+ 	return false;
  }
  
 +static inline bool platform_constraint_d3(struct pci_dev *dev)
@@ -100,7 +99,7 @@ Index: kernel-5_15/drivers/pci/pci.c
  /**
   * pci_update_current_state - Read power state of given device and cache it
   * @dev: PCI device to handle.
-@@ -2978,11 +2986,8 @@ bool pci_bridge_d3_possible(struct pci_d
+@@ -3022,11 +3030,8 @@ bool pci_bridge_d3_possible(struct pci_d
  		if (dmi_check_system(bridge_d3_blacklist))
  			return false;
  
@@ -118,7 +117,7 @@ Index: kernel-5_15/drivers/pci/pci.h
 ===================================================================
 --- kernel-5_15.orig/drivers/pci/pci.h
 +++ kernel-5_15/drivers/pci/pci.h
-@@ -721,18 +721,31 @@ static inline void pci_aer_clear_fatal_s
+@@ -715,18 +715,31 @@ static inline void pci_aer_clear_fatal_s
  static inline int pci_aer_clear_status(struct pci_dev *dev) { return -EINVAL; }
  static inline int pci_aer_raw_clear_status(struct pci_dev *dev) { return -EINVAL; }
  #endif

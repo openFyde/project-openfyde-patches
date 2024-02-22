@@ -1,8 +1,8 @@
-diff --git a/drivers/gpu/drm/i915/display/intel_fb.c b/drivers/gpu/drm/i915/display/intel_fb.c
-index b07ef8b78f38..9335faeaa6e7 100644
---- a/drivers/gpu/drm/i915/display/intel_fb.c
-+++ b/drivers/gpu/drm/i915/display/intel_fb.c
-@@ -1817,7 +1817,8 @@ int intel_framebuffer_init(struct intel_framebuffer *intel_fb,
+Index: kernel-5_15/drivers/gpu/drm/i915/display/intel_fb.c
+===================================================================
+--- kernel-5_15.orig/drivers/gpu/drm/i915/display/intel_fb.c
++++ kernel-5_15/drivers/gpu/drm/i915/display/intel_fb.c
+@@ -1903,7 +1903,8 @@ int intel_framebuffer_init(struct intel_
  
  	if (!drm_any_plane_has_format(&dev_priv->drm,
  				      mode_cmd->pixel_format,
