@@ -2,12 +2,32 @@ Index: kernel-5_15/drivers/ata/ahci.c
 ===================================================================
 --- kernel-5_15.orig/drivers/ata/ahci.c
 +++ kernel-5_15/drivers/ata/ahci.c
-@@ -137,7 +137,7 @@ static const struct ata_port_info ahci_p
- 		.port_ops	= &ahci_ops,
- 	},
- 	[board_ahci_low_power] = {
--		AHCI_HFLAGS	(AHCI_HFLAG_IS_MOBILE),
-+		AHCI_HFLAGS	(AHCI_HFLAG_IS_MOBILE | AHCI_HFLAG_NO_SUSPEND),
- 		.flags		= AHCI_FLAG_COMMON,
- 		.pio_mask	= ATA_PIO4,
- 		.udma_mask	= ATA_UDMA6,
+@@ -1284,18 +1284,24 @@ static bool ahci_broken_suspend(struct p
+ 			},
+ 			.driver_data = "20091216",	/* V3.04 */
+ 		},
++    {
++      .ident = "14II",
++      .matches = {
++        DMI_MATCH(DMI_SYS_VENDOR, "TIMI"),
++        DMI_MATCH(DMI_PRODUCT_NAME, "RedmiBook 14 II"),
++      },
++      .driver_data = "20200820"
++    },
+ 		{ }	/* terminate list */
+ 	};
+ 	const struct dmi_system_id *dmi = dmi_first_match(sysids);
+ 	int year, month, date;
+ 	char buf[9];
+-
+-	if (!dmi || pdev->bus->number || pdev->devfn != PCI_DEVFN(0x1f, 2))
++	if (!dmi /*|| pdev->bus->number || pdev->devfn != PCI_DEVFN(0x1f, 2)*/){
+ 		return false;
+-
++  }
+ 	dmi_get_date(DMI_BIOS_DATE, &year, &month, &date);
+ 	snprintf(buf, sizeof(buf), "%04d%02d%02d", year, month, date);
+-
+ 	return strcmp(buf, dmi->driver_data) < 0;
+ }
+ 
