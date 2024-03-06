@@ -1,0 +1,17 @@
+diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
+index ef504e2645..1e8f157db8 100644
+--- a/login_manager/chrome_setup.cc
++++ b/login_manager/chrome_setup.cc
+@@ -1097,10 +1097,10 @@ void PerformChromeSetup(brillo::CrosConfigInterface* cros_config,
+   AddFeatureManagementFlags(&builder, feature_management);
+ 
+   // Apply any modifications requested by the developer.
+-  if (builder.is_developer_end_user()) {
++  /*if (builder.is_developer_end_user()) { */
+     builder.ApplyUserConfig(base::FilePath(kChromeDevConfigPath),
+                             disallowed_prefixes);
+-  }
++  /*}*/
+ 
+   *is_developer_end_user_out = builder.is_developer_end_user();
+   *env_vars_out = builder.environment_variables();

@@ -12,4 +12,5 @@ cros_pre_src_prepare_openfyde_patches() {
   eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/login_manager_add_dynamic_default_wallpaper_flag.patch
 
   eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/mount_widevine.patch
+  eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/apply-chrome-dev-flags-in-base-mode.patch
 }
