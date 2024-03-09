@@ -1,11 +1,8 @@
-# Copyright (c) 2022 Fyde Innovations Limited and the openFyde Authors.
-# Distributed under the license specified in the root directory of this project.
-
-# Copyright 1999-2022 Gentoo Authors
+# Copyright 1999-2024 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-inherit mount-boot savedconfig
+inherit linux-info mount-boot savedconfig multiprocessing
 
 # In case this is a real snapshot, fill in commit below.
 # For normal, tagged releases, leave blank
@@ -22,24 +19,33 @@ else
 		SRC_URI="https://mirrors.edge.kernel.org/pub/linux/kernel/firmware/${P}.tar.xz"
 	fi
 
-	KEYWORDS="~alpha amd64 arm arm64 hppa ~ia64 ~m68k ~mips ppc ppc64 ~riscv ~s390 sparc x86"
+	KEYWORDS="~alpha amd64 arm arm64 hppa ~ia64 ~loong ~m68k ~mips ppc ppc64 ~riscv ~s390 sparc x86"
 fi
 
 DESCRIPTION="Linux firmware files"
 HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
 
-LICENSE="GPL-2 GPL-2+ GPL-3 BSD MIT  MPL-1.1
-	redistributable? (
-		linux-fw-redistributable ( BSD-2 BSD BSD-4 ISC MIT ) )
+LICENSE="GPL-2 GPL-2+ GPL-3 BSD MIT || ( MPL-1.1 GPL-2 )
+	redistributable? ( linux-fw-redistributable BSD-2 BSD BSD-4 ISC MIT )
 	unknown-license? ( all-rights-reserved )"
 SLOT="0"
-IUSE="initramfs +redistributable savedconfig unknown-license"
-REQUIRED_USE="initramfs? ( redistributable )"
+IUSE="bindist compress-xz compress-zstd deduplicate initramfs +redistributable savedconfig unknown-license"
+REQUIRED_USE="initramfs? ( redistributable )
+	?? ( compress-xz compress-zstd )
+	savedconfig? ( !deduplicate )"
 
-RESTRICT="binchecks strip test mirror
+RESTRICT="binchecks strip test
+	!bindist? ( bindist )
 	unknown-license? ( bindist )"
 
-BDEPEND="initramfs? ( app-arch/cpio )"
+DEPEND="
+  savedconfig? ( sys-kernel/linux-firmware-config )
+"
+
+BDEPEND="initramfs? ( app-alternatives/cpio )
+	compress-xz? ( app-arch/xz-utils )
+	compress-zstd? ( app-arch/zstd )
+	deduplicate? ( app-misc/rdfind )"
 
 #add anything else that collides to this
 RDEPEND="!savedconfig? (
@@ -62,14 +68,28 @@ RDEPEND="!savedconfig? (
 		)
 	)"
 
-DEPEND="
-  savedconfig? ( sys-kernel/linux-firmware-config )
-  "
-
 QA_PREBUILT="*"
+PATCHES=( "${FILESDIR}"/${PN}-copy-firmware-r3.patch )
 
 pkg_pretend() {
 	use initramfs && mount-boot_pkg_pretend
+}
+
+pkg_setup() {
+	if use compress-xz || use compress-zstd ; then
+		local CONFIG_CHECK
+
+		if kernel_is -ge 5 19; then
+			use compress-xz && CONFIG_CHECK="~FW_LOADER_COMPRESS_XZ"
+			use compress-zstd && CONFIG_CHECK="~FW_LOADER_COMPRESS_ZSTD"
+		else
+			use compress-xz && CONFIG_CHECK="~FW_LOADER_COMPRESS"
+			if use compress-zstd; then
+				eerror "Kernels <5.19 do not support ZSTD-compressed firmware files"
+			fi
+		fi
+		linux-info_pkg_setup
+	fi
 }
 
 src_unpack() {
@@ -85,6 +105,7 @@ src_unpack() {
 }
 
 src_prepare() {
+
 	default
 
 	find . -type f -not -perm 0644 -print0 \
@@ -123,8 +144,9 @@ src_prepare() {
 	# whitelist of misc files
 	local misc_files=(
 		copy-firmware.sh
+		README.md
 		WHENCE
-		README
+		LICEN[CS]E.*
 	)
 
 	# whitelist of images with a free software license
@@ -194,14 +216,12 @@ src_prepare() {
 
 	# blacklist of images with unknown license
 	local unknown_license=(
-		atmsar11.fw
 		korg/k1212.dsp
 		ess/maestro3_assp_kernel.fw
 		ess/maestro3_assp_minisrc.fw
 		yamaha/ds1_ctrl.fw
 		yamaha/ds1_dsp.fw
 		yamaha/ds1e_ctrl.fw
-		tr_smctr.bin
 		ttusb-budget/dspbootcode.bin
 		emi62/bitstream.fw
 		emi62/loader.fw
@@ -213,7 +233,6 @@ src_prepare() {
 		mts_mt9234zba.fw
 		whiteheat.fw
 		whiteheat_loader.fw
-		intelliport2.bin
 		cpia2/stv0672_vp4.bin
 		vicam/firmware.fw
 		edgeport/boot.fw
@@ -233,7 +252,6 @@ src_prepare() {
 		adaptec/starfire_tx.bin
 		yam/1200.bin
 		yam/9600.bin
-		3com/3C359.bin
 		ositech/Xilinx7OD.bin
 		qlogic/isp1000.bin
 		myricom/lanai.bin
@@ -264,67 +282,33 @@ src_prepare() {
 	fi
 
 	restore_config ${PN}.conf
-  einfo "restore ${PN}.conf"
-}
-
-install_iwlwifi() {
-    local target_version=$1
-    local target
-    local prefix
-    local latest
-    local model
-    local models=("cc" "QuZ" "so" "Qu" "ty")
-
-    for f in iwlwifi*.ucode; do
-
-        local tmp=(${f//-/ })
-        model=${tmp[1]}
-
-
-        [[ ! " ${models[@]} " =~ " ${model} " ]] && continue
-
-        prefix="$(echo ${f} | sed 's/[0-9]*.ucode//g')"
-        target="${prefix}${target_version}.ucode"
-
-        [ -f $target ] && continue
-        [ -L $target ] && continue
-
-        latest=$(find . -name "${prefix}*ucode" -printf "%f\n" | sort | tail -n1)
-        ln -sf $latest $target
-    done
 }
 
 src_install() {
-	./copy-firmware.sh -v "${ED}/lib/firmware" || die
+
+	local LINUX_FIRMWARE_SAVED_CONFIG_FILES=
+	local FW_OPTIONS=( "-v" )
+
+	if use savedconfig; then
+		if [[ -s "${S}/${PN}.conf" ]]; then
+			files_to_keep="${T}/files_to_keep.lst"
+			grep -v '^#' "${S}/${PN}.conf" 2>/dev/null > "${files_to_keep}" || die
+			[[ -s "${files_to_keep}" ]] || die "grep failed, empty config file?"
+			LINUX_FIRMWARE_SAVED_CONFIG_FILES=$(<${files_to_keep})
+			LINUX_FIRMWARE_SAVED_CONFIG_FILES="${LINUX_FIRMWARE_SAVED_CONFIG_FILES//$'\n'/ }"
+			FW_OPTIONS+=( "--firmware-list" "${LINUX_FIRMWARE_SAVED_CONFIG_FILES[@]}" )
+		fi
+	fi
+
+	! use deduplicate && FW_OPTIONS+=( "--ignore-duplicates" )
+	FW_OPTIONS+=( "${ED}/lib/firmware" )
+	./copy-firmware.sh "${FW_OPTIONS[@]}"
 
 	pushd "${ED}/lib/firmware" &>/dev/null || die
 
 	# especially use !redistributable will cause some broken symlinks
 	einfo "Removing broken symlinks ..."
 	find * -xtype l -print -delete || die
-
-	if use savedconfig; then
-		if [[ -s "${S}/${PN}.conf" ]]; then
-			local files_to_keep="${T}/files_to_keep.lst"
-			grep -v '^#' "${S}/${PN}.conf" 2>/dev/null > "${files_to_keep}" || die
-			[[ -s "${files_to_keep}" ]] || die "grep failed, empty config file?"
-
-			einfo "Applying USE=savedconfig; Removing all files not listed in config ..."
-			find ! -type d -printf "%P\n" \
-				| grep -Fvx -f "${files_to_keep}" \
-				| xargs -d '\n' --no-run-if-empty rm -v
-
-			if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-				die "Find failed to print installed files"
-			elif [[ ${PIPESTATUS[1]} -eq 2 ]]; then
-				# grep returns exit status 1 if no lines were selected
-				# which is the case when we want to keep all files
-				die "Grep failed to select files to keep"
-			elif [[ ${PIPESTATUS[2]} -ne 0 ]]; then
-				die "Failed to remove files not listed in config"
-			fi
-		fi
-	fi
 
 	# remove empty directories, bug #396073
 	find -type d -empty -delete || die
@@ -340,18 +324,57 @@ src_install() {
 	echo "# Remove files that shall not be installed from this list." > "${S}"/${PN}.conf || die
 	find * ! -type d >> "${S}"/${PN}.conf || die
 	save_config "${S}"/${PN}.conf
-	install_iwlwifi "77"
+
+	if use compress-xz || use compress-zstd; then
+		einfo "Compressing firmware ..."
+		local target
+		local ext
+		local compressor
+
+		if use compress-xz; then
+			ext=xz
+			compressor="xz -T1 -C crc32"
+		elif use compress-zstd; then
+			ext=zst
+			compressor="zstd -15 -T1 -C -q --rm"
+		fi
+
+		# rename symlinks
+		while IFS= read -r -d '' f; do
+			# skip symlinks pointing to directories
+			[[ -d ${f} ]] && continue
+
+			target=$(readlink "${f}")
+			[[ $? -eq 0 ]] || die
+			ln -sf "${target}".${ext} "${f}" || die
+			mv -T "${f}" "${f}".${ext} || die
+		done < <(find . -type l -print0) || die
+
+		find . -type f ! -path "./amd-ucode/*" -print0 | \
+			xargs -0 -P $(makeopts_jobs) -I'{}' ${compressor} '{}' || die
+
+	fi
+
 	popd &>/dev/null || die
 
 	if use initramfs ; then
 		insinto /boot
 		doins "${S}"/amd-uc.img
 	fi
+
+	dodoc README.md
+	# some licenses require copyright and permission notice to be included
+	use bindist && dodoc WHENCE LICEN[CS]E.*
 }
 
 pkg_preinst() {
 	if use savedconfig; then
 		ewarn "USE=savedconfig is active. You must handle file collisions manually."
+	fi
+
+	# Fix 'symlink is blocked by a directory' Bug #871315
+	if has_version "<${CATEGORY}/${PN}-20220913-r2" ; then
+		rm -rf "${EROOT}"/lib/firmware/qcom/LENOVO/21BX
 	fi
 
 	# Make sure /boot is available if needed.

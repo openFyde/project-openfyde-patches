@@ -1,1 +1,0 @@
-linux-firmware-20220310.ebuild

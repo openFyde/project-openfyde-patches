@@ -17,16 +17,22 @@ DEPEND="${RDEPEND}"
 
 S=${WORKDIR}
 
+TARGET_CONFIG="linux-firmware-20240220"
+
+src_compile() {
+  local file_list="${FILESDIR}/linux_firmware_list"
+  if use intel-common; then
+    cat $file_list | grep -v -E "amdgpu|nvidia|radeon" > $TARGET_CONFIG
+  elif use amd-common; then
+    cat $file_list | grep -v -E "intel|i915|nvidia" > $TARGET_CONFIG
+  elif use nvidia-common; then
+    cat $file_list | grep -v -E "intel|i915|amdgpu|radeon" > $TARGET_CONFIG
+  else
+    cat $file_list > $TARGET_CONFIG
+  fi
+}
+
 src_install() {
   insinto /usr/local/etc/portage/savedconfig/sys-kernel
-  target_config=linux-firmware-20220310
-  if use intel-common; then
-    newins ${FILESDIR}/intel-common-config $target_config
-  elif use amd-common; then
-    newins ${FILESDIR}/amd-config $target_config
-  elif use nvidia-common; then
-    newins ${FILESDIR}/nvidia-config $target_config
-  else
-    newins ${FILESDIR}/common-config $target_config 
-  fi
+  doins $TARGET_CONFIG
 }
