@@ -27,6 +27,7 @@ SLOT="0/0"
 KEYWORDS="*"
 IUSE="
 	cros_embedded direncryption +encrypted_stateful
+	tpm_insecure_fallback
 	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
 	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
 	+oobe_config prjquota -s3halt +syslog systemd tpm2 +udev vivid vtconsole"
