@@ -24,9 +24,9 @@ src_compile() {
   if use intel-common; then
     cat $file_list | grep -v -E "amdgpu|nvidia|radeon" > $TARGET_CONFIG
   elif use amd-common; then
-    cat $file_list | grep -v -E "intel|i915|nvidia" > $TARGET_CONFIG
+    cat $file_list | grep -v -E "i915|nvidia" > $TARGET_CONFIG
   elif use nvidia-common; then
-    cat $file_list | grep -v -E "intel|i915|amdgpu|radeon" > $TARGET_CONFIG
+    cat $file_list | grep -v -E "i915|amdgpu|radeon" > $TARGET_CONFIG
   else
     cat $file_list > $TARGET_CONFIG
   fi
