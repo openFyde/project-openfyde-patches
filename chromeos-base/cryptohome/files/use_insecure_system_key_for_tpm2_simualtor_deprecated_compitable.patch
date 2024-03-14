@@ -1,0 +1,25 @@
+diff --git a/cryptohome/libs/BUILD.gn b/cryptohome/libs/BUILD.gn
+index e30c0c35b7..95513be33f 100644
+--- a/cryptohome/libs/BUILD.gn
++++ b/cryptohome/libs/BUILD.gn
+@@ -39,6 +39,7 @@ config("target_defaults") {
+     "USE_TPM1=${use.tpm}",
+     "USE_TPM2=${use.tpm2}",
+     "USE_TPM2_SIMULATOR=${use.tpm2_simulator}",
++    "USE_TPM2_SIMULATOR_DEPRECATED=${use.tpm2_simulator_deprecated}",
+     "USE_VTPM_PROXY=${use.vtpm_proxy}",
+     "USE_DOUBLE_EXTEND_PCR_ISSUE=${use.double_extend_pcr_issue}",
+     "USE_MOUNT_OOP=${use.mount_oop}",
+diff --git a/cryptohome/mount_encrypted/mount_encrypted.cc b/cryptohome/mount_encrypted/mount_encrypted.cc
+index 460d1b196d..066ce4d9db 100644
+--- a/cryptohome/mount_encrypted/mount_encrypted.cc
++++ b/cryptohome/mount_encrypted/mount_encrypted.cc
+@@ -112,7 +112,7 @@ static bool shall_use_tpm_for_system_key() {
+   }
+ 
+   /* Assume we have tpm for system_key when we are using vtpm tpm2 simulator. */
+-  return USE_TPM2_SIMULATOR && USE_VTPM_PROXY;
++  return USE_TPM2_SIMULATOR && USE_VTPM_PROXY && !USE_TPM2_SIMULATOR_DEPRECATED;
+ }
+ 
+ static result_code report_info(mount_encrypted::EncryptedFs* encrypted_fs,
