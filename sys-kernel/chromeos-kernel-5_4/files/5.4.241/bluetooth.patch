@@ -1,8 +1,8 @@
-Index: kernel-5_4/drivers/bluetooth/btusb.c
-===================================================================
---- kernel-5_4.orig/drivers/bluetooth/btusb.c
-+++ kernel-5_4/drivers/bluetooth/btusb.c
-@@ -333,6 +333,7 @@ static const struct usb_device_id blackl
+diff --git a/drivers/bluetooth/btusb.c b/drivers/bluetooth/btusb.c
+index f85e54e52ee5..2a413e7fbd4e 100644
+--- a/drivers/bluetooth/btusb.c
++++ b/drivers/bluetooth/btusb.c
+@@ -335,6 +335,7 @@ static const struct usb_device_id blacklist_table[] = {
  	{ USB_DEVICE(0x1286, 0x2044), .driver_info = BTUSB_MARVELL },
  	{ USB_DEVICE(0x1286, 0x2046), .driver_info = BTUSB_MARVELL },
  	{ USB_DEVICE(0x1286, 0x204e), .driver_info = BTUSB_MARVELL },

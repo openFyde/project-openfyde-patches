@@ -1,7 +1,7 @@
-Index: kernel-5_4/drivers/input/touchscreen/goodix.c
-===================================================================
---- kernel-5_4.orig/drivers/input/touchscreen/goodix.c
-+++ kernel-5_4/drivers/input/touchscreen/goodix.c
+diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
+index bfb945fc33a1..75d296783449 100644
+--- a/drivers/input/touchscreen/goodix.c
++++ b/drivers/input/touchscreen/goodix.c
 @@ -29,6 +29,15 @@
  #include <linux/of.h>
  #include <asm/unaligned.h>
@@ -34,8 +34,8 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  
  static int goodix_check_cfg_8(struct goodix_ts_data *ts,
  			const struct firmware *cfg);
-@@ -346,34 +357,62 @@ static int goodix_ts_read_input_report(s
- 	return -ENOMSG;
+@@ -338,34 +349,62 @@ static int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
+ 	return 0;
  }
  
 -static void goodix_ts_report_touch_8b(struct goodix_ts_data *ts, u8 *coor_data)
@@ -99,7 +99,7 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  }
  
  /**
-@@ -391,6 +430,9 @@ static void goodix_process_events(struct
+@@ -383,6 +422,9 @@ static void goodix_process_events(struct goodix_ts_data *ts)
  	int i;
  
  	touch_num = goodix_ts_read_input_report(ts, point_data);
@@ -109,7 +109,7 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  	if (touch_num < 0)
  		return;
  
-@@ -400,14 +442,17 @@ static void goodix_process_events(struct
+@@ -392,14 +434,17 @@ static void goodix_process_events(struct goodix_ts_data *ts)
  	 */
  	input_report_key(ts->input_dev, KEY_LEFTMETA, point_data[0] & BIT(4));
  
@@ -135,7 +135,7 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  	input_mt_sync_frame(ts->input_dev);
  	input_sync(ts->input_dev);
  }
-@@ -745,6 +790,29 @@ static int goodix_i2c_test(struct i2c_cl
+@@ -737,6 +782,29 @@ static int goodix_i2c_test(struct i2c_client *client)
  	return error;
  }
  
@@ -165,7 +165,7 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  /**
   * goodix_configure_dev - Finish device initialization
   *
-@@ -778,10 +846,14 @@ static int goodix_configure_dev(struct g
+@@ -770,10 +838,14 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
  	/* Capacitive Windows/Home button on some devices */
  	input_set_capability(ts->input_dev, EV_KEY, KEY_LEFTMETA);
  
@@ -180,7 +180,7 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  
  	/* Read configuration and apply touchscreen parameters */
  	goodix_read_config(ts);
-@@ -816,12 +888,18 @@ static int goodix_configure_dev(struct g
+@@ -808,12 +880,18 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
  			"Non-standard 9-bytes report format quirk\n");
  	}
  
@@ -200,7 +200,7 @@ Index: kernel-5_4/drivers/input/touchscreen/goodix.c
  	error = input_mt_init_slots(ts->input_dev, ts->max_touch_num,
  				    INPUT_MT_DIRECT | INPUT_MT_DROP_UNUSED);
  	if (error) {
-@@ -844,7 +922,7 @@ static int goodix_configure_dev(struct g
+@@ -836,7 +914,7 @@ static int goodix_configure_dev(struct goodix_ts_data *ts)
  		return error;
  	}
  

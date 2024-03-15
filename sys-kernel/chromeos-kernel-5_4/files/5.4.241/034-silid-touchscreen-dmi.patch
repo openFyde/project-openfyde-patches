@@ -1,8 +1,8 @@
-Index: kernel-5_4/drivers/platform/x86/touchscreen_dmi.c
-===================================================================
---- kernel-5_4.orig/drivers/platform/x86/touchscreen_dmi.c
-+++ kernel-5_4/drivers/platform/x86/touchscreen_dmi.c
-@@ -586,6 +586,36 @@ static const struct ts_dmi_data teclast_
+diff --git a/drivers/platform/x86/touchscreen_dmi.c b/drivers/platform/x86/touchscreen_dmi.c
+index 7ed1189a7200c..e1713a2cb042f 100644
+--- a/drivers/platform/x86/touchscreen_dmi.c
++++ b/drivers/platform/x86/touchscreen_dmi.c
+@@ -553,6 +553,36 @@ static const struct ts_dmi_data teclast_x98plus2_data = {
  	.properties	= teclast_x98plus2_props,
  };
  
@@ -39,10 +39,11 @@ Index: kernel-5_4/drivers/platform/x86/touchscreen_dmi.c
  static const struct property_entry trekstor_primebook_c11_props[] = {
  	PROPERTY_ENTRY_U32("touchscreen-size-x", 1970),
  	PROPERTY_ENTRY_U32("touchscreen-size-y", 1530),
-@@ -1024,6 +1054,22 @@ static const struct dmi_system_id touchs
+@@ -966,6 +996,22 @@ static const struct dmi_system_id touchscreen_dmi_table[] = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "X98 Plus II"),
  		},
  	},
- 	{
++	{
 +		/* Teclast TbooK 16 Power */
 +		.driver_data = (void *)&teclast_tbook16p_data,
 +		.matches = {
@@ -58,7 +59,6 @@ Index: kernel-5_4/drivers/platform/x86/touchscreen_dmi.c
 +			DMI_MATCH(DMI_PRODUCT_NAME, "WT9T12"),
 +		},
 +	},
-+	{
+ 	{
  		/* Trekstor Primebook C11 */
  		.driver_data = (void *)&trekstor_primebook_c11_data,
- 		.matches = {
