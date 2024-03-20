@@ -9,7 +9,7 @@ HOMEPAGE="http://fydeos.com"
 LICENSE="BSD-Google"
 SLOT="0"
 KEYWORDS="*"
-IUSE="intel-common amd-common nvidia-common"
+IUSE="intel-common amd-common nvidia-common surface-common"
 
 RDEPEND=""
 
@@ -27,6 +27,8 @@ src_compile() {
     cat $file_list | grep -v -E "i915|nvidia" > $TARGET_CONFIG
   elif use nvidia-common; then
     cat $file_list | grep -v -E "i915|amdgpu|radeon" > $TARGET_CONFIG
+  elif use surface-common; then
+    cat $file_list | grep -v -E "amdgpu|amd-ucode|radeon|nvidia|amdtee|cirrus|iwlwifi-[1-9]|rtw8|brcm|b43|mediatek|amd_sev" > $TARGET_CONFIG
   else
     cat $file_list > $TARGET_CONFIG
   fi
