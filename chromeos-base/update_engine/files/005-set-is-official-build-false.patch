@@ -1,0 +1,13 @@
+diff --git a/cros/hardware_chromeos.cc b/cros/hardware_chromeos.cc
+index c7f72d8c..5283c8f6 100644
+--- a/cros/hardware_chromeos.cc
++++ b/cros/hardware_chromeos.cc
+@@ -155,7 +155,7 @@ void HardwareChromeOS::Init() {
+ }
+ 
+ bool HardwareChromeOS::IsOfficialBuild() const {
+-  return VbGetSystemPropertyInt("debug_build") == 0;
++  return false;
+ }
+ 
+ bool HardwareChromeOS::IsNormalBootMode() const {
