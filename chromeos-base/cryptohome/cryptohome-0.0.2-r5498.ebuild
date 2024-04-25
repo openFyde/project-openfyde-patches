@@ -243,3 +243,13 @@ platform_pkg_test() {
 	platform_test "run" "${OUT}/mount_encrypted_unittests"
 	platform_test "run" "${OUT}/stateful_recovery_unittests"
 }
+
+src_prepare() {
+  eapply_user
+  if ! use upper_case_product_uuid; then
+    eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/prevent_product_uuid_uppercase_convert.patch
+  fi
+  if use tpm2_simulator_deprecated; then
+    eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/use_insecure_system_key_for_tpm2_simualtor_deprecated_compitable.patch
+  fi
+}
