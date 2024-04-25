@@ -1,0 +1,15 @@
+diff --git a/devices/src/serial_device.rs b/devices/src/serial_device.rs
+index 56b951c9e..5c22cb351 100644
+--- a/devices/src/serial_device.rs
++++ b/devices/src/serial_device.rs
+@@ -178,9 +178,8 @@ impl SerialParameters {
+         let input: Option<Box<dyn SerialInput>> = if let Some(input_path) = &self.input {
+             let input_path = input_path.as_path();
+ 
+-            let input_file = open_file_or_duplicate(input_path, OpenOptions::new().read(true))
++            let input_file = open_file_or_duplicate(input_path, OpenOptions::new().read(true).write(true))
+                 .map_err(|e| Error::FileOpen(e.into(), input_path.into()))?;
+-
+             keep_rds.push(input_file.as_raw_descriptor());
+             Some(Box::new(input_file))
+         } else if self.stdin {
