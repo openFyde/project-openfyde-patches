@@ -1,0 +1,99 @@
+diff --git a/shill/cellular/cellular.cc b/shill/cellular/cellular.cc
+index bb6624da21..9428f7b4c6 100644
+--- a/shill/cellular/cellular.cc
++++ b/shill/cellular/cellular.cc
+@@ -339,7 +339,8 @@ void Cellular::CreateImplicitNetwork(bool fixed_ip_params) {
+ 
+ Network* Cellular::GetPrimaryNetwork() const {
+   // The default network is considered as primary always.
+-  return default_pdn_ ? default_pdn_->network() : nullptr;
++  return default_pdn_ ? default_pdn_->network() :
++    ppp_device_ ? ppp_device_->GetPrimaryNetwork() : nullptr;
+ }
+ 
+ std::string Cellular::GetLegacyEquipmentIdentifier() const {
+@@ -2841,6 +2842,7 @@ void Cellular::StopPPP() {
+     return;
+   DropConnection();
+   ppp_task_.reset();
++  manager()->DeregisterDevice(ppp_device_);
+   ppp_device_ = nullptr;
+ }
+ 
+@@ -2921,6 +2923,7 @@ void Cellular::OnPPPConnected(
+     ppp_device_ = device_info->CreatePPPDevice(manager(), interface_name,
+                                                interface_index);
+     device_info->RegisterDevice(ppp_device_);
++    manager()->RegisterDevice(ppp_device_);
+   }
+ 
+   CHECK(service_);
+@@ -2932,6 +2935,8 @@ void Cellular::OnPPPConnected(
+   auto properties = std::make_unique<IPConfig::Properties>(
+       PPPDaemon::ParseIPConfiguration(params));
+   ppp_device_->UpdateIPConfig(std::move(properties), nullptr);
++  ResetServiceAttachedNetwork();
++  OnIPConfigsPropertyUpdated(ppp_device_->interface_index());
+ }
+ 
+ void Cellular::OnPPPDied(pid_t pid, int exit) {
+diff --git a/shill/device_info.cc b/shill/device_info.cc
+index c1e34fb814..a1c60935fe 100644
+--- a/shill/device_info.cc
++++ b/shill/device_info.cc
+@@ -190,6 +190,8 @@ const char* const kModemDrivers[] = {
+ // Path to the tun device.
+ constexpr char kTunDeviceName[] = "/dev/net/tun";
+ 
++static constexpr std::string_view kPPPDevicePrefix = "ppp";
++
+ // Time to wait before registering devices which need extra time to detect.
+ constexpr base::TimeDelta kDelayedDeviceCreation = base::Seconds(5);
+ 
+@@ -382,6 +384,9 @@ Technology DeviceInfo::GetDeviceTechnology(
+     SLOG(2) << iface_name << ": device is kind '" << kind.value() << "'";
+   }
+ 
++  if (iface_name.starts_with(kPPPDevicePrefix)) {
++    return Technology::kPPP;
++  }
+   if (IsGuestDevice(iface_name)) {
+     SLOG(2) << iface_name << ": device is a guest device";
+     return Technology::kGuestInterface;
+@@ -624,7 +629,7 @@ DeviceRefPtr DeviceInfo::CreateDevice(const std::string& link_name,
+                                       int interface_index,
+                                       Technology technology) {
+   SLOG(1) << __func__ << ": " << link_name << " Address: " << address
+-          << " Index: " << interface_index;
++          << " Index: " << interface_index << " Technology:" << technology;
+   DeviceRefPtr device;
+   delayed_devices_.erase(interface_index);
+   infos_[interface_index].technology = technology;
+@@ -774,7 +779,6 @@ void DeviceInfo::AddLinkMsgHandler(const net_base::RTNLMessage& msg) {
+       LOG(ERROR) << "Add Link message does not contain a link name!";
+       return;
+     }
+-    SLOG(2) << "add link index " << dev_index << " name " << link_name;
+     infos_[dev_index].name = link_name;
+     indices_[link_name] = dev_index;
+ 
+@@ -789,6 +793,7 @@ void DeviceInfo::AddLinkMsgHandler(const net_base::RTNLMessage& msg) {
+       technology = GetDeviceTechnology(link_name, msg.link_status().kind);
+     }
+ 
++    SLOG(2) << "add link index " << dev_index << " name " << link_name << " technology:" << technology;
+     const auto mac_address =
+         net_base::MacAddress::CreateFromBytes(msg.GetAttribute(IFLA_ADDRESS));
+     if (mac_address) {
+diff --git a/shill/virtual_device.cc b/shill/virtual_device.cc
+index ebc84cc5ce..5311d31f3d 100644
+--- a/shill/virtual_device.cc
++++ b/shill/virtual_device.cc
+@@ -69,6 +69,7 @@ void VirtualDevice::UpdateIPConfig(
+       .probing_configuration =
+           manager()->GetPortalDetectorProbingConfiguration(),
+   });
++  OnIPConfigsPropertyUpdated(interface_index());
+ }
+ 
+ void VirtualDevice::ResetConnection() {

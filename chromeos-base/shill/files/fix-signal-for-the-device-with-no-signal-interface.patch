@@ -1,0 +1,21 @@
+diff --git a/shill/cellular/cellular_capability_3gpp.cc b/shill/cellular/cellular_capability_3gpp.cc
+index 2ae524ea24..1f7706f2f3 100644
+--- a/shill/cellular/cellular_capability_3gpp.cc
++++ b/shill/cellular/cellular_capability_3gpp.cc
+@@ -1870,6 +1870,16 @@ void CellularCapability3gpp::OnModemPropertiesChanged(
+       mdn = numbers[0];
+     OnMdnChanged(mdn);
+   }
++
++  if (properties.ContainsVariant(MM_MODEM_PROPERTY_SIGNALQUALITY)) {
++    uint32_t signal;
++    bool enabled;
++    std::tie(signal, enabled) = properties.GetVariant(MM_MODEM_PROPERTY_SIGNALQUALITY).Get<SignalQuality>();
++    SLOG(this, 1) << __func__ << " signal:" << signal << " enabled:" << enabled;
++    if (enabled) {
++      cellular()->HandleNewSignalQuality(signal);
++    }
++  }
+ }
+ 
+ void CellularCapability3gpp::OnPropertiesChanged(
