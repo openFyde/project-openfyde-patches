@@ -6,10 +6,6 @@ cros_pre_src_prepare_openfyde_patches() {
     eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/borealis-skip-untrusted-vm-error.patch
     eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/disable_smt.patch
     eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/disable_foz_db_list.patch
+    eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/resolve_arc_path.patch
   fi
 }
-
-# cros_pre_src_prepare_openfyde_patches_fix_syntax_error() {
-  # the syntax error still exists in r102
-  # eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/r96_fix_vm_concierge_if_syntax_error.patch
-# }

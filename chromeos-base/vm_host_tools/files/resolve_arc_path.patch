@@ -1,0 +1,14 @@
+--- a/concierge/service_arc.cc
++++ b/concierge/service_arc.cc
+@@ -95,9 +95,10 @@ const VariationsFeature kArcVmAAudioMMAPLowLatencyFeature{
+ // file when in dev mode.
+ base::FilePath GetImagePath(const base::FilePath& image_path,
+                             bool is_dev_mode) {
++#if 0
+   if (!is_dev_mode)
+     return image_path;
+-
++#endif
+   // When in dev mode, the Android images might be on the stateful partition and
+   // |kRootfsPath| might be a symlink to the stateful partition image file. In
+   // that case, we need to use the resolved path so that brillo::SafeFD calls

@@ -1,5 +1,5 @@
 diff --git a/shill/cellular/cellular.cc b/shill/cellular/cellular.cc
-index bb6624da21..9428f7b4c6 100644
+index bb6624da21..762e86e38c 100644
 --- a/shill/cellular/cellular.cc
 +++ b/shill/cellular/cellular.cc
 @@ -339,7 +339,8 @@ void Cellular::CreateImplicitNetwork(bool fixed_ip_params) {
@@ -12,15 +12,16 @@ index bb6624da21..9428f7b4c6 100644
  }
  
  std::string Cellular::GetLegacyEquipmentIdentifier() const {
-@@ -2841,6 +2842,7 @@ void Cellular::StopPPP() {
+@@ -2841,6 +2842,8 @@ void Cellular::StopPPP() {
      return;
    DropConnection();
    ppp_task_.reset();
 +  manager()->DeregisterDevice(ppp_device_);
++  SetPrimaryMultiplexedInterface("");
    ppp_device_ = nullptr;
  }
  
-@@ -2921,6 +2923,7 @@ void Cellular::OnPPPConnected(
+@@ -2921,6 +2924,7 @@ void Cellular::OnPPPConnected(
      ppp_device_ = device_info->CreatePPPDevice(manager(), interface_name,
                                                 interface_index);
      device_info->RegisterDevice(ppp_device_);
@@ -28,10 +29,11 @@ index bb6624da21..9428f7b4c6 100644
    }
  
    CHECK(service_);
-@@ -2932,6 +2935,8 @@ void Cellular::OnPPPConnected(
+@@ -2932,6 +2936,9 @@ void Cellular::OnPPPConnected(
    auto properties = std::make_unique<IPConfig::Properties>(
        PPPDaemon::ParseIPConfiguration(params));
    ppp_device_->UpdateIPConfig(std::move(properties), nullptr);
++  SetPrimaryMultiplexedInterface(ppp_device_->GetPrimaryNetwork()->interface_name());
 +  ResetServiceAttachedNetwork();
 +  OnIPConfigsPropertyUpdated(ppp_device_->interface_index());
  }

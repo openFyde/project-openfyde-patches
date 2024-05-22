@@ -1,0 +1,13 @@
+diff --git a/patchpanel/arc_service.cc b/patchpanel/arc_service.cc
+index 0d8d7a9144..3bed937b41 100644
+--- a/patchpanel/arc_service.cc
++++ b/patchpanel/arc_service.cc
+@@ -462,7 +462,7 @@ void ArcService::AddDevice(const ShillClient::Device& shill_device) {
+   RecordEvent(metrics_, ArcServiceUmaEvent::kAddDevice);
+ 
+   if (devices_.find(shill_device.ifname) != devices_.end()) {
+-    LOG(DFATAL) << "Attemping to add already tracked shill Device "
++    LOG(WARNING) << "Attemping to add already tracked shill Device "
+                 << shill_device;
+     return;
+   }
