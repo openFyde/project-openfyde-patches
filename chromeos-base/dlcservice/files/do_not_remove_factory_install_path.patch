@@ -1,0 +1,34 @@
+diff --git a/dlcservice/dlc_base.cc b/dlcservice/dlc_base.cc
+index b67fa4e763..2ff090690d 100644
+--- a/dlcservice/dlc_base.cc
++++ b/dlcservice/dlc_base.cc
+@@ -471,10 +471,10 @@ bool DlcBase::FactoryInstallCopier() {
+     LOG(WARNING) << "Failed to mark the image verified for DLC=" << id_;
+   }
+ 
+-  if (!brillo::DeletePathRecursively(
+-          JoinPaths(SystemState::Get()->factory_install_dir(), id_))) {
+-    LOG(WARNING) << "Failed to delete the factory installed DLC=" << id_;
+-  }
++  // if (!brillo::DeletePathRecursively(
++  //         JoinPaths(SystemState::Get()->factory_install_dir(), id_))) {
++  //   LOG(WARNING) << "Failed to delete the factory installed DLC=" << id_;
++  // }
+ 
+   return true;
+ }
+diff --git a/dlcservice/utils.cc b/dlcservice/utils.cc
+index 94337f654d..8406c7a95e 100644
+--- a/dlcservice/utils.cc
++++ b/dlcservice/utils.cc
+@@ -307,8 +307,8 @@ set<string> ScanDirectory(const FilePath& dir) {
+ std::vector<base::FilePath> GetPathsToDelete(const DlcId& id) {
+   const auto* system_state = SystemState::Get();
+   return {JoinPaths(system_state->content_dir(), id),
+-          JoinPaths(system_state->dlc_prefs_dir(), id),
+-          JoinPaths(system_state->factory_install_dir(), id)};
++          JoinPaths(system_state->dlc_prefs_dir(), id)};
++          // JoinPaths(system_state->factory_install_dir(), id)};
+ }
+ 
+ PartitionSlot ToPartitionSlot(BootSlot::Slot slot) {
