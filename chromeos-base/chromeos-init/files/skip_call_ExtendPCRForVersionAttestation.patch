@@ -1,0 +1,14 @@
+diff --git a/init/startup/chromeos_startup.cc b/init/startup/chromeos_startup.cc
+index 0f153d5f23..8d6c398dfe 100644
+--- a/init/startup/chromeos_startup.cc
++++ b/init/startup/chromeos_startup.cc
+@@ -800,7 +800,8 @@ int ChromeosStartup::Run() {
+ 
+   base::FilePath pcr_extend_failed =
+       stateful_.Append(kVersionPCRExtendFailedFile);
+-  if (!ExtendPCRForVersionAttestation()) {
++  const bool presume_success = true;
++  if (!presume_success && !ExtendPCRForVersionAttestation()) {
+     // At the moment we'll only log it but not force reboot or recovery.
+     // TODO(b/278071784): Monitor if the failure occurs frequently and later
+     // change this to reboot/send to recovery when it failed.
