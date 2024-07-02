@@ -25,7 +25,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
 +	input_sync(dev);
 +}
 +
-+static void goodix_ts_report_touch_8b(struct goodix_ts_data *ts, u8 *coor_data, u8 key_value)
++static int goodix_ts_report_touch_8b(struct goodix_ts_data *ts, u8 *coor_data, u8 key_value)
  {
  	int id = coor_data[0] & 0x0F;
  	int input_x = get_unaligned_le16(&coor_data[1]);
@@ -34,7 +34,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  
 +	if (coor_data[0] & 0x80) {
 +		googdix_ts_report_pen(ts->pen_dev, input_x, input_y, input_w, key_value);
-+		return;
++		return -1;
 +	}
  	input_mt_slot(ts->input_dev, id);
  	input_mt_report_slot_state(ts->input_dev, MT_TOOL_FINGER, true);
@@ -43,12 +43,11 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  	input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, input_w);
  	input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, input_w);
 +	input_report_abs(ts->input_dev, ABS_MT_PRESSURE, input_w);
-+	input_mt_sync_frame(ts->input_dev);
-+	input_sync(ts->input_dev);
++  return id;
  }
  
 -static void goodix_ts_report_touch_9b(struct goodix_ts_data *ts, u8 *coor_data)
-+static void goodix_ts_report_touch_9b(struct goodix_ts_data *ts, u8 *coor_data, u8 key_value)
++static int goodix_ts_report_touch_9b(struct goodix_ts_data *ts, u8 *coor_data, u8 key_value)
  {
  	int id = coor_data[1] & 0x0F;
  	int input_x = get_unaligned_le16(&coor_data[3]);
@@ -57,7 +56,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  
 +	if (coor_data[1] & 0x80) {
 +		googdix_ts_report_pen(ts->pen_dev, input_x, input_y, input_w, key_value);
-+		return;
++		return -1;
 +	}
  	input_mt_slot(ts->input_dev, id);
  	input_mt_report_slot_state(ts->input_dev, MT_TOOL_FINGER, true);
@@ -68,26 +67,59 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
 +	input_report_abs(ts->input_dev, ABS_MT_PRESSURE, input_w);
 +	input_mt_sync_frame(ts->input_dev);
 +	input_sync(ts->input_dev);
++  return id;
  }
  
  static void goodix_ts_report_key(struct goodix_ts_data *ts, u8 *data)
-@@ -363,13 +388,10 @@ static void goodix_process_events(struct
- 	for (i = 0; i < touch_num; i++)
- 		if (ts->contact_size == 9)
- 			goodix_ts_report_touch_9b(ts,
+@@ -350,9 +375,11 @@ static void goodix_ts_report_key(struct
+  */
+ static void goodix_process_events(struct goodix_ts_data *ts)
+ {
+-	u8  point_data[2 + GOODIX_MAX_CONTACT_SIZE * GOODIX_MAX_CONTACTS];
++	u8  point_data[2 + GOODIX_MAX_CONTACT_SIZE * GOODIX_MAX_CONTACTS] = { 0 };
+ 	int touch_num;
+ 	int i;
++  bool reported[GOODIX_MAX_CONTACTS] = { 0 };
++  int reported_slot;
+ 
+ 	touch_num = goodix_ts_read_input_report(ts, point_data);
+ 	if (touch_num < 0)
+@@ -360,16 +387,24 @@ static void goodix_process_events(struct
+ 
+ 	goodix_ts_report_key(ts, point_data);
+ 
+-	for (i = 0; i < touch_num; i++)
+-		if (ts->contact_size == 9)
+-			goodix_ts_report_touch_9b(ts,
 -				&point_data[1 + ts->contact_size * i]);
-+				&point_data[1 + ts->contact_size * i], point_data[0]);
- 		else
- 			goodix_ts_report_touch_8b(ts,
+-		else
+-			goodix_ts_report_touch_8b(ts,
 -				&point_data[1 + ts->contact_size * i]);
 -
 -	input_mt_sync_frame(ts->input_dev);
 -	input_sync(ts->input_dev);
++	for (i = 0; i < touch_num; i++) {
++		if (ts->contact_size == 9) {
++			reported_slot = goodix_ts_report_touch_9b(ts,
 +				&point_data[1 + ts->contact_size * i], point_data[0]);
++		} else {
++			reported_slot = goodix_ts_report_touch_8b(ts,
++				&point_data[1 + ts->contact_size * i], point_data[0]);
++    }
++    if (reported_slot > -1)
++      reported[reported_slot] = true;
++  }
++  for (i = 0; i < GOODIX_MAX_CONTACTS; i++)
++    if (!reported[i]) {
++      input_mt_slot(ts->input_dev, i);
++      input_mt_report_slot_inactive(ts->input_dev);
++    }
++  input_mt_sync_frame(ts->input_dev);
++  input_sync(ts->input_dev);
  }
  
  /**
-@@ -1015,6 +1037,29 @@ static int goodix_i2c_test(struct i2c_cl
+@@ -1015,6 +1050,29 @@ static int goodix_i2c_test(struct i2c_cl
  	return error;
  }
  
@@ -117,7 +149,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  /**
   * goodix_configure_dev - Finish device initialization
   *
-@@ -1061,10 +1106,14 @@ static int goodix_configure_dev(struct g
+@@ -1061,10 +1119,14 @@ static int goodix_configure_dev(struct g
  		input_set_capability(ts->input_dev, EV_KEY, ts->keymap[i]);
  	}
  
@@ -132,7 +164,7 @@ Index: kernel-5_15/drivers/input/touchscreen/goodix.c
  
  retry_read_config:
  	/* Read configuration and apply touchscreen parameters */
-@@ -1131,7 +1180,7 @@ retry_read_config:
+@@ -1131,7 +1193,7 @@ retry_read_config:
  		return error;
  	}
  
