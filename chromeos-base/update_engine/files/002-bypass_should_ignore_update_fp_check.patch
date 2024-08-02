@@ -1,6 +1,8 @@
---- a/cros/omaha_request_action.cc
-+++ b/cros/omaha_request_action.cc
-@@ -1280,9 +1280,9 @@
+Index: update_engine/cros/omaha_request_action.cc
+===================================================================
+--- update_engine.orig/cros/omaha_request_action.cc
++++ update_engine/cros/omaha_request_action.cc
+@@ -1282,9 +1282,9 @@ bool OmahaRequestAction::ShouldIgnoreUpd
      }
    }
  

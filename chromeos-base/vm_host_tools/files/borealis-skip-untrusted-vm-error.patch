@@ -1,47 +1,13 @@
---- a/concierge/untrusted_vm_utils.cc
-+++ b/concierge/untrusted_vm_utils.cc
-@@ -154,7 +154,7 @@
-       // l1tf and mds mitigations then fail to start an untrusted VM.
-       case UntrustedVMUtils::MitigationStatus::VULNERABLE:
-         *reason = "Host vulnerable against untrusted VM";
--        return false;
-+        return true;
+Index: vm_tools/concierge/untrusted_vm_utils.cc
+===================================================================
+--- vm_tools.orig/concierge/untrusted_vm_utils.cc
++++ vm_tools/concierge/untrusted_vm_utils.cc
+@@ -181,7 +181,7 @@ bool UntrustedVMUtils::SafeToRunVirtualM
+     // l1tf and mds mitigations then fail to start an untrusted VM.
+     case UntrustedVMUtils::MitigationStatus::VULNERABLE:
+       *reason = "Host vulnerable against untrusted VM";
+-      return false;
++      return true;
  
-       // At this point SMT should not be a security issue. As
-       // |kMinKernelVersionForUntrustedAndNestedVM| has security patches to
-@@ -180,7 +180,7 @@
-      << kMinKernelVersionForUntrustedAndNestedVM.second
-      << ", or the device must be in the developer mode";
-   *reason = ss.str();
--  return false;
-+  return true;
- }
- 
- bool IsUntrustedVM(bool run_as_untrusted,
-@@ -191,7 +191,7 @@
-   // |kMinKernelVersionForUntrustedAndNestedVM|. This means that even with a
-   // trusted image the VM started will essentially be untrusted.
-   if (host_kernel_version >= kMinKernelVersionForUntrustedAndNestedVM)
--    return true;
-+     return true;
- 
-   // Any untrusted image definitely results in an untrusted VM.
-   if (!is_trusted_image)
---- a/concierge/service.cc
-+++ b/concierge/service.cc
-@@ -1888,6 +1888,7 @@
-       response.set_failure_reason(reason);
-       return response;
-     }
-+    LOG(WARNING) << __func__ << ":[UntrustedVM] " << reason;
-   }
- 
-   // Track the next available virtio-blk device name.
-@@ -4771,6 +4772,7 @@
-   if (is_untrusted) {
-     allowed = untrusted_vm_utils_->IsUntrustedVMAllowed(host_kernel_version_,
-                                                         &reason);
-+    LOG(WARNING) << "Untrusted VM:" << reason;
-   }
- 
-   response.set_allowed(allowed);
+     // At this point SMT should not be a security issue, since Linux 4.19+ has
+     // security patches to make nested VMs co-exist securely with SMT.

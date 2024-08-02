@@ -1,5 +1,7 @@
---- a/cros/fydeos_toggle_ota.cc
-+++ b/cros/fydeos_toggle_ota.cc
+Index: update_engine/cros/fydeos_toggle_ota.cc
+===================================================================
+--- update_engine.orig/cros/fydeos_toggle_ota.cc
++++ update_engine/cros/fydeos_toggle_ota.cc
 @@ -2,6 +2,10 @@
  #include <base/files/file_util.h>
  
@@ -11,7 +13,7 @@
  
  namespace fydeos {
  namespace {
-@@ -9,6 +13,8 @@
+@@ -9,6 +13,8 @@ namespace {
    const char kFydeOSOTAIndicatorFile[] = "/mnt/stateful_partition/unencrypted/preserve/.disable_fydeos_ota";
  
    const char kShellCmd[] = "/usr/share/fydeos-ota-checker/ota-checker.sh";
@@ -20,7 +22,7 @@
  }
  
  bool OTAEnabled() {
-@@ -36,4 +42,103 @@
+@@ -36,4 +42,102 @@ bool OTANeeded(std::string version) {
    return true;
  }
  
@@ -45,10 +47,9 @@
 +   if (!ReadFileToString(base::FilePath(config_path), &config_json))
 +       LOG(FATAL) << "Failed to read " << config_path;
 +
-+  absl::optional<base::Value> config = base::JSONReader::Read(config_json);
++  std::optional<base::Value> config = base::JSONReader::Read(config_json);
 +  if (!config || !config->is_dict()) {
 +    LOG(FATAL) << "Failed to parse " << config_json;
-+    return "";
 +  }
 +
 +  base::Value *v;
@@ -124,8 +125,10 @@
 +}
 +
  } // fydeos
---- a/cros/fydeos_toggle_ota.h
-+++ b/cros/fydeos_toggle_ota.h
+Index: update_engine/cros/fydeos_toggle_ota.h
+===================================================================
+--- update_engine.orig/cros/fydeos_toggle_ota.h
++++ update_engine/cros/fydeos_toggle_ota.h
 @@ -2,11 +2,15 @@
  #define FYDEOS_TOGGLE_OTA_H_
  
@@ -142,9 +145,11 @@
  }
  
  #endif // ifndef FYDEOS_TOGGLE_OTA_H_
---- a/cros/omaha_request_action.cc
-+++ b/cros/omaha_request_action.cc
-@@ -693,6 +693,13 @@
+Index: update_engine/cros/omaha_request_action.cc
+===================================================================
+--- update_engine.orig/cros/omaha_request_action.cc
++++ update_engine/cros/omaha_request_action.cc
+@@ -699,6 +699,13 @@ bool OmahaRequestAction::ParseParams(Sco
  void OmahaRequestAction::TransferComplete(HttpFetcher* fetcher,
                                            bool successful) {
    ScopedActionCompleter completer(processor_, this);

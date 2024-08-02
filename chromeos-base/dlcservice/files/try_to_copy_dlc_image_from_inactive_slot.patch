@@ -1,8 +1,8 @@
-diff --git a/dlcservice/dlc_base.cc b/dlcservice/dlc_base.cc
-index b67fa4e763..eac891d9ce 100644
---- a/dlcservice/dlc_base.cc
-+++ b/dlcservice/dlc_base.cc
-@@ -596,6 +596,12 @@ bool DlcBase::Install(ErrorPtr* err) {
+Index: dlcservice/dlc_base.cc
+===================================================================
+--- dlcservice.orig/dlc_base.cc
++++ dlcservice/dlc_base.cc
+@@ -685,6 +685,12 @@ bool DlcBase::Install(ErrorPtr* err) {
          break;
        }
  
@@ -15,7 +15,7 @@ index b67fa4e763..eac891d9ce 100644
        // By now the image is not verified, so it needs to be installed
        // through update_engine. So don't go any further.
        return true;
-@@ -982,4 +988,23 @@ bool DlcBase::Deploy(ErrorPtr* err) {
+@@ -1135,4 +1141,23 @@ void DlcBase::LoadPrefs() {
    }
  }
  
@@ -39,11 +39,11 @@ index b67fa4e763..eac891d9ce 100644
 +}
 +
  }  // namespace dlcservice
-diff --git a/dlcservice/dlc_base.h b/dlcservice/dlc_base.h
-index 2a97aa5ce5..f5fc1af027 100644
---- a/dlcservice/dlc_base.h
-+++ b/dlcservice/dlc_base.h
-@@ -150,6 +150,8 @@ class DlcBase : public DlcInterface {
+Index: dlcservice/dlc_base.h
+===================================================================
+--- dlcservice.orig/dlc_base.h
++++ dlcservice/dlc_base.h
+@@ -276,6 +276,8 @@ class DlcBase : public DlcInterface {
    void OnSetActiveValueSuccess();
    void OnSetActiveValueError(brillo::Error* err);
  

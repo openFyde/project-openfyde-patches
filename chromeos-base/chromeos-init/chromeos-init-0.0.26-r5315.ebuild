@@ -2,6 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
+CROS_WORKON_COMMIT="67d76a6fbdfa5d6c76e645d964b3167efc69d2e5"
+CROS_WORKON_TREE=("b34cd17a5119e65123516e3d20992ce4b303fa5b" "b7bfbb19e75b67e028ee53a734c4cc46df9600db" "353ddd3e314c5dfa9e60c672a71bb67482f247f5" "d151f506358c08ae319134ea9b6ea1aa546a0e16" "0e2e8468d1a663b7af9ead8a1c7fe0f85ff15016" "9050d91be8a513b5b9706395d3ed06adf219cf3e" "f90469f0bb47a738fae51bbb2bc124c427c2fbb5" "1a0387c9b012cec6f920128725766de73b934731" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -21,11 +23,12 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 SLOT="0/0"
-KEYWORDS="~*"
+KEYWORDS="*"
 IUSE="
 	cros_embedded device-mapper direncryption +encrypted_stateful
 	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
 	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
+  fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
 	+udev unibuild vivid vtconsole vtpm_proxy"
 
 REQUIRED_USE="

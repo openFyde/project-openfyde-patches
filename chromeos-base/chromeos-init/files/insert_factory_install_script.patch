@@ -1,13 +1,31 @@
 R120 notes: chromeos_startup.sh does not exist in R120, this patch is invalid
 
---- a/init/chromeos_startup.sh
-+++ b/init/chromeos_startup.sh
-@@ -776,6 +776,8 @@
-   fi
- fi
+Index: init/startup/chromeos_startup.cc
+===================================================================
+--- init.orig/startup/chromeos_startup.cc
++++ init/startup/chromeos_startup.cc
+@@ -136,6 +136,15 @@ const std::array<const char*, 4> kPreser
+     "usr/local/etc/wifi_creds",
+ };
  
-+. /usr/share/cros/fydeos_factory_install.sh
++void RunFydeOSFactoryInstall() {
++  brillo::ProcessImpl proc;
++  proc.AddArg("/usr/share/cros/fydeos_factory_install.sh");
++  int status = proc.Run();
++  if (status != 0) {
++    LOG(WARNING) << "Failed to run fydeos factory install script.";
++  }
++}
 +
- bootstat post-startup
+ }  // namespace
  
- # Always return success to avoid killing init
+ namespace startup {
+@@ -940,7 +949,7 @@ int ChromeosStartup::Run() {
+                         MS_REMOUNT | MS_RDONLY | kCommonMountFlags, "")) {
+     PLOG(WARNING) << "Failed to remount " << kernel_sec << " as readonly.";
+   }
+-
++  RunFydeOSFactoryInstall();
+   bootstat_.LogEvent("post-startup");
+ 
+   return 0;

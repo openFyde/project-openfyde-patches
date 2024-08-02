@@ -1,8 +1,8 @@
-diff --git a/shill/cellular/cellular.cc b/shill/cellular/cellular.cc
-index bb6624da21..762e86e38c 100644
---- a/shill/cellular/cellular.cc
-+++ b/shill/cellular/cellular.cc
-@@ -339,7 +339,8 @@ void Cellular::CreateImplicitNetwork(bool fixed_ip_params) {
+Index: shill/cellular/cellular.cc
+===================================================================
+--- shill.orig/cellular/cellular.cc
++++ shill/cellular/cellular.cc
+@@ -338,7 +338,8 @@ Cellular::~Cellular() {
  
  Network* Cellular::GetPrimaryNetwork() const {
    // The default network is considered as primary always.
@@ -12,7 +12,7 @@ index bb6624da21..762e86e38c 100644
  }
  
  std::string Cellular::GetLegacyEquipmentIdentifier() const {
-@@ -2841,6 +2842,8 @@ void Cellular::StopPPP() {
+@@ -3013,6 +3014,8 @@ void Cellular::StopPPP() {
      return;
    DropConnection();
    ppp_task_.reset();
@@ -21,7 +21,7 @@ index bb6624da21..762e86e38c 100644
    ppp_device_ = nullptr;
  }
  
-@@ -2921,6 +2924,7 @@ void Cellular::OnPPPConnected(
+@@ -3093,6 +3096,7 @@ void Cellular::OnPPPConnected(
      ppp_device_ = device_info->CreatePPPDevice(manager(), interface_name,
                                                 interface_index);
      device_info->RegisterDevice(ppp_device_);
@@ -29,21 +29,21 @@ index bb6624da21..762e86e38c 100644
    }
  
    CHECK(service_);
-@@ -2932,6 +2936,9 @@ void Cellular::OnPPPConnected(
-   auto properties = std::make_unique<IPConfig::Properties>(
-       PPPDaemon::ParseIPConfiguration(params));
-   ppp_device_->UpdateIPConfig(std::move(properties), nullptr);
+@@ -3104,6 +3108,9 @@ void Cellular::OnPPPConnected(
+   auto network_config = std::make_unique<net_base::NetworkConfig>(
+       PPPDaemon::ParseNetworkConfig(params));
+   ppp_device_->UpdateNetworkConfig(std::move(network_config));
 +  SetPrimaryMultiplexedInterface(ppp_device_->GetPrimaryNetwork()->interface_name());
 +  ResetServiceAttachedNetwork();
 +  OnIPConfigsPropertyUpdated(ppp_device_->interface_index());
  }
  
  void Cellular::OnPPPDied(pid_t pid, int exit) {
-diff --git a/shill/device_info.cc b/shill/device_info.cc
-index c1e34fb814..a1c60935fe 100644
---- a/shill/device_info.cc
-+++ b/shill/device_info.cc
-@@ -190,6 +190,8 @@ const char* const kModemDrivers[] = {
+Index: shill/device_info.cc
+===================================================================
+--- shill.orig/device_info.cc
++++ shill/device_info.cc
+@@ -191,6 +191,8 @@ const char* const kModemDrivers[] = {
  // Path to the tun device.
  constexpr char kTunDeviceName[] = "/dev/net/tun";
  
@@ -52,7 +52,7 @@ index c1e34fb814..a1c60935fe 100644
  // Time to wait before registering devices which need extra time to detect.
  constexpr base::TimeDelta kDelayedDeviceCreation = base::Seconds(5);
  
-@@ -382,6 +384,9 @@ Technology DeviceInfo::GetDeviceTechnology(
+@@ -376,6 +378,9 @@ Technology DeviceInfo::GetDeviceTechnolo
      SLOG(2) << iface_name << ": device is kind '" << kind.value() << "'";
    }
  
@@ -62,16 +62,16 @@ index c1e34fb814..a1c60935fe 100644
    if (IsGuestDevice(iface_name)) {
      SLOG(2) << iface_name << ": device is a guest device";
      return Technology::kGuestInterface;
-@@ -624,7 +629,7 @@ DeviceRefPtr DeviceInfo::CreateDevice(const std::string& link_name,
-                                       int interface_index,
-                                       Technology technology) {
-   SLOG(1) << __func__ << ": " << link_name << " Address: " << address
+@@ -620,7 +625,7 @@ DeviceRefPtr DeviceInfo::CreateDevice(
+     Technology technology) {
+   SLOG(1) << __func__ << ": " << link_name << " MAC Address: "
+           << (mac_address.has_value() ? mac_address->ToString() : "(null)")
 -          << " Index: " << interface_index;
 +          << " Index: " << interface_index << " Technology:" << technology;
+ 
    DeviceRefPtr device;
    delayed_devices_.erase(interface_index);
-   infos_[interface_index].technology = technology;
-@@ -774,7 +779,6 @@ void DeviceInfo::AddLinkMsgHandler(const net_base::RTNLMessage& msg) {
+@@ -771,7 +776,6 @@ void DeviceInfo::AddLinkMsgHandler(const
        LOG(ERROR) << "Add Link message does not contain a link name!";
        return;
      }
@@ -79,7 +79,7 @@ index c1e34fb814..a1c60935fe 100644
      infos_[dev_index].name = link_name;
      indices_[link_name] = dev_index;
  
-@@ -789,6 +793,7 @@ void DeviceInfo::AddLinkMsgHandler(const net_base::RTNLMessage& msg) {
+@@ -783,6 +787,7 @@ void DeviceInfo::AddLinkMsgHandler(const
        technology = GetDeviceTechnology(link_name, msg.link_status().kind);
      }
  
@@ -87,13 +87,13 @@ index c1e34fb814..a1c60935fe 100644
      const auto mac_address =
          net_base::MacAddress::CreateFromBytes(msg.GetAttribute(IFLA_ADDRESS));
      if (mac_address) {
-diff --git a/shill/virtual_device.cc b/shill/virtual_device.cc
-index ebc84cc5ce..5311d31f3d 100644
---- a/shill/virtual_device.cc
-+++ b/shill/virtual_device.cc
-@@ -69,6 +69,7 @@ void VirtualDevice::UpdateIPConfig(
-       .probing_configuration =
+Index: shill/virtual_device.cc
+===================================================================
+--- shill.orig/virtual_device.cc
++++ shill/virtual_device.cc
+@@ -64,6 +64,7 @@ void VirtualDevice::UpdateNetworkConfig(
            manager()->GetPortalDetectorProbingConfiguration(),
+       .validation_mode = NetworkMonitor::ValidationMode::kDisabled,
    });
 +  OnIPConfigsPropertyUpdated(interface_index());
  }

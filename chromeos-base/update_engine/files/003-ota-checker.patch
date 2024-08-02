@@ -1,5 +1,7 @@
---- a/cros/fydeos_toggle_ota.cc
-+++ b/cros/fydeos_toggle_ota.cc
+Index: update_engine/cros/fydeos_toggle_ota.cc
+===================================================================
+--- update_engine.orig/cros/fydeos_toggle_ota.cc
++++ update_engine/cros/fydeos_toggle_ota.cc
 @@ -1,10 +1,14 @@
  #include "update_engine/cros/fydeos_toggle_ota.h"
  #include <base/files/file_util.h>
@@ -15,7 +17,7 @@
  }
  
  bool OTAEnabled() {
-@@ -12,4 +16,24 @@
+@@ -12,4 +16,24 @@ bool OTAEnabled() {
    return enabled;
  }
  
@@ -40,8 +42,10 @@
 +}
 +
  } // fydeos
---- a/cros/fydeos_toggle_ota.h
-+++ b/cros/fydeos_toggle_ota.h
+Index: update_engine/cros/fydeos_toggle_ota.h
+===================================================================
+--- update_engine.orig/cros/fydeos_toggle_ota.h
++++ update_engine/cros/fydeos_toggle_ota.h
 @@ -1,8 +1,12 @@
  #ifndef FYDEOS_TOGGLE_OTA_H_
  #define FYDEOS_TOGGLE_OTA_H_
@@ -55,9 +59,11 @@
  }
  
  #endif // ifndef FYDEOS_TOGGLE_OTA_H_
---- a/cros/omaha_response_handler_action.cc
-+++ b/cros/omaha_response_handler_action.cc
-@@ -40,6 +40,7 @@
+Index: update_engine/cros/omaha_response_handler_action.cc
+===================================================================
+--- update_engine.orig/cros/omaha_response_handler_action.cc
++++ update_engine/cros/omaha_response_handler_action.cc
+@@ -28,6 +28,7 @@
  #include "update_engine/update_manager/update_can_be_applied_policy.h"
  #include "update_engine/update_manager/update_can_be_applied_policy_data.h"
  #include "update_engine/update_manager/update_manager.h"
@@ -65,7 +71,7 @@
  
  using chromeos_update_manager::kRollforwardInfinity;
  using chromeos_update_manager::UpdateCanBeAppliedPolicy;
-@@ -102,6 +103,14 @@
+@@ -90,6 +91,14 @@ void OmahaResponseHandlerAction::Perform
    install_plan_.download_url = current_url;
    install_plan_.version = response.version;
  

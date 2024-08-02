@@ -1,28 +1,13 @@
---- a/vpd.cc
-+++ b/vpd.cc
-@@ -882,6 +882,7 @@
-   vpd_err_t retval = VPD_OK;
-   int export_type = VPD_EXPORT_KEY_VALUE;
-   const char* optstring = "hf:s:S:p:i:lOg:d:0";
-+  char def_filename[] = "/usr/share/oem/.oem_licence";
-   static struct option long_options[] = {
-       {"help", 0, 0, 'h'},
-       {"file", 0, 0, 'f'},
-@@ -898,7 +899,7 @@
-       {"delete", 0, 0, 'd'},
+Index: vpd/vpd.cc
+===================================================================
+--- vpd.orig/vpd.cc
++++ vpd/vpd.cc
+@@ -410,7 +410,7 @@ int main(int argc, char* argv[]) {
        {0, 0, 0, 0}};
+   vpd::VpdRegion region = vpd::VpdRo;
    std::string region_name = "RO_VPD";
--  char* filename = NULL;
-+  char* filename = def_filename;
-   const char* load_file = NULL;
-   const char* save_file = NULL;
-   const char* tmp_part_file = NULL;
-@@ -1167,7 +1168,7 @@
- teardown:
-   if (spd_data)
-     free(spd_data);
--  if (filename)
-+  if (filename && filename != def_filename)
-     free(filename);
-   destroyContainer(&file);
-   destroyContainer(&set_argument);
+-  std::optional<std::string> filename;
++  std::optional<std::string> filename = std::string("/usr/share/oem/.oem_licence");
+   std::optional<std::string> save_file;
+   std::optional<std::string> key_to_export;
+   /* Stores parsed pairs from command "set" arguments. */

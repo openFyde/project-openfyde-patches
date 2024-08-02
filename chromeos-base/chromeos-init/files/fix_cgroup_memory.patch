@@ -1,6 +1,8 @@
---- a/init/upstart/cgroups.conf
-+++ b/init/upstart/cgroups.conf
-@@ -51,6 +51,10 @@
+Index: init/upstart/cgroups.conf
+===================================================================
+--- init.orig/upstart/cgroups.conf
++++ init/upstart/cgroups.conf
+@@ -49,6 +49,10 @@ script
            -o "${subsys},${mount_opts}" || log "${subsys}"
      fi
  
@@ -9,5 +11,5 @@
 +    fi
 +
      if [ "${subsys}" != "net_cls" ]; then
-       mkdir -p /sys/fs/cgroup/${subsys}/session_manager_containers
-       if id -u android-root 2>/dev/null; then
+       mkdir -p /sys/fs/cgroup/${subsys}/session_manager_containers \
+           # croslint: disable

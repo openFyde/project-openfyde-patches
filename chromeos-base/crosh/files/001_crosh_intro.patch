@@ -1,17 +1,17 @@
---- a/crosh/src/main.rs
-+++ b/crosh/src/main.rs
+--- a/src/main.rs
++++ b/src/main.rs
 @@ -53,14 +53,13 @@
- 
+
  fn intro() {
      println!(
 -        r#"Welcome to crosh, the ChromeOS developer shell.
 +        r#"Welcome to crosh, the developer shell for openFyde/FydeOS, we hope you know what you are doing!
- 
+
 -If you got here by mistake, don't panic!  Just close this tab and carry on.
 +Please note that this is NOT the Linux subsystem:
 + - type 'help' for a list of commands available in crosh
 + - type 'shell' if you wish to enter the Bash shell for your openFyde/FydeOS
- 
+
 -Type 'help' for a list of commands.
 -
 -If you want to customize the look/behavior, you can use the options page.

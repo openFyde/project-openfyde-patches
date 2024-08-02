@@ -1,17 +1,21 @@
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -207,6 +207,8 @@
-     "cros/requisition_util.cc",
-     "cros/shill_proxy.cc",
-     "cros/update_attempter.cc",
-+    "cros/fydeos_license_checker.cc",
-+    "cros/fydeos_toggle_ota.cc",
-     "libcurl_http_fetcher.cc",
-     "metrics_utils.cc",
-     "update_boot_flags_action.cc",
---- a/cros/daemon_chromeos.cc
-+++ b/cros/daemon_chromeos.cc
-@@ -75,6 +75,8 @@
+Index: update_engine/BUILD.gn
+===================================================================
+--- update_engine.orig/BUILD.gn
++++ update_engine/BUILD.gn
+@@ -197,6 +197,8 @@ if (!use.cros_host) {
+       "cros/real_system_state.cc",
+       "cros/shill_proxy.cc",
+       "cros/update_attempter.cc",
++      "cros/fydeos_license_checker.cc",
++      "cros/fydeos_toggle_ota.cc",
+       "libcurl_http_fetcher.cc",
+       "metrics_utils.cc",
+       "update_boot_flags_action.cc",
+Index: update_engine/cros/daemon_chromeos.cc
+===================================================================
+--- update_engine.orig/cros/daemon_chromeos.cc
++++ update_engine/cros/daemon_chromeos.cc
+@@ -63,6 +63,8 @@ void DaemonChromeOS::OnDBusRegistered(bo
      return;
    }
  
@@ -20,7 +24,7 @@
    // Update the telemetry information before starting the updater, to request
    // once and continue caching on boot.
    SystemState::Get()->cros_healthd()->ProbeTelemetryInfo(
-@@ -86,7 +88,7 @@
+@@ -74,7 +76,7 @@ void DaemonChromeOS::OnDBusRegistered(bo
            TelemetryCategoryEnum::kBus,
        },
        base::BindOnce(
@@ -29,9 +33,11 @@
  }
  
  }  // namespace chromeos_update_engine
---- a/cros/daemon_chromeos.h
-+++ b/cros/daemon_chromeos.h
-@@ -24,6 +24,9 @@
+Index: update_engine/cros/daemon_chromeos.h
+===================================================================
+--- update_engine.orig/cros/daemon_chromeos.h
++++ update_engine/cros/daemon_chromeos.h
+@@ -12,6 +12,9 @@
  #include "update_engine/common/subprocess.h"
  #include "update_engine/cros/dbus_service.h"
  #include "update_engine/cros/real_system_state.h"
@@ -41,7 +47,7 @@
  
  namespace chromeos_update_engine {
  
-@@ -48,6 +51,8 @@
+@@ -36,6 +39,8 @@ class DaemonChromeOS : public DaemonBase
    // dependency.
    Subprocess subprocess_;
  
@@ -50,8 +56,10 @@
    // |SystemState| is a global context, but we can't have a static singleton of
    // its object because the style guide does not allow that (it has non-trivial
    // dtor). We need an instance of |SystemState| in this class instead and have
+Index: update_engine/cros/fydeos_license_checker.cc
+===================================================================
 --- /dev/null
-+++ b/cros/fydeos_license_checker.cc
++++ update_engine/cros/fydeos_license_checker.cc
 @@ -0,0 +1,47 @@
 +#include "update_engine/cros/fydeos_license_checker.h"
 +
@@ -100,8 +108,10 @@
 +FydeLicenseChecker* FydeLicenseChecker::license_checker_singleton_ = nullptr;
 +
 +} // namespace fydeos
+Index: update_engine/cros/fydeos_license_checker.h
+===================================================================
 --- /dev/null
-+++ b/cros/fydeos_license_checker.h
++++ update_engine/cros/fydeos_license_checker.h
 @@ -0,0 +1,26 @@
 +#ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H
 +#define UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H
@@ -129,8 +139,10 @@
 +
 +} // namespace fydeos
 +#endif /* ifndef UPDATE_ENGINE_FYDEOS_LICENSE_CHECKER_H */
+Index: update_engine/cros/fydeos_toggle_ota.cc
+===================================================================
 --- /dev/null
-+++ b/cros/fydeos_toggle_ota.cc
++++ update_engine/cros/fydeos_toggle_ota.cc
 @@ -0,0 +1,15 @@
 +#include "update_engine/cros/fydeos_toggle_ota.h"
 +#include <base/files/file_util.h>
@@ -147,8 +159,10 @@
 +}
 +
 +} // fydeos
+Index: update_engine/cros/fydeos_toggle_ota.h
+===================================================================
 --- /dev/null
-+++ b/cros/fydeos_toggle_ota.h
++++ update_engine/cros/fydeos_toggle_ota.h
 @@ -0,0 +1,8 @@
 +#ifndef FYDEOS_TOGGLE_OTA_H_
 +#define FYDEOS_TOGGLE_OTA_H_
@@ -158,9 +172,11 @@
 +}
 +
 +#endif // ifndef FYDEOS_TOGGLE_OTA_H_
---- a/cros/omaha_request_action.cc
-+++ b/cros/omaha_request_action.cc
-@@ -55,6 +55,9 @@
+Index: update_engine/cros/omaha_request_action.cc
+===================================================================
+--- update_engine.orig/cros/omaha_request_action.cc
++++ update_engine/cros/omaha_request_action.cc
+@@ -43,6 +43,9 @@
  #include "update_engine/cros/payload_state_interface.h"
  #include "update_engine/cros/update_attempter.h"
  #include "update_engine/metrics_utils.h"
@@ -170,7 +186,7 @@
  
  using base::Time;
  using base::TimeDelta;
-@@ -1318,6 +1321,11 @@
+@@ -1320,6 +1323,11 @@ bool OmahaRequestAction::ShouldIgnoreUpd
      LOG(ERROR) << "All packages were excluded.";
    }
  
@@ -182,9 +198,11 @@
    // Note: We could technically delete the UpdateFirstSeenAt state when we
    // return true. If we do, it'll mean a device has to restart the
    // UpdateFirstSeenAt and thus help scattering take effect when the AU is
---- a/cros/omaha_request_builder_xml.cc
-+++ b/cros/omaha_request_builder_xml.cc
-@@ -36,6 +36,9 @@
+Index: update_engine/cros/omaha_request_builder_xml.cc
+===================================================================
+--- update_engine.orig/cros/omaha_request_builder_xml.cc
++++ update_engine/cros/omaha_request_builder_xml.cc
+@@ -24,6 +24,9 @@
  #include "update_engine/common/utils.h"
  #include "update_engine/cros/omaha_request_params.h"
  #include "update_engine/cros/update_attempter.h"
@@ -194,7 +212,7 @@
  
  using std::string;
  
-@@ -308,6 +311,11 @@
+@@ -290,6 +293,11 @@ string OmahaRequestBuilderXml::GetApp(co
      app_versions = "version=\"" +
                     XmlEncodeWithDefault(app_data.version, kNoVersion) + "\" ";
    }
@@ -206,19 +224,21 @@
  
    string download_channel = params->download_channel();
    string app_channels =
-@@ -416,6 +424,9 @@
-       // DLC excluded for installs and updates.
-       (app_data.is_dlc ? "" : requisition_arg) +
- 
+@@ -389,6 +397,9 @@ string OmahaRequestBuilderXml::GetApp(co
+       "delta_okay=\"" + delta_okay_str + "\" " +
+       "extended_okay=\"" + extended_okay_str + "\" " +
+       install_date_in_days_str +
 +      // ---***FYDEOS BEGIN***---
 +      fydeos_license_id +
 +      // ---***FYDEOS END***---
        ">\n" +
           app_body +
        "    </app>\n";
---- a/cros/update_attempter.cc
-+++ b/cros/update_attempter.cc
-@@ -73,6 +73,7 @@
+Index: update_engine/cros/update_attempter.cc
+===================================================================
+--- update_engine.orig/cros/update_attempter.cc
++++ update_engine/cros/update_attempter.cc
+@@ -61,6 +61,7 @@
  #include "update_engine/update_manager/omaha_request_params_policy.h"
  #include "update_engine/update_manager/update_manager.h"
  #include "update_engine/update_status_utils.h"
@@ -226,7 +246,7 @@
  
  using base::FilePath;
  using base::Time;
-@@ -1298,6 +1299,12 @@
+@@ -1293,6 +1294,12 @@ void UpdateAttempter::OnUpdateScheduled(
        current_update_flags_ = update_flags_;
      }
  
@@ -239,9 +259,11 @@
      switch (pm_) {
        case ProcessMode::UPDATE:
        case ProcessMode::INSTALL:
---- a/update_manager/official_build_check_policy_impl.cc
-+++ b/update_manager/official_build_check_policy_impl.cc
-@@ -26,6 +26,8 @@
+Index: update_engine/update_manager/official_build_check_policy_impl.cc
+===================================================================
+--- update_engine.orig/update_manager/official_build_check_policy_impl.cc
++++ update_engine/update_manager/official_build_check_policy_impl.cc
+@@ -14,6 +14,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolic
      State* state,
      std::string* error,
      PolicyDataInterface* data) const {
@@ -250,7 +272,7 @@
    const bool* is_official_build_p =
        ec->GetValue(state->system_provider()->var_is_official_build());
    if (is_official_build_p != nullptr && !(*is_official_build_p)) {
-@@ -40,6 +42,8 @@
+@@ -28,6 +30,8 @@ EvalStatus OnlyUpdateOfficialBuildsPolic
      LOG(INFO) << "Unofficial build, but periodic update check interval "
                << "timeout is defined, so update is not blocked.";
    }

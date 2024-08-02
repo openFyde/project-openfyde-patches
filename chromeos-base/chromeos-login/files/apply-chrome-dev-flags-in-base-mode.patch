@@ -1,8 +1,8 @@
-diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
-index ef504e2645..1e8f157db8 100644
---- a/login_manager/chrome_setup.cc
-+++ b/login_manager/chrome_setup.cc
-@@ -1097,10 +1097,10 @@ void PerformChromeSetup(brillo::CrosConfigInterface* cros_config,
+Index: login_manager/chrome_setup.cc
+===================================================================
+--- login_manager.orig/chrome_setup.cc
++++ login_manager/chrome_setup.cc
+@@ -1094,10 +1094,10 @@ void PerformChromeSetup(brillo::CrosConf
    AddFeatureManagementFlags(&builder, feature_management);
  
    // Apply any modifications requested by the developer.

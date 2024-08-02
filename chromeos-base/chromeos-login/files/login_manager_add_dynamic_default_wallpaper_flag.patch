@@ -1,9 +1,9 @@
-diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
-index 1e3c092df4..ddd18171ff 100644
---- a/login_manager/chrome_setup.cc
-+++ b/login_manager/chrome_setup.cc
-@@ -261,6 +261,36 @@ bool AddWallpaperFlags(
-   return true;
+Index: login_manager/chrome_setup.cc
+===================================================================
+--- login_manager.orig/chrome_setup.cc
++++ login_manager/chrome_setup.cc
+@@ -692,6 +692,36 @@ void SetUpRegulatoryLabelFlag(ChromiumCo
+   }
  }
  
 +bool AddDynamicDefaultWallpaperFlags(
@@ -36,14 +36,13 @@ index 1e3c092df4..ddd18171ff 100644
 +  return support;
 +}
 +
- // Adds ARC related flags.
- void AddArcFlags(ChromiumCommandBuilder* builder,
-                  std::set<std::string>* disallowed_params_out,
-@@ -798,6 +828,8 @@ void SetUpWallpaperFlags(
+ void SetUpWallpaperFlags(
+     ChromiumCommandBuilder* builder,
+     brillo::CrosConfigInterface* cros_config,
+@@ -718,6 +748,7 @@ void SetUpWallpaperFlags(
  
    // Fall back to default.
    AddWallpaperFlags(builder, "default", "default", path_exists);
-+
 +  AddDynamicDefaultWallpaperFlags(builder, path_exists);
  }
  

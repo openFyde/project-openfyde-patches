@@ -1,8 +1,8 @@
-diff --git a/shill/cellular/cellular_capability_3gpp.cc b/shill/cellular/cellular_capability_3gpp.cc
-index 2ae524ea24..1f7706f2f3 100644
---- a/shill/cellular/cellular_capability_3gpp.cc
-+++ b/shill/cellular/cellular_capability_3gpp.cc
-@@ -1870,6 +1870,16 @@ void CellularCapability3gpp::OnModemPropertiesChanged(
+Index: shill/cellular/cellular_capability_3gpp.cc
+===================================================================
+--- shill.orig/cellular/cellular_capability_3gpp.cc
++++ shill/cellular/cellular_capability_3gpp.cc
+@@ -1809,6 +1809,16 @@ void CellularCapability3gpp::OnModemProp
        mdn = numbers[0];
      OnMdnChanged(mdn);
    }

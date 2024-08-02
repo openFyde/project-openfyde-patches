@@ -1,8 +1,8 @@
-diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
-index 72f580f922..1e3c092df4 100644
---- a/login_manager/chrome_setup.cc
-+++ b/login_manager/chrome_setup.cc
-@@ -232,14 +232,24 @@ bool AddWallpaperFlags(
+Index: login_manager/chrome_setup.cc
+===================================================================
+--- login_manager.orig/chrome_setup.cc
++++ login_manager/chrome_setup.cc
+@@ -208,14 +208,24 @@ bool AddWallpaperFlags(
      const std::string& flag_type,
      const std::string& file_type,
      const base::RepeatingCallback<bool(const base::FilePath&)>& path_exists) {

@@ -1,18 +1,8 @@
---- a/tpm_manager/client/tpm_manager_utility.cc
-+++ b/tpm_manager/client/tpm_manager_utility.cc
-@@ -74,7 +74,8 @@
-       &org::chromium::TpmManagerProxyInterface::GetTpmStatusAsync, tpm_owner_,
-       request, &tpm_status);
-   if (tpm_status.status() != tpm_manager::STATUS_SUCCESS) {
--    LOG(ERROR) << __func__ << ": Failed to read TPM state from tpm_managerd.";
-+    //LOG(ERROR) << __func__ << ": Failed to read TPM state from tpm_managerd.";
-+    VLOG(1) << __func__ << ": Failed to read TPM state from tpm_managerd.";
-     return false;
-   }
-   *is_enabled = tpm_status.enabled();
---- a/tpm_manager/server/tpm_manager_service.cc
-+++ b/tpm_manager/server/tpm_manager_service.cc
-@@ -261,14 +261,14 @@
+Index: tpm_manager/server/tpm_manager_service.cc
+===================================================================
+--- tpm_manager.orig/server/tpm_manager_service.cc
++++ tpm_manager/server/tpm_manager_service.cc
+@@ -321,14 +321,14 @@ std::unique_ptr<GetTpmStatusReply> TpmMa
  
    TpmStatus::TpmOwnershipStatus ownership_status;
    if (!tpm_status_->GetTpmOwned(&ownership_status)) {
@@ -29,14 +19,30 @@
                   << ": get tpm ownership status still failed. Giving up.";
        reply->set_status(STATUS_DEVICE_ERROR);
        return reply;
---- a/tpm_manager/server/tpm_status_impl.cc
-+++ b/tpm_manager/server/tpm_status_impl.cc
-@@ -109,7 +109,7 @@
+Index: tpm_manager/server/tpm_status_impl.cc
+===================================================================
+--- tpm_manager.orig/server/tpm_status_impl.cc
++++ tpm_manager/server/tpm_status_impl.cc
+@@ -109,7 +109,7 @@ bool TpmStatusImpl::GetTpmOwned(TpmStatu
    const std::optional<TpmStatus::TpmOwnershipStatus> owner_password_status =
        TestTpmWithDefaultOwnerPassword();
    if (!owner_password_status.has_value()) {
 -    LOG(ERROR) << __func__ << ": Failed to test default owner password.";
 +    VLOG(1) << __func__ << ": Failed to test default owner password.";
      return false;
+   }
+ 
+Index: tpm_manager/client/main.cc
+===================================================================
+--- tpm_manager.orig/client/main.cc
++++ tpm_manager/client/main.cc
+@@ -345,7 +345,8 @@ class ClientLoop : public ClientLoopBase
+   }
+ 
+   void PrintErrorAndQuit(brillo::Error* error) {
+-    printf("Error: %s\n", error->GetMessage().c_str());
++    //printf("Error: %s\n", error->GetMessage().c_str());
++    VLOG(1) << "Error:" << error->GetMessage();
+     Quit();
    }
  

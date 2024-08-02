@@ -1,7 +1,7 @@
-diff --git a/login_manager/init/scripts/write-machine-info b/login_manager/init/scripts/write-machine-info
+diff --git a/init/scripts/write-machine-info b/init/scripts/write-machine-info
 index 846fa9652b..e65d5382df 100755
---- a/login_manager/init/scripts/write-machine-info
-+++ b/login_manager/init/scripts/write-machine-info
+--- a/init/scripts/write-machine-info
++++ b/init/scripts/write-machine-info
 @@ -20,6 +20,11 @@ set -e
  # product_name product_serial product_uuid product_version
  serial_number() {
@@ -11,6 +11,6 @@ index 846fa9652b..e65d5382df 100755
 +    echo "${serial_number}"
 +    return
 +  fi
- 
+
    if crossystem "mainfw_type?nonchrome"; then
      # Try the SMBIOS product serial if available.
