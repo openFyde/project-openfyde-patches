@@ -1,10 +1,10 @@
-diff --git a/trunks/BUILD.gn b/trunks/BUILD.gn
-index 7556359a72..0a1be02ac0 100644
---- a/trunks/BUILD.gn
-+++ b/trunks/BUILD.gn
-@@ -62,6 +62,9 @@ config("target_defaults") {
-     "BIOMETRICS_DEV=true",
-   ]
+Index: trunks/BUILD.gn
+===================================================================
+--- trunks.orig/BUILD.gn
++++ trunks/BUILD.gn
+@@ -60,6 +60,9 @@ config("target_defaults") {
+   configs = [ ":target_default_pkg_deps" ]
+   defines = [ "USE_GENERIC_TPM2=${use.generic_tpm2}" ]
    libs = [ "hwsec-foundation" ]
 +  if (use.tpm2_simulator) {
 +    defines += [ "USE_SIMULATOR=1" ]
@@ -12,7 +12,7 @@ index 7556359a72..0a1be02ac0 100644
  }
  
  proto_library("interface_proto") {
-@@ -203,6 +206,11 @@ static_library("trunksd_lib") {
+@@ -169,6 +172,11 @@ static_library("trunksd_lib") {
      "trunks_dbus_service.cc",
      "trunks_metrics.cc",
    ]
@@ -24,8 +24,8 @@ index 7556359a72..0a1be02ac0 100644
    all_dependent_configs = [
      ":trunksd_lib_all_dependent_configs",
      ":trunksd_lib_all_dependent_pkg_deps",
-@@ -235,6 +243,9 @@ executable("trunksd") {
-     ":trunks",
+@@ -202,6 +210,9 @@ executable("trunksd") {
+     ":trunks_adaptors",
      ":trunksd_lib",
    ]
 +  if (use.tpm2_simulator) {
@@ -33,11 +33,11 @@ index 7556359a72..0a1be02ac0 100644
 +  }
  }
  
- executable("tpm_tunneld") {
-diff --git a/trunks/trunksd.cc b/trunks/trunksd.cc
-index dee990ea25..2d7f61f769 100644
---- a/trunks/trunksd.cc
-+++ b/trunks/trunksd.cc
+ static_library("trunks_test") {
+Index: trunks/trunksd.cc
+===================================================================
+--- trunks.orig/trunksd.cc
++++ trunks/trunksd.cc
 @@ -24,6 +24,9 @@
  #include "trunks/resilience/write_error_tracker_impl.h"
  #include "trunks/resource_manager.h"
@@ -48,7 +48,7 @@ index dee990ea25..2d7f61f769 100644
  #include "trunks/trunks_dbus_service.h"
  #include "trunks/trunks_factory_impl.h"
  #include "trunks/trunks_ftdi_spi.h"
-@@ -105,6 +108,11 @@ int main(int argc, char** argv) {
+@@ -107,6 +110,11 @@ int main(int argc, char** argv) {
    if (cl->HasSwitch("ftdi")) {
      LOG(INFO) << "Sending commands to FTDI SPI.";
      low_level_transceiver = new trunks::TrunksFtdiSpi();
@@ -58,5 +58,18 @@ index dee990ea25..2d7f61f769 100644
 +    low_level_transceiver = new trunks::TpmSimulatorHandle();
 +#endif
    } else {
-     low_level_transceiver = new trunks::TpmHandle(write_error_tracker);
+     low_level_transceiver = new trunks::TpmHandle(metrics, write_error_tracker);
    }
+Index: trunks/trunksd.conf
+===================================================================
+--- trunks.orig/trunksd.conf
++++ trunks/trunksd.conf
+@@ -66,7 +66,7 @@ end script
+ 
+ expect fork
+ 
+-exec trunksd
++exec trunksd --simulator
+ 
+ post-start script
+   if [ "${KEY_EVICTION}" = true ]; then
