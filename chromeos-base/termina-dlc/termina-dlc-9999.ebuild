@@ -5,7 +5,7 @@
 
 EAPI=7
 
-inherit dlc cros-workon
+inherit dlc cros-workon edo
 
 # This ebuild is upreved via PuPR, so disable the normal uprev process for
 # cros-workon ebuilds.
@@ -56,6 +56,8 @@ else
 fi
 
 DLC_PRELOAD=true
+# Use the scaled infrastructure for serving DLC contents.
+DLC_FORCE_OTA=true
 
 # We need to inherit from cros-workon so people can do "cros-workon-${BOARD}
 # start termina-dlc", but we don't want to actually run any of the cros-workon
@@ -74,17 +76,18 @@ src_unpack() {
 }
 
 src_compile() {
-	if [[ ${PV} == 9999 ]]; then
-		if use amd64; then
-			vm_board="tatl"
-		else
-			vm_board="tael"
-		fi
-		image_path="/mnt/host/source/src/build/images/${vm_board}/latest/chromiumos_test_image.bin"
-		[[ ! -f "${image_path}" ]] && die "Couldn't find VM image at ${image_path}, try building a test image for ${vm_board} first"
-
-		/mnt/host/source/src/platform/container-guest-tools/termina/termina_build_image.py "${image_path}" "${S}/vm"
+	if [[ ${PV} != 9999 ]]; then
+		return
 	fi
+	if use amd64; then
+		vm_board="tatl"
+	else
+		vm_board="tael"
+	fi
+	image_path="/mnt/host/source/src/build/images/${vm_board}/latest/chromiumos_test_image.bin"
+	[[ ! -f "${image_path}" ]] && die "Couldn't find VM image at ${image_path}, try building a test image: cros build-image --board=${vm_board}"
+	# Use the same subdir name (guest-vm-base) as infra/recipes/recipes/uprev_guest_vm_pin.py
+	edo /mnt/host/source/src/platform/container-guest-tools/termina/termina_build_image.py "${image_path}" "${S}/guest-vm-base"
 }
 
 src_install() {
@@ -94,6 +97,11 @@ src_install() {
 	into "$(dlc_add_path ${install_dir})"
 	insinto "$(dlc_add_path ${install_dir})"
 	exeinto "$(dlc_add_path ${install_dir})"
-	doins "${WORKDIR}"/*/*
+	# about_os_credits.html is used by chrome://crostini-credits/
+	doins "${WORKDIR}/guest-vm-base/about_os_credits.html"
+	doins "${WORKDIR}/guest-vm-base/lsb-release"
+	doins "${WORKDIR}/guest-vm-base/vm_kernel"
+	doins "${WORKDIR}/guest-vm-base/vm_rootfs.img"
+	doins "${WORKDIR}/guest-vm-base/vm_tools.img"
 	dlc_src_install
 }
