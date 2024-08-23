@@ -15,7 +15,7 @@
 EAPI=7
 
 PYTHON_COMPAT=( python3_{8..11} )
-inherit autotest-deponly binutils-funcs chromium-source cros-credentials cros-constants cros-sanitizers eutils flag-o-matic multilib toolchain-funcs user python-any-r1 multiprocessing
+inherit autotest-deponly binutils-funcs chromium-source cros-credentials cros-constants cros-remoteexec cros-sanitizers eutils flag-o-matic multilib toolchain-funcs user python-any-r1 multiprocessing
 
 DESCRIPTION="Open-source version of Google Chrome web browser"
 HOMEPAGE="http://www.chromium.org/"
@@ -32,11 +32,13 @@ IUSE="
 	app_shell
 	arc_hw_oemcrypto
 	asan
+	bluetooth
 	+build_tests
+	camera_angle_backend
 	cdm_factory_daemon
 	+chrome_debug
-	+cfi
 	cfm
+	chrome_cfi_thinlto
 	chrome_debug_tests
 	chrome_dcheck
 	chrome_internal
@@ -46,19 +48,19 @@ IUSE="
 	component_build
 	compressed_ash
 	cros-debug
+	crosier_binary
 	debug_fission
 	+dwarf5
 	+fonts
-	hibernate
 	hw_details
 	feature_management
-	goma_thinlto
 	hevc_codec
 	+highdpi
 	intel_oemcrypto
 	internal_gles_conform
 	+libcxx
 	libinput
+	merge_request
 	mojo
 	msan
 	+nacl
@@ -66,12 +68,10 @@ IUSE="
 	+oobe_config
 	opengl
 	opengles
+	optee_oemcrypto
 	protected_av1
-	remoteexec
-	+runhooks
 	strict_toolchain_checks
 	subpixel_rendering
-	+thinlto
 	touchview
 	tpm_dynamic
 	ubsan
@@ -82,11 +82,9 @@ IUSE="
 	vtable_verify
 	xkbcommon
 	"
-# CFI is coupled with ThinLTO.
 # AFDO generate does not support debug_fission.
 # AFDO verify does not use production AFDO.
 REQUIRED_USE="
-	cfi? ( thinlto )
 	afdo_generate? ( !debug_fission )
 	afdo_verify? ( !afdo_use )
 	"
@@ -112,25 +110,22 @@ D_CHROME_DIR="${D}/${CHROME_DIR}"
 BUILDTYPE="${BUILDTYPE:-Release}"
 BOARD="${BOARD:-${SYSROOT##/build/}}"
 BUILD_OUT="${BUILD_OUT:-out_${BOARD}}"
+ANGLE_BUILD_OUT="${BUILD_OUT}_angle"
 # WARNING: We are using a symlink now for the build directory to work around
 # command line length limits. This will cause problems if you are doing
 # parallel builds of different boards/variants.
 # Unsetting BUILD_OUT_SYM will revert this behavior
 BUILD_OUT_SYM="c"
+ANGLE_BUILD_OUT_SYM="${BUILD_OUT_SYM}_angle"
 
 # The following entry will be modified automatically for verifying AFDO profile.
 UNVETTED_AFDO_FILE=""
 
-RDEPEND="${RDEPEND}
-	app-arch/bzip2
-	app-arch/sharutils
+COMMON_DEPEND="
 	app-crypt/mit-krb5
-	app-misc/edid-decode
-	~chromeos-base/chrome-icu-${PV}
+	bluetooth? ( net-wireless/bluez )
 	chromeos-base/gestures
 	chromeos-base/libevdev:=
-	chromeos-base/mojo_service_manager
-	fonts? ( chromeos-base/chromeos-fonts )
 	chrome_internal? ( chromeos-base/quickoffice )
 	dev-libs/expat
 	dev-libs/libffi
@@ -143,7 +138,7 @@ RDEPEND="${RDEPEND}
 	x11-libs/libdrm
 	media-libs/minigbm
 	v4lplugin? ( media-libs/libv4lplugins )
-	>=media-sound/adhd-0.0.6-r2908
+	media-libs/libcras
 	net-print/cups
 	opengl? ( virtual/opengl )
 	opengles? ( virtual/opengles )
@@ -157,29 +152,37 @@ RDEPEND="${RDEPEND}
 		x11-libs/libxkbcommon
 		x11-misc/xkeyboard-config
 	)
+	libcxx? (
+		sys-libs/libcxx
+	)
+"
+
+RDEPEND="
+	${COMMON_DEPEND}
 	accessibility? (
 		app-accessibility/brltty
 		app-accessibility/espeak-ng
 		app-accessibility/googletts
 	)
-	libcxx? (
-		sys-libs/libcxx
-	)
-	oobe_config? ( chromeos-base/oobe_config )
+	app-arch/bzip2
+	app-arch/sharutils
+	app-misc/edid-decode
+	~chromeos-base/chrome-icu-${PV}
+	fonts? ( chromeos-base/chromeos-fonts )
 	chromeos-base/iioservice
-	hibernate? ( chromeos-base/hiberman )
-	"
+	chromeos-base/mojo_service_manager
+	oobe_config? ( chromeos-base/oobe_config )
+"
 
-DEPEND="${DEPEND}
-	${RDEPEND}
-	chromeos-base/protofiles
-	>=dev-util/gperf-3.0.3
-	arm? ( x11-libs/libdrm )
+DEPEND="
+	${COMMON_DEPEND}
+	opengles? ( x11-drivers/opengles-headers:= )
 "
 
 # shellcheck disable=SC2016
 BDEPEND="
 	app-crypt/mit-krb5
+	app-misc/ca-certificates
 	dev-libs/glib
 	dev-util/gperf
 	$(python_gen_any_dep '
@@ -187,6 +190,7 @@ BDEPEND="
 	')
 	dev-vcs/git
 	media-libs/fontconfig
+	net-misc/rsync
 	arm64? (
 		cross-armv7a-cros-linux-gnueabihf/binutils
 		cross-armv7a-cros-linux-gnueabihf/compiler-rt
@@ -231,36 +235,10 @@ echox() {
 echotf() { echox "${1:-$?}" true false ; }
 usetf()  { usex "$1" true false ; }
 
-# Can only turn on either remoteexec or goma
-use_remoteexec() {
-	[[ "${USE_REMOTEEXEC:-$(usetf remoteexec)}" == "true" && \
-		$(cros-fetch_google_app_credentials) == "true" ]]
-}
-
-use_goma() {
-	if use_remoteexec; then
-		false
-	else
-		[[ -n "${USE_GOMA}" && "${USE_GOMA}" == "true" ]]
-	fi
-}
-
-should_upload_build_logs() {
-	[[ -n "${GOMA_TMP_DIR}" && -n "${GLOG_log_dir}" && \
-		"${GLOG_log_dir}" == "${GOMA_TMP_DIR}"* ]]
-}
-
 set_build_args() {
-	# use goma_thinlto says that if we are using Goma and ThinLTO, use
-	# Goma for distributed code generation. So only set the corresponding
-	# gn arg to true if all three conditions are met.
-
 	# shellcheck disable=SC2119
 	# suppressing the false warning not to specify the optional argument of 'echotf".
-	use_goma_thin_lto=$(use goma_thinlto && use_goma && use thinlto; echotf)
-	# shellcheck disable=SC2119
-	# suppressing the false warning not to specify the optional argument of 'echotf".
-	use_protected_av1=$(use intel_oemcrypto || use protected_av1; echotf)
+	use_protected_av1=$(use intel_oemcrypto || use optee_oemcrypto || use protected_av1; echotf)
 	# shellcheck disable=SC2119
 	# suppressing the false warning not to specify the optional argument of 'echotf".
 	use_hevc_codec=$(use hevc_codec && (use chrome_internal || use chrome_media); echotf)
@@ -281,7 +259,6 @@ set_build_args() {
 		"use_chromeos_protected_av1=${use_protected_av1}"
 		"use_chromeos_protected_media=$(usetf cdm_factory_daemon)"
 		"enable_hevc_parser_and_hw_decoder=${use_hevc_codec}"
-		"use_runtime_vlog=$(usetf build_tests)"
 		"use_v4l2_codec=$(usetf v4l2_codec)"
 		"use_v4lplugin=$(usetf v4lplugin)"
 		"use_vaapi=$(usetf vaapi)"
@@ -299,9 +276,8 @@ set_build_args() {
 		"is_msan=$(usetf msan)"
 		"is_ubsan=$(usetf ubsan)"
 		"is_clang=true"
-		"use_thin_lto=$(usetf thinlto)"
-		"use_goma_thin_lto=${use_goma_thin_lto}"
-		"is_cfi=$(usetf cfi)"
+		"use_thin_lto=$(usetf chrome_cfi_thinlto)"
+		"is_cfi=$(usetf chrome_cfi_thinlto)"
 		"use_dwarf5=$(usetf dwarf5)"
 		# Disable use of debian sysroot for host builds.
 		"use_sysroot=false"
@@ -323,6 +299,36 @@ set_build_args() {
 		# Whether the target board has any device models supporting the
 		# "time of day" wallpaper and screensaver collections.
 		"is_time_of_day_supported=$(usetf feature_management)"
+
+		# Merge advanced features.
+		"enable_merge_request=$(usetf merge_request)"
+	)
+
+	ANGLE_BUILD_ARGS=(
+		"use_ozone=false"
+		"ozone_platform_cast=false"
+		"ozone_platform_drm=false"
+		"ozone_platform_flatland=false"
+		"ozone_platform_gbm=false"
+		"ozone_platform_headless=false"
+		"ozone_platform_x11=false"
+		"ozone_platform_wayland=false"
+		"angle_build_all=true"
+		"angle_build_mesa=false"
+		"angle_enable_cl=false"
+		"angle_enable_vulkan=true"
+		"angle_enable_vulkan_validation_layers=false"
+		"angle_use_custom_libvulkan=false"
+		"angle_enable_gl=false"
+		"angle_enable_gl_desktop_backend=false"
+		"angle_enable_null=false"
+		"angle_use_vulkan_null_display=false"
+		"angle_use_vulkan_display=true"
+		"angle_vulkan_display_mode=\"offscreen\""
+		"angle_use_wayland=false"
+		"angle_use_x11=false"
+		"angle_enable_context_mutex=true"
+		"angle_enable_share_context_lock=true"
 	)
 
 	# BUILD_STRING_ARGS needs appropriate quoting. So, we keep them separate and
@@ -411,30 +417,8 @@ set_build_args() {
 	if use component_build; then
 		BUILD_ARGS+=( "is_component_build=true" )
 	fi
-	if use_goma; then
-		BUILD_ARGS+=( "use_goma=true" )
-		BUILD_STRING_ARGS+=( "goma_dir=${GOMA_DIR:-/home/${WHOAMI}/goma}" )
 
-		# Goma compiler proxy runs outside of portage build.
-		# Practically, because TMPDIR is set in portage, it is
-		# different from the directory used when the compiler proxy
-		# started.
-		# If GOMA_TMP_DIR is not set, the compiler proxy uses
-		# TMPDIR/goma_${WHOAMI} for its tmpdir as fallback, which
-		# causes unexpected behavior.
-		# Specifically, named socket used to communicate with compiler
-		# proxy is ${GOMA_TMP_DIR}/goma.ipc by default, so the compiler
-		# proxy cannot be reached.
-		# Thus, here set GOMA_TMP_DIR to /tmp/goma_${WHOAMI} if it is
-		# not yet set.
-		if [[ -z "${GOMA_TMP_DIR}" ]]; then
-			export GOMA_TMP_DIR="/tmp/goma_${WHOAMI}"
-		fi
-	fi
-
-	if use_remoteexec; then
-		einfo "!!!! Using reclient to speed up builds !!!!"
-
+	if cros-remoteexec_use_remoteexec; then
 		BUILD_ARGS+=(
 			"use_remoteexec=true"
 		)
@@ -449,39 +433,7 @@ set_build_args() {
 			"rbe_exec_root=/"
 		)
 
-		# Startup reproxy. ============================================
-
-		# How overall reclient build works in a nutshell:
-		# 1) Startup reproxy (this is a local client used to send builds to RBE)
-		# 2) On chromium's GN setup, we are passing in a GN arg: use_remoteexec, which
-		#    wraps build commands (eg. clang++) with rewrapper so that it looks like (eg. rewrapper clang++ ...)
-		#    rewrapper then communicates with the local reproxy client, which then communicates with RBE for the build.
-
-		# 1. Check if a builder is running this or local dev. Switch to the RBE env accordingly
-		# TODO(b/281097251): Reused ugly hack to determine if local dev is invoking versus from a CI builder.
-		# Need to restrict RBE access depending on above.
-		if [[ -z ${CHROMEOS_CI_USERNAME} ]]; then
-			die "FATAL - CHROMEOS_CI_USERNAME is undefined. Should be defined in make.common"
-		fi
-
-		if [[ $(whoami) == "${CHROMEOS_CI_USERNAME}" ]]; then
-			REPROXY_CFG_FILENAME="reproxy.cfg"
-			einfo "Using production reproxy.cfg config for user: $(whoami) "
-		else
-			REPROXY_CFG_FILENAME="reproxy_experimental.cfg"
-			einfo "Using developer reproxy_experimental.cfg config for user: $(whoami) "
-		fi
-
-		# 2. Bootstrap is used to startup reproxy. This is used to route local builds to RBE.
-
-		# 2a. reclient and proxy generates a lot of logs. Put it into a subfolder
-		mkdir -p /tmp/reclient-chromeos-chrome || die
-
-		einfo "Starting reproxy"
-		"${DEPOT_TOOLS}/.cipd_bin/reclient/bootstrap" \
-			--cfg="/mnt/host/source/chromite/sdk/reclient_cfgs/${REPROXY_CFG_FILENAME}" \
-			--re_proxy "${DEPOT_TOOLS}/.cipd_bin/reclient/reproxy" \
-			|| die "Fatal - cannot start reproxy for distributed builds."
+		cros-remoteexec_initialize
 	fi
 
 	if use chrome_debug; then
@@ -515,7 +467,13 @@ set_build_args() {
 }
 
 unpack_chrome() {
-	local cmd=( "${CHROMITE_BIN_DIR}"/sync_chrome )
+	# Lock the destination directory to avoid having multiple ebuilds writing
+	# to the same directory concurrently.
+	local cmd=(
+		flock
+		"${CHROME_DISTDIR}"
+		"${CHROMITE_BIN_DIR}"/sync_chrome
+	)
 	use chrome_internal && cmd+=( --internal )
 	if [[ "${CHROME_VERSION}" != "9999" ]]; then
 		cmd+=( "--tag=${CHROME_VERSION}" )
@@ -577,9 +535,9 @@ src_unpack() {
 	tc-export CC CXX
 	local WHOAMI=$(whoami)
 
-	CHROME_SRC="chrome-src"
+	local chrome_src="chrome-src"
 	if use chrome_internal; then
-		CHROME_SRC+="-internal"
+		chrome_src+="-internal"
 	fi
 
 	# Add depot_tools to PATH, local chroot builds fail otherwise. Also used
@@ -587,12 +545,12 @@ src_unpack() {
 	export PATH=${PATH}:${DEPOT_TOOLS}
 
 	# CHROME_CACHE_DIR is used for storing output artifacts.
-	: "${CHROME_CACHE_DIR:="/var/cache/chromeos-chrome/${CHROME_SRC}"}"
+	: "${CHROME_CACHE_DIR:="/var/cache/chromeos-chrome/${chrome_src}"}"
 	addwrite "${CHROME_CACHE_DIR}"
 
 	# CHROME_DISTDIR is used for storing the source code, if any source code
 	# needs to be unpacked at build time (e.g. in the SERVER_SOURCE scenario).
-	: "${CHROME_DISTDIR:="${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/${CHROME_SRC}"}"
+	: "${CHROME_DISTDIR:="${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/${chrome_src}"}"
 	addwrite "${CHROME_DISTDIR}"
 
 	# Create storage directories.
@@ -621,9 +579,20 @@ src_unpack() {
 	(SERVER_SOURCE)
 		elog "Using CHROME_VERSION = ${CHROME_VERSION}"
 		if [[ ${WHOAMI} == "chrome-bot" ]]; then
-			# TODO: Should add a sanity check that the version checked out is
-			# what we actually want.  Not sure how to do that though.
-			elog "Skipping syncing as cbuildbot ran SyncChrome for us."
+			if [[ -d "${CHROME_DISTDIR}/src" ]]; then
+				# TODO: Should add a sanity check that the version checked out is
+				# what we actually want.  Not sure how to do that though.
+				elog "Skipping syncing as chromite.api.PackageService/NeedsChromeSource and subsequent steps correctly synced source."
+			else
+				ewarn "Chrome has not been checked out to ${CHROME_DISTDIR} as expected via chromite."
+				ewarn "This is not good."
+				ewarn "Please compare the following against the output from chromite.api.PackageService/NeedsChromeSource:"
+				ewarn "USE flags: ${USE:-}"
+				ewarn "IUSE flags: ${IUSE}"
+				ewarn "FEATURES flags: ${FEATURES}"
+				ewarn "Proceeding to manually sync source via the ebuild."
+				unpack_chrome
+			fi
 		else
 			unpack_chrome
 		fi
@@ -718,6 +687,14 @@ src_prepare() {
 			die "Could not create symlink for output directory"
 	fi
 
+	if use camera_angle_backend; then
+		mkdir -p "${CHROME_CACHE_DIR}/src/${ANGLE_BUILD_OUT}" || die
+		if [[ -n "${ANGLE_BUILD_OUT_SYM}" ]]; then
+			rm -rf "${ANGLE_BUILD_OUT_SYM}" || die "Could not remove symlink"
+			ln -sfT "${CHROME_CACHE_DIR}/src/${ANGLE_BUILD_OUT}" "${ANGLE_BUILD_OUT_SYM}" ||
+				die "Could not create symlink for output directory"
+		fi
+	fi
 
 	# Apply patches for non-localsource builds.
 	if [[ "${CHROME_ORIGIN}" == "SERVER_SOURCE" && ${#PATCHES[@]} -gt 0 ]]; then
@@ -742,13 +719,17 @@ src_prepare() {
 }
 
 setup_test_lists() {
+	# These tests are not executed directly as unit-tests on CQ, but rather they
+	# are wrapped and executed as tast tests, or they are executed as part of
+	# chrome-binary-tests ebuild.
+
 	TEST_FILES=(
 		capture_unittests
 		dawn_end2end_tests
 		dawn_unittests
 		fake_dmserver
 		libtest_trace_processor.so
-		gl_tests
+		libvk_swiftshader.so
 		jpeg_decode_accelerator_unittest
 		ozone_gl_unittests
 		ozone_integration_tests
@@ -778,11 +759,24 @@ setup_test_lists() {
 
 	if use v4l2_codec; then
 		TEST_FILES+=(
+			image_processor_perf_test
 			v4l2_stateless_decoder
 			v4l2_unittest
-			image_processor_perf_test
 		)
 	fi
+
+	if use crosier_binary; then
+		TEST_FILES+=(
+			chromeos_integration_tests
+			fake_chrome
+		)
+	fi
+
+	# Binaries that tests started generally depending on.
+	TEST_BINARIES=(
+		icudtl.dat
+		resources.pak
+	)
 
 	# TODO(ihf): Figure out how to keep this in sync with telemetry.
 	TOOLS_TELEMETRY_BIN=(
@@ -811,13 +805,7 @@ setup_compile_flags() {
 	# sanitizers out here.
 	filter-flags '-fsanitize=*' '-fsanitize-trap=*'
 
-	# There are some flags we want to only use in the ebuild.
-	# The rest will be exported to the simple chrome workflow.
-	EBUILD_CFLAGS=()
-	EBUILD_CXXFLAGS=()
-	EBUILD_LDFLAGS=()
-
-	if use thinlto; then
+	if use chrome_cfi_thinlto; then
 		# if using thinlto, we need to pass the equivalent of
 		# -fdebug-types-section to the backend, to prevent out-of-range
 		# relocations (see
@@ -850,12 +838,6 @@ setup_compile_flags() {
 		append-ldflags "-stdlib=libc++"
 	fi
 
-	# Workaround: Disable fatal linker warnings on arm64/lld.
-	# https://crbug.com/913071
-	use arm64 && append-ldflags "-Wl,--no-fatal-warnings"
-	# Workaround: Disable fatal linker warnings on arm/lld.
-	# https://crbug.com/1190544
-	use arm && append-ldflags "-Wl,--no-fatal-warnings"
 	use vtable_verify && append-ldflags -fvtable-verify=preinit
 
 	local flags
@@ -877,14 +859,14 @@ src_configure() {
 	export LD="${CXX}"
 	export LD_host=${CXX_host}
 
-	# We need below change when USE="thinlto" is set. We set this globally
+	# We need below change when thinlto is enabled. We set this globally
 	# so that users can turn on the "use_thin_lto" in the simplechrome
 	# flow more easily.
 	# use nm from llvm, https://crbug.com/917193
 	export NM="llvm-nm"
 	export NM_host="llvm-nm"
 	export AR="llvm-ar"
-	# USE=thinlto affects host build, we need to set host AR to
+	# USE=chrome_cfi_thinlto affects host build, we need to set host AR to
 	# llvm-ar to make sure host package builds with thinlto.
 	# crbug.com/731335
 	export AR_host="llvm-ar"
@@ -892,7 +874,7 @@ src_configure() {
 	# Use llvm's objcopy instead of GNU
 	export OBJCOPY="llvm-objcopy"
 
-	# Set binutils path for goma.
+	# Set binutils path for remoteexec.
 	CFLAGS_host+=" -B$(get_binutils_path "${LD_host}")"
 	CXXFLAGS_host+=" -B$(get_binutils_path "${LD_host}")"
 
@@ -907,33 +889,32 @@ src_configure() {
 
 	export DEPOT_TOOLS_GSUTIL_BIN_DIR="${CHROME_CACHE_DIR}/gsutil_bin"
 
-	# TODO(rcui): crosbug.com/20435. Investigate removal of runhooks
-	# useflag when chrome build switches to Ninja inside the chroot.
-	if use runhooks; then
-		local cmd=( "${EGCLIENT}" runhooks --force )
+	if [[ "${CHROME_ORIGIN}" == "SERVER_SOURCE" ]]; then
+		# Lock the destination directory to avoid having multiple ebuilds writing
+		# to the same directory concurrently.
+		local cmd=( flock "${CHROME_ROOT}" "${EGCLIENT}" runhooks --force )
 		echo "${cmd[@]}"
-		CFLAGS="${CFLAGS} ${EBUILD_CFLAGS[*]}" \
-		CXXFLAGS="${CXXFLAGS} ${EBUILD_CXXFLAGS[*]}" \
-		LDFLAGS="${LDFLAGS} ${EBUILD_LDFLAGS[*]}" \
 		"${cmd[@]}" || die
 	fi
 
+	local usr_bin="/usr/bin/"
+
 	BUILD_STRING_ARGS+=(
 		"cros_target_ar=${AR}"
-		"cros_target_cc=${CC}"
-		"cros_target_cxx=${CXX}"
+		"cros_target_cc=${usr_bin}${CC}"
+		"cros_target_cxx=${usr_bin}${CXX}"
 		"host_toolchain=//build/toolchain/cros:host"
 		"custom_toolchain=//build/toolchain/cros:target"
 		"v8_snapshot_toolchain=//build/toolchain/cros:v8_snapshot"
 		"cros_target_ld=${LD}"
 		"cros_target_nm=${NM}"
 		"cros_target_readelf=${READELF}"
-		"cros_target_extra_cflags=${CFLAGS} ${EBUILD_CFLAGS[*]}"
+		"cros_target_extra_cflags=${CFLAGS}"
 		"cros_target_extra_cppflags=${CPPFLAGS}"
-		"cros_target_extra_cxxflags=${CXXFLAGS} ${EBUILD_CXXFLAGS[*]}"
-		"cros_target_extra_ldflags=${LDFLAGS} ${EBUILD_LDFLAGS[*]}"
-		"cros_host_cc=${CC_host}"
-		"cros_host_cxx=${CXX_host}"
+		"cros_target_extra_cxxflags=${CXXFLAGS}"
+		"cros_target_extra_ldflags=${LDFLAGS}"
+		"cros_host_cc=${usr_bin}${CC_host}"
+		"cros_host_cxx=${usr_bin}${CXX_host}"
 		"cros_host_ar=${AR_host}"
 		"cros_host_ld=${LD_host}"
 		"cros_host_nm=${NM_host}"
@@ -942,8 +923,8 @@ src_configure() {
 		"cros_host_extra_cxxflags=${CXXFLAGS_host}"
 		"cros_host_extra_cppflags=${CPPFLAGS_host}"
 		"cros_host_extra_ldflags=${LDFLAGS_host}"
-		"cros_v8_snapshot_cc=${CC_host}"
-		"cros_v8_snapshot_cxx=${CXX_host}"
+		"cros_v8_snapshot_cc=${usr_bin}${CC_host}"
+		"cros_v8_snapshot_cxx=${usr_bin}${CXX_host}"
 		"cros_v8_snapshot_ar=${AR_host}"
 		"cros_v8_snapshot_ld=${LD_host}"
 		"cros_v8_snapshot_nm=${NM_host}"
@@ -977,7 +958,23 @@ src_configure() {
 		--args="${GN_ARGS}" --root="${CHROME_ROOT}/src"
 	)
 	echo "${gn[@]}"
-	"${gn[@]}" || die
+	"${gn[@]}" || die "Running gn for chrome failed."
+
+	if use camera_angle_backend; then
+		for arg in "${ANGLE_BUILD_ARGS[@]}"; do
+			BUILD_ARGS+=("${arg%%=*}=${arg#*=}")
+		done
+		export ANGLE_GN_ARGS="${BUILD_ARGS[*]}"
+		einfo "ANGLE_GN_ARGS = ${ANGLE_GN_ARGS}"
+		local gn=(
+			"${CHROME_ROOT}/src/buildtools/linux64/gn" gen
+			"${CHROME_ROOT}/src/${ANGLE_BUILD_OUT_SYM}/${BUILDTYPE}"
+			--args="${ANGLE_GN_ARGS}" --root="${CHROME_ROOT}/src"
+			--root-target="//third_party/angle"
+		)
+		echo "${gn[@]}"
+		"${gn[@]}" || die "Running gn for angle failed."
+	fi
 
 	setup_test_lists
 
@@ -987,19 +984,22 @@ src_configure() {
 }
 
 chrome_make() {
-	local build_dir="${BUILD_OUT_SYM}/${BUILDTYPE}"
+	local build_dir="$1"
+	shift
 
 	# If ThinLTO is enabled, we may have a cache from a previous link. Due
 	# to fears about lack of reproducibility, we don't allow cache reuse
 	# across rebuilds. The cache is still useful for artifacts shared
 	# between multiple links done by this build (e.g. tests).
-	use thinlto && rm -rf "${build_dir}/thinlto-cache"
+	use chrome_cfi_thinlto && rm -rf "${build_dir}/thinlto-cache"
 
 	local parallelism="$(makeopts_jobs)"
-	# If goma or remoteexec is enabled, increase the number of parallel
+	# For slow remoteexec builds, decrease the number of parallel
 	# run to 10 * {number of processors}. Though, if it is too large the
 	# performance gets slow down, so limit by 200 heuristically.
-	if use_goma || use_remoteexec; then
+	# For any other remoteexec build, the parallelism  level is
+	# set in cros-remoteexec.eclass.
+	if cros-remoteexec_use_remoteexec && use chrome_cfi_thinlto; then
 		local num_parallel=$(($(nproc) * 10))
 		local j_limit=200
 		parallelism=$((num_parallel < j_limit ? num_parallel : j_limit))
@@ -1013,19 +1013,19 @@ chrome_make() {
 		"$@"
 	)
 
-	# If goma is used, log the command, cwd and env vars, which will be
-	# uploaded to the logging server.
-	if should_upload_build_logs; then
-		env --null > "${GLOG_log_dir}/ninja_env" || die
-		pwd > "${GLOG_log_dir}/ninja_cwd" || die
-		echo "${command[@]}" > "${GLOG_log_dir}/ninja_command" || die
+	# If remoteexec is used, log the command, cwd and env vars
+	if cros-remoteexec_use_remoteexec; then
+		# shellcheck disable=SC2154 # RBE_log_dir declared in cros-remoteexec.eclass
+		env --null > "${RBE_log_dir}/ninja_env" || die
+		pwd > "${RBE_log_dir}/ninja_cwd" || die
+		echo "${command[@]}" > "${RBE_log_dir}/ninja_command" || die
 	fi
 	PATH=${PATH}:${DEPOT_TOOLS} "${command[@]}"
 	local ret=$?
-	if should_upload_build_logs; then
-		echo "${ret}" > "${GLOG_log_dir}/ninja_exit"
-		cp -p "${BUILD_OUT_SYM}/${BUILDTYPE}/.ninja_log" \
-			"${GLOG_log_dir}/ninja_log" || die
+	if cros-remoteexec_use_remoteexec; then
+		echo "${ret}" > "${RBE_log_dir}/ninja_exit"
+		cp -p "${build_dir}/.ninja_log" \
+			"${RBE_log_dir}/ninja_log" || die
 	fi
 	[[ "${ret}" -eq 0 ]] || die
 }
@@ -1056,7 +1056,11 @@ src_compile() {
 	fi
 	use_nacl && chrome_targets+=( nacl_helper_bootstrap nacl_helper )
 
-	chrome_make "${chrome_targets[@]}"
+	chrome_make "${BUILD_OUT_SYM}/${BUILDTYPE}" "${chrome_targets[@]}"
+
+	if use camera_angle_backend; then
+		chrome_make "${ANGLE_BUILD_OUT_SYM}/${BUILDTYPE}" "angle"
+	fi
 
 	if use build_tests; then
 		install_chrome_test_resources "${WORKDIR}/test_src"
@@ -1089,12 +1093,7 @@ src_compile() {
 		autotest_src_compile
 	fi
 
-	if use_remoteexec; then
-		"${DEPOT_TOOLS}/.cipd_bin/reclient/bootstrap" --shutdown \
-			--cfg="/mnt/host/source/chromite/sdk/reclient_cfgs/${REPROXY_CFG_FILENAME}" \
-			--re_proxy /mnt/host/source/src/chromium/depot_tools/reclient/reproxy
-		einfo "Shutting down reproxy"
-	fi
+	cros-remoteexec_shutdown
 }
 
 install_test_resources() {
@@ -1124,6 +1123,17 @@ install_test_resources() {
 		"${test_dir}/" || die
 }
 
+test_binary_install() {
+	local from="${1}"
+	local dest="${2}"
+	shift 2
+	mkdir -p "${dest}" || die
+	local f
+	for f in "$@"; do
+		cp "${from}/${f}" "${dest}/$(basename "${f}")" || die
+	done
+}
+
 test_strip_install() {
 	local from="${1}"
 	local dest="${2}"
@@ -1149,10 +1159,12 @@ install_chrome_test_resources() {
 	# everything but the symbol names. Developers who need more detailed debug
 	# info on the tests can use the original unstripped tests from the ${from}
 	# directory.
-	TEST_INSTALL_TARGETS=( "${TEST_FILES[@]}" )
+	local test_install_targets=( "${TEST_FILES[@]}" )
+	einfo "Installing test targets: ${test_install_targets[*]}"
+	test_strip_install "${from}" "${dest}" "${test_install_targets[@]}"
 
-	einfo "Installing test targets: ${TEST_INSTALL_TARGETS[*]}"
-	test_strip_install "${from}" "${dest}" "${TEST_INSTALL_TARGETS[@]}"
+	# Binaries that are in the out directory and can't be stripped.
+	test_binary_install "${from}" "${dest}" "${TEST_BINARIES[@]}"
 
 	# Install Chrome test resources.
 	# WARNING: Only install subdirectories of |chrome/test|.
@@ -1177,27 +1189,41 @@ install_chrome_test_resources() {
 
 	cp -a "${CHROME_ROOT}"/"${AUTOTEST_DEPS}"/chrome_test/setup_test_links.sh \
 		"${dest}" || die
+
+	if use crosier_binary; then
+		einfo "Copying Crosier test dependencies from: ${CHROME_ROOT}/src and ${from} to ${dest}"
+		cp -a -r -f "${CHROME_ROOT}"/src/chrome/test/base/chromeos/crosier/helper/test_sudo_helper.py \
+			"${CHROME_ROOT}"/src/chrome/test/base/chromeos/crosier/helper/reset_dut.py \
+			"${CHROME_ROOT}"/src/chrome/test/data/chromeos/web_handwriting \
+			"${CHROME_ROOT}"/src/third_party/test_fonts \
+			"${from}/crosier_metadata" \
+			"${dest}" || die
+		if use chrome_internal; then
+			cp -a -f "${CHROME_ROOT}/src/chrome/browser/internal/resources/chromeos/crosier/test_accounts.json" "${dest}" || die
+		fi
+		einfo "Crosier test dependencies copied successfully"
+	fi
 }
 
 install_telemetry_dep_resources() {
 	local test_dir="${1}"
 
-	TELEMETRY=${CHROME_ROOT}/src/third_party/catapult/telemetry
-	if [[ -r "${TELEMETRY}" ]]; then
+	local telemetry=${CHROME_ROOT}/src/third_party/catapult/telemetry
+	if [[ -r "${telemetry}" ]]; then
 		echo "Copying Telemetry Framework into ${test_dir}"
 		mkdir -p "${test_dir}" || die
 		# We are going to call chromium code but can't trust that it is clean
 		# of precompiled code. See crbug.com/590762.
-		find "${TELEMETRY}" -name "*.pyc" -type f -delete || die
+		find "${telemetry}" -name "*.pyc" -type f -delete || die
 		# Get deps from Chrome.
-		FIND_DEPS=${CHROME_ROOT}/src/tools/perf/find_dependencies
-		PERF_DEPS=${CHROME_ROOT}/src/tools/perf/bootstrap_deps
-		CROS_DEPS=${CHROME_ROOT}/src/tools/cros/bootstrap_deps
+		local find_deps=${CHROME_ROOT}/src/tools/perf/find_dependencies
+		local perf_deps=${CHROME_ROOT}/src/tools/perf/bootstrap_deps
+		local cros_deps=${CHROME_ROOT}/src/tools/cros/bootstrap_deps
 		# sed removes the leading path including src/ converting it to relative.
 		# To avoid silent failures assert the success.
-		DEPS_LIST=$(${FIND_DEPS} "${PERF_DEPS}" "${CROS_DEPS}" | \
+		local deps_list=$(${find_deps} "${perf_deps}" "${cros_deps}" | \
 			sed -e "s|^${CHROME_ROOT}/src/||"; assert)
-		install_test_resources "${test_dir}" "${DEPS_LIST}"
+		install_test_resources "${test_dir}" "${deps_list}"
 	fi
 
 	local from="${CHROME_CACHE_DIR}/src/${BUILD_OUT}/${BUILDTYPE}"
@@ -1222,7 +1248,7 @@ install_telemetry_dep_resources() {
 # Add any new artifacts generated by the Chrome build targets to deploy_chrome.py.
 # We deal with miscellaneous artifacts here in the ebuild.
 src_install() {
-	FROM="${CHROME_CACHE_DIR}/src/${BUILD_OUT}/${BUILDTYPE}"
+	local from="${CHROME_CACHE_DIR}/src/${BUILD_OUT}/${BUILDTYPE}"
 
 	# Override default strip flags and lose the '-R .comment'
 	# in order to play nice with the crash server.
@@ -1236,8 +1262,8 @@ src_install() {
 		export PORTAGE_STRIP_FLAGS="--strip-debug"
 	fi
 	einfo "PORTAGE_STRIP_FLAGS=${PORTAGE_STRIP_FLAGS}"
-	LS=$(ls -alhS "${FROM}") || die
-	einfo "CHROME_DIR after build\n${LS}"
+	local ls=$(ls -alhS "${from}") || die
+	einfo "CHROME_DIR after build\n${ls}"
 
 	insinto /etc/init
 	doins "${FILESDIR}"/mount-ash-chrome.conf
@@ -1246,56 +1272,6 @@ src_install() {
 	# /opt/google/chrome/dbus by deploy_chrome.
 	insinto /etc/dbus-1/system.d
 	doins "${FILESDIR}"/chrome.conf
-
-	if use chrome_internal; then
-		local qo_install_root="/usr/share/chromeos-assets/quickoffice"
-		insinto "${qo_install_root}"
-		QUICKOFFICE="${CHROME_ROOT}"/src/chrome/browser/resources/chromeos/quickoffice
-		doins -r "${QUICKOFFICE}"/_locales
-		doins -r "${QUICKOFFICE}"/css
-		doins -r "${QUICKOFFICE}"/img
-		doins -r "${QUICKOFFICE}"/plugin
-		doins -r "${QUICKOFFICE}"/scripts
-		doins -r "${QUICKOFFICE}"/views
-
-		local qo_path=""
-		case "${ARCH}" in
-		arm)
-			qo_path="${QUICKOFFICE}"/_platform_specific/arm
-			;;
-		arm64)
-			qo_path="${QUICKOFFICE}"/_platform_specific/arm
-			;;
-		amd64)
-			qo_path="${QUICKOFFICE}"/_platform_specific/x86_64
-			;;
-		*)
-			die "Unsupported architecture: ${ARCH}"
-			;;
-		esac
-
-		# Compress the platform-specific NaCl binaries with squashfs to
-		# save space on the rootfs.
-		# - compress with LZO and 1M blocks to optimize trade-off
-		# between compression ratio and decompression speed.
-		# - use "-keep-as-directory" option so the squash file will
-		# include the folder with the name of the CPU architecture,
-		# which is expected by the scripts on device.
-		# - use "-root-mode 0755" to ensure that the mountpoint has
-		# permissions 0755 instead of the default 0777.
-		# - use "-4k-align" option so individual files inside the squash
-		# file will be aligned to 4K blocks, which improves the
-		# efficiency of the delta updates.
-		mksquashfs "${qo_path}" "${WORKDIR}/quickoffice.squash" \
-			-all-root -noappend -no-recovery -no-exports \
-			-exit-on-error -comp lzo -b 1M -keep-as-directory \
-			-4k-align -root-mode 0755 -no-progress \
-			|| die "Failed to create Quickoffice squashfs"
-
-		# The squashfs will be mounted at boot time by an upstart script
-		# installed by chromeos-base/quickoffice.
-		doins "${WORKDIR}/quickoffice.squash"
-	fi
 
 	# Chrome test resources
 	# Test binaries are only available when building chrome from source
@@ -1341,7 +1317,7 @@ src_install() {
 	# Disable stripping for now, as deploy_chrome doesn't generate splitdebug files.
 	cmd+=(
 		"--board=${BOARD}"
-		"--build-dir=${FROM}"
+		"--build-dir=${from}"
 		"--gn-args=${GN_ARGS}"
 		# If this is enabled, we need to re-enable `prepstrip` above for autotests.
 		# You'll also have to re-add "strip" to the RESTRICT at the top of the file.
@@ -1358,18 +1334,19 @@ src_install() {
 	fi
 	einfo "${cmd[*]}"
 	"${cmd[@]}" || die
-	LS=$(ls -alhS "${D}/${CHROME_DIR}")
-	einfo "CHROME_DIR after deploy_chrome\n${LS}"
+	ls=$(ls -alhS "${D}/${CHROME_DIR}")
+	einfo "CHROME_DIR after deploy_chrome\n${ls}"
+
+	# Do not strip the debug files.
+	dostrip -x "/usr/lib/debug/"
 
 	# Keep the .dwp files with debug fission.
 	if use chrome_debug && use debug_fission; then
-		# TODO(b/279648466): Replace GNU dwp with llvm-dwp.
-		DWP="${CHOST}-dwp"
 		mkdir -p "${D}/usr/lib/debug/${CHROME_DIR}" || die
 		cd "${D}/${CHROME_DIR}" || die
 		# Iterate over all ELF files in current directory
 		while read -r i; do
-			cd "${FROM}" || die
+			cd "${from}" || die
 			# These files do not build with -gsplit-dwarf,
 			# so we do not need to get a .dwp file from them.
 			if [[ "${i}" == "./nacl_helper_nonsfi"	|| \
@@ -1384,9 +1361,9 @@ src_install() {
 			fi
 			# Same for nacl_helper, though only on arm64.
 			[[ "${ARCH}" == "arm64" && "${i}" == "./nacl_helper" ]] && continue
-			source="${i}"
+			local source="${i}"
 			# shellcheck disable=SC2154
-			${DWP} -e "${FROM}/${source}" -o "${D}/usr/lib/debug/${CHROME_DIR}/${i}.dwp" || die
+			${DWP} -e "${from}/${source}" -o "${D}/usr/lib/debug/${CHROME_DIR}/${i}.dwp" || die
 		done < <(scanelf -ByF '%F' ".")
 	fi
 
@@ -1394,12 +1371,12 @@ src_install() {
 		# Install Chrome Driver to test image.
 		local chromedriver_dir='/usr/local/chromedriver'
 		dodir "${chromedriver_dir}"
-		cp -pPR "${FROM}"/chromedriver "${D}/${chromedriver_dir}" || die
+		cp -pPR "${from}"/chromedriver "${D}/${chromedriver_dir}" || die
 
 		if use chrome_internal; then
 			# Install LibAssistant test library to test image.
 			into /usr/local/
-			dolib.so "${FROM}"/libassistant_debug.so
+			dolib.so "${from}"/libassistant_debug.so
 		fi
 
 		# Install a testing script to run Lacros from command line.
@@ -1411,7 +1388,7 @@ src_install() {
 		# Copy LibAssistant V2 library to a temp build folder for later
 		# installation of `assistant-dlc`.
 		exeinto /build/share/libassistant
-		doexe "${FROM}/libassistant_v2.so"
+		doexe "${from}/libassistant_v2.so"
 	fi
 
 	# The icu data is used by both chromeos-base/chrome-icu and this package.
@@ -1419,20 +1396,32 @@ src_install() {
 	# data, so we remove it from ${D} here.
 	rm "${D_CHROME_DIR}/icudtl.dat" || die
 	rm "${D_CHROME_DIR}/icudtl.dat.hash" || die
+
+	if use camera_angle_backend; then
+		local from="${CHROME_CACHE_DIR}/src/${ANGLE_BUILD_OUT}/${BUILDTYPE}"
+
+		# For now install in private directory.
+		dodir "/usr/$(get_libdir)/angle"
+		insinto "/usr/$(get_libdir)/angle"
+
+		insopts -m0755
+		doins "${from}/libEGL.so"
+		doins "${from}/libGLESv2.so"
+	fi
 }
 
 pkg_preinst() {
 	enewuser "wayland"
 	enewgroup "wayland"
-	LS=$(ls -alhS "${ED}/${CHROME_DIR}")
-	einfo "CHROME_DIR after installation\n${LS}"
-	CHROME_SIZE=$(stat --printf="%s" "${ED}/${CHROME_DIR}/chrome")
-	einfo "CHROME_SIZE = ${CHROME_SIZE}"
+	local ls=$(ls -alhS "${ED}/${CHROME_DIR}")
+	einfo "CHROME_DIR after installation\n${ls}"
+	local chrome_size=$(stat --printf="%s" "${ED}/${CHROME_DIR}/chrome")
+	einfo "chrome_size = ${chrome_size}"
 
 	# Non-internal builds come with >10MB of unwinding info built-in. Size
 	# checks on those are less profitable.
-	if [[ ${CHROME_SIZE} -ge 300000000 && -z "${KEEP_CHROME_DEBUG_SYMBOLS}" ]] && use chrome_internal && ! use chrome_dcheck; then
-		die "Installed chrome binary got suspiciously large (size=${CHROME_SIZE})."
+	if [[ ${chrome_size} -ge 300000000 && -z "${KEEP_CHROME_DEBUG_SYMBOLS}" ]] && use chrome_internal && ! use chrome_dcheck; then
+		die "Installed chrome binary got suspiciously large (size=${chrome_size})."
 	fi
 	if use arm; then
 		local files=$(find "${ED}/usr/lib/debug${CHROME_DIR}" -size +$((4 * 1024 * 1024 * 1024 - 1))c)
