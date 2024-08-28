@@ -1,0 +1,58 @@
+--- a/trunks/BUILD.gn
++++ b/trunks/BUILD.gn
+@@ -60,6 +60,9 @@
+   configs = [ ":target_default_pkg_deps" ]
+   defines = [ "USE_GENERIC_TPM2=${use.generic_tpm2}" ]
+   libs = [ "hwsec-foundation" ]
++  if (use.tpm2_simulator) {
++    defines += [ "USE_SIMULATOR=1" ]
++  }
+ }
+ 
+ proto_library("interface_proto") {
+@@ -169,6 +172,11 @@
+     "trunks_dbus_service.cc",
+     "trunks_metrics.cc",
+   ]
++
++  if (use.tpm2_simulator) {
++    sources += [ "tpm_simulator_handle.cc" ]
++  }
++
+   all_dependent_configs = [
+     ":trunksd_lib_all_dependent_configs",
+     ":trunksd_lib_all_dependent_pkg_deps",
+@@ -202,6 +210,9 @@
+     ":trunks_adaptors",
+     ":trunksd_lib",
+   ]
++  if (use.tpm2_simulator) {
++    libs += [ "tpm2" ]
++  }
+ }
+ 
+ static_library("trunks_test") {
+--- a/trunks/trunksd.cc
++++ b/trunks/trunksd.cc
+@@ -24,6 +24,9 @@
+ #include "trunks/resilience/write_error_tracker_impl.h"
+ #include "trunks/resource_manager.h"
+ #include "trunks/tpm_handle.h"
++#if defined(USE_SIMULATOR)
++#include "trunks/tpm_simulator_handle.h"
++#endif
+ #include "trunks/trunks_dbus_service.h"
+ #include "trunks/trunks_factory_impl.h"
+ #include "trunks/trunks_ftdi_spi.h"
+@@ -107,6 +110,11 @@
+   if (cl->HasSwitch("ftdi")) {
+     LOG(INFO) << "Sending commands to FTDI SPI.";
+     low_level_transceiver = new trunks::TrunksFtdiSpi();
++#if defined(USE_SIMULATOR)
++  } else if (cl->HasSwitch("simulator")) {
++    LOG(INFO) << "Sending commands to simulator.";
++    low_level_transceiver = new trunks::TpmSimulatorHandle();
++#endif
+   } else {
+     low_level_transceiver = new trunks::TpmHandle(metrics, write_error_tracker);
+   }
