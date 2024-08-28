@@ -28,7 +28,7 @@ IUSE="
 	cros_embedded device-mapper direncryption +encrypted_stateful
 	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
 	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
-  fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
 	+udev unibuild vivid vtconsole vtpm_proxy"
 
 REQUIRED_USE="

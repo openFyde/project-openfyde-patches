@@ -20,5 +20,5 @@ cros_post_src_prepare_openfyde_patches() {
 
 cros_post_src_install_openfyde_patches() {
 	insinto /usr/share/chromeos-assets
-	doins ${FILESDIR}/splash_background
+	doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/splash_background
 }
