@@ -1,0 +1,11 @@
+--- a/init/tpm_encryption/encryption_key.cc
++++ b/init/tpm_encryption/encryption_key.cc
+@@ -193,7 +193,7 @@
+   std::string product_uuid;
+   if (platform_->ReadFileToString(rootdir_.Append(paths::kProductUUID),
+                                   &product_uuid)) {
+-    system_key_ = Sha256(base::ToUpperASCII(product_uuid));
++    system_key_ = Sha256(product_uuid);
+     LOG(INFO) << "Using UUID as system key.";
+     system_key_status_ = SystemKeyStatus::kProductUUID;
+     return true;

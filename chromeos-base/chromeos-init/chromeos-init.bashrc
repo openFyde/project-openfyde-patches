@@ -16,6 +16,13 @@ cros_post_src_prepare_openfyde_patches() {
     eapply ${FILESDIR}/remove_cgroup_crosvm.patch
   fi
   eapply ${FILESDIR}/skip_call_ExtendPCRForVersionAttestation.patch
+
+  if ! use upper_case_product_uuid; then
+    eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/tpm/prevent_product_uuid_uppercase_convert.patch
+  fi
+  if use tpm2_simulator_deprecated; then
+    eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/tpm/use_insecure_system_key_for_tpm2_simualtor_deprecated_compitable.patch
+  fi
 }
 
 cros_post_src_install_openfyde_patches() {

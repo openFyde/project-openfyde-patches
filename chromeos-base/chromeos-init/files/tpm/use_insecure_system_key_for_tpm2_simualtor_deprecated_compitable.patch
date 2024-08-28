@@ -1,0 +1,22 @@
+index e30c0c35b7..95513be33f 100644
+--- a/init/BUILD.gn
++++ b/init/BUILD.gn
+@@ -65,6 +65,7 @@
+     "USE_TPM1=${use.tpm}",
+     "USE_TPM2=${use.tpm2}",
+     "USE_TPM2_SIMULATOR=${use.tpm2_simulator}",
++    "USE_TPM2_SIMULATOR_DEPRECATED=${use.tpm2_simulator_deprecated}",
+     "USE_VTPM_PROXY=${use.vtpm_proxy}",
+   ]
+   pkg_deps = [
+--- a/init/tpm_encryption/tpm_setup.cc
++++ b/init/tpm_encryption/tpm_setup.cc
+@@ -279,7 +279,7 @@
+   }
+ 
+   /* Assume we have tpm for system_key when we are using vtpm tpm2 simulator. */
+-  return USE_TPM2_SIMULATOR && USE_VTPM_PROXY;
++  return USE_TPM2_SIMULATOR && USE_VTPM_PROXY && !USE_TPM2_SIMULATOR_DEPRECATED;
+ }
+ 
+ bool TpmSystemKey::MigrateTpmOwnerShipStateFile() {

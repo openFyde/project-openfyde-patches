@@ -29,12 +29,15 @@ IUSE="
 	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
 	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
 	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+	-upper_case_product_uuid
+	-tpm2_simulator_deprecated
 	+udev unibuild vivid vtconsole vtpm_proxy"
 
 REQUIRED_USE="
 	tpm_dynamic? ( tpm tpm2 )
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
 	unibuild
+	tpm2_simulator_deprecated? ( tpm2_simulator )
 "
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
