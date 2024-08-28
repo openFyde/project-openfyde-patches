@@ -390,8 +390,7 @@ src_test() {
 		ewarn "********************************************************"
 		ewarn "WARNING: Build-time SELinux policy tests only apply to"
 		ewarn "boards shipping android-container-pi."
-		ewarn "Test again using e.g. caroline or kevin to ensure full"
-		ewarn "test coverage."
+		ewarn "Test again using e.g. coral to ensure full test coverage."
 		ewarn "********************************************************"
 		return
 	fi
@@ -400,8 +399,7 @@ src_test() {
 		ewarn "********************************************************"
 		ewarn "WARNING: Build-time SELinux policy tests are skipped on"
 		ewarn "boards shipping ARC userdebug builds (including betty)."
-		ewarn "Test again using e.g. caroline or kevin to ensure full"
-		ewarn "test coverage."
+		ewarn "Test again using e.g. coral to ensure full test coverage."
 		ewarn "********************************************************"
 		return
 	fi

@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="04097b9df3be67662e26f4a7452ddbf989a7158b"
-CROS_WORKON_TREE="7cab21a3c2a05421b90c9804b255fd8a0229d14a"
+CROS_WORKON_COMMIT="06aae8e29fd1b276346b530dbb09b7e8f046b335"
+CROS_WORKON_TREE="459556dffe9dd6c505c51d7907c73e278dd1b646"
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -392,8 +392,7 @@ src_test() {
 		ewarn "********************************************************"
 		ewarn "WARNING: Build-time SELinux policy tests only apply to"
 		ewarn "boards shipping android-container-pi."
-		ewarn "Test again using e.g. caroline or kevin to ensure full"
-		ewarn "test coverage."
+		ewarn "Test again using e.g. coral to ensure full test coverage."
 		ewarn "********************************************************"
 		return
 	fi
@@ -402,8 +401,7 @@ src_test() {
 		ewarn "********************************************************"
 		ewarn "WARNING: Build-time SELinux policy tests are skipped on"
 		ewarn "boards shipping ARC userdebug builds (including betty)."
-		ewarn "Test again using e.g. caroline or kevin to ensure full"
-		ewarn "test coverage."
+		ewarn "Test again using e.g. coral to ensure full test coverage."
 		ewarn "********************************************************"
 		return
 	fi
