@@ -1,0 +1,15 @@
+diff --git a/vm_tools/concierge/untrusted_vm_utils.cc b/vm_tools/concierge/untrusted_vm_utils.cc
+index 144e222643..2029b6ede0 100644
+--- vm_tools/concierge/untrusted_vm_utils.cc
++++ vm_tools/concierge/untrusted_vm_utils.cc
+@@ -174,6 +174,10 @@ UntrustedVMUtils::CheckUntrustedVMMitigationStatus() const {
+ 
+ bool UntrustedVMUtils::SafeToRunVirtualMachines(std::string* reason) const {
+   DCHECK(reason);
++  const bool force_enabled = true;
++  if (force_enabled) {
++    return true;
++  }
+ 
+   // Check if l1tf and mds mitigations are present on the host.
+   switch (CheckUntrustedVMMitigationStatus()) {
