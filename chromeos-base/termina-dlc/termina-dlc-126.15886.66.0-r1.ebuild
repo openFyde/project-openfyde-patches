@@ -57,7 +57,7 @@ fi
 
 DLC_PRELOAD=true
 # Use the scaled infrastructure for serving DLC contents.
-DLC_FORCE_OTA=true
+DLC_FORCE_OTA=false
 
 # `termina-dlc` should be added to `chromite/lib/dlc_allowlist.py`
 DLC_FACTORY_INSTALL=true
