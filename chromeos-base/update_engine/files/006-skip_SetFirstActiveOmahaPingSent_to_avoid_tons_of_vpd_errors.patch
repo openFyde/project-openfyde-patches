@@ -1,0 +1,24 @@
+We never used the key FirstActiveOmahaPing
+
+index 7b4e18b1c6..16f72f32d7 100644
+--- update_engine/cros/omaha_request_action.cc
++++ update_engine/cros/omaha_request_action.cc
+@@ -754,12 +754,12 @@ void OmahaRequestAction::TransferComplete(HttpFetcher* fetcher,
+   // need to check if a=-1 has been sent because older devices have already sent
+   // their a=-1 in the past and we have to set first_active_omaha_ping_sent for
+   // future checks.
+-  if (!SystemState::Get()->hardware()->GetFirstActiveOmahaPingSent()) {
+-    if (!SystemState::Get()->hardware()->SetFirstActiveOmahaPingSent()) {
+-      SystemState::Get()->metrics_reporter()->ReportInternalErrorCode(
+-          ErrorCode::kFirstActiveOmahaPingSentPersistenceError);
+-    }
+-  }
++  // if (!SystemState::Get()->hardware()->GetFirstActiveOmahaPingSent()) {
++  //   if (!SystemState::Get()->hardware()->SetFirstActiveOmahaPingSent()) {
++  //     SystemState::Get()->metrics_reporter()->ReportInternalErrorCode(
++  //         ErrorCode::kFirstActiveOmahaPingSentPersistenceError);
++  //   }
++  // }
+ 
+   // Create/update the metadata files for each DLC app received.
+   StorePingReply();

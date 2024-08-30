@@ -10,6 +10,7 @@ cros_pre_src_prepare_openfyde_patches() {
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/003-ota-checker.patch
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/004-local-ota.patch
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/005-set-is-official-build-false.patch
+  eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/006-skip_SetFirstActiveOmahaPingSent_to_avoid_tons_of_vpd_errors.patch
   # skip_removable patch from r96 was removed here
   # if more patches needed by specified overlay(board), define a new hook with
   # different name in the overlay itself, then load from profile.bashrc of the
