@@ -87,6 +87,17 @@ Index: shill/device_info.cc
      const auto mac_address =
          net_base::MacAddress::CreateFromBytes(msg.GetAttribute(IFLA_ADDRESS));
      if (mac_address) {
+@@ -1260,6 +1265,10 @@ void DeviceInfo::DelayedDeviceCreationTa
+     // NB: ARHRD_RAWIP was introduced in kernel 4.14.
+     if (technology != Technology::kTunnel &&
+         technology != Technology::kUnknown && arp_type != ARPHRD_RAWIP) {
++      if (technology == Technology::kEthernet && !mac_address.has_value()) {
++        LOG(WARNING) << "device: " << link_name << " has no mac address, skip.";
++        continue;
++      }
+       DCHECK(mac_address.has_value());
+     }
+ 
 Index: shill/virtual_device.cc
 ===================================================================
 --- shill.orig/virtual_device.cc
