@@ -1,0 +1,56 @@
+Index: flashrom/cli_classic.c
+===================================================================
+--- flashrom.orig/cli_classic.c
++++ flashrom/cli_classic.c
+@@ -46,6 +46,7 @@ enum {
+ 	OPTION_WP_DISABLE,
+ 	OPTION_WP_LIST,
+ 	OPTION_PROGRESS,
++  OPTION_REALRUN,
+ };
+ 
+ struct cli_options {
+@@ -77,6 +78,7 @@ struct cli_options {
+ 	char *logfile;
+ 	char *referencefile;
+ 	const char *chip_to_probe;
++  bool real_run;
+ };
+ 
+ static void cli_classic_usage(const char *name)
+@@ -129,6 +131,7 @@ static void cli_classic_usage(const char
+ 	       " -z | --list-supported-wiki         print supported devices in wiki syntax\n"
+ #endif
+ 	       "      --progress                    show progress percentage on the standard output\n"
++         "      --realrun                     Nochromeos device will not runing flashrom process.\n"
+ 	       " -p | --programmer <name>[:<param>] specify the programmer device. One of\n");
+ 	list_programmers_linebreak(4, 80, 0);
+ 	printf(".\n\nYou can specify one of -h, -R, -L, "
+@@ -878,6 +881,9 @@ static void parse_options(int argc, char
+ 		case OPTION_PROGRESS:
+ 			options->show_progress = true;
+ 			break;
++    case OPTION_REALRUN:
++      options->real_run = true;
++      break;
+ 		default:
+ 			cli_classic_abort_usage(NULL);
+ 			break;
+@@ -948,6 +954,7 @@ int main(int argc, char *argv[])
+ 		{"version",		0, NULL, 'R'},
+ 		{"output",		1, NULL, 'o'},
+ 		{"progress",		0, NULL, OPTION_PROGRESS},
++    {"realrun", 0, NULL, OPTION_REALRUN},
+ 		{NULL,			0, NULL, 0},
+ 	};
+ 
+@@ -967,7 +974,8 @@ int main(int argc, char *argv[])
+ 	setbuf(stdout, NULL);
+ 
+ 	parse_options(argc, argv, optstring, long_options, &options);
+-
++  if (!options.real_run)
++    goto out;
+ 	if (options.filename && check_filename(options.filename, "image"))
+ 		cli_classic_abort_usage(NULL);
+ 	if (options.layoutfile && check_filename(options.layoutfile, "layout"))
