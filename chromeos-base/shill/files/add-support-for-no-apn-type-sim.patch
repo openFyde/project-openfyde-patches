@@ -1,0 +1,25 @@
+Index: shill/cellular/cellular_capability_3gpp.cc
+===================================================================
+--- shill.orig/cellular/cellular_capability_3gpp.cc
++++ shill/cellular/cellular_capability_3gpp.cc
+@@ -2202,14 +2202,20 @@ void CellularCapability3gpp::OnProfilesC
+     // originally being done by MM, before it started to list profiles without
+     // an explicit APN type.
+     if (!base::Contains(profile, CellularBearer::kMMApnTypeProperty)) {
++      if (brillo::GetVariantValueOrDefault<std::string>(
++              profile, CellularBearer::kMMApnProperty).compare("internet")) {
+       SLOG(this, 3) << __func__ << ": ignoring profile with no type.";
+       n_no_apn_type++;
+       continue;
++      }
+     }
+ 
+     auto apn_types = MMBearerApnTypeToApnTypes(
+         static_cast<MMBearerApnType>(brillo::GetVariantValueOrDefault<uint32_t>(
+             profile, CellularBearer::kMMApnTypeProperty)));
++    if (!brillo::GetVariantValueOrDefault<std::string>(
++                    profile, CellularBearer::kMMApnProperty).compare("internet"))
++      apn_types.insert(kApnTypeDefault);
+     if (apn_types.empty()) {
+       SLOG(this, 3) << __func__ << ": ignoring profile with unexpected type.";
+       n_unexpected_apn_type++;

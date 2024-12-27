@@ -7,4 +7,5 @@ cros_pre_src_prepare_openfyde_patches() {
   fi
   eapply  ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/add-support-for-ppp-on-cellular-device.patch
   eapply  ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/fix-signal-for-the-device-with-no-signal-interface.patch
+  eapply  ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/add-support-for-no-apn-type-sim.patch
 }
