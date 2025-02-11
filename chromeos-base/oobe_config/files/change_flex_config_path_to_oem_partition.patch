@@ -1,8 +1,6 @@
-diff --git a/oobe_config/etc/init/oobe_config_restore.conf b/oobe_config/etc/init/oobe_config_restore.conf
-index 1aa54bda26..23dc8d6fde 100644
 --- a/oobe_config/etc/init/oobe_config_restore.conf
 +++ b/oobe_config/etc/init/oobe_config_restore.conf
-@@ -38,8 +38,8 @@ script
+@@ -38,8 +38,8 @@
    # fail. Use $@ array instead of empty string, as passing in "" to minijail
    # also fails.
    set --
@@ -13,24 +11,20 @@ index 1aa54bda26..23dc8d6fde 100644
    fi
  
    exec minijail0 --config=/usr/share/minijail/oobe_config_restore.conf \
-diff --git a/oobe_config/filesystem/file_handler.h b/oobe_config/filesystem/file_handler.h
-index b045e0a73f..9f47355a19 100644
 --- a/oobe_config/filesystem/file_handler.h
 +++ b/oobe_config/filesystem/file_handler.h
-@@ -171,7 +171,7 @@ class FileHandler {
- 
-   // TODO(b/316944501): Switch flex_config dir name to flex_oobe_config.
-   static constexpr char kFlexOobeConfigFilePath[] =
+@@ -193,7 +193,7 @@
+   static constexpr char kFlexOobeConfigUnencryptedDirPath[] =
+       "mnt/stateful_partition/unencrypted/flex_config";
+   static constexpr char kFlexOobeConfigUnencryptedFilePath[] =
 -      "mnt/stateful_partition/unencrypted/flex_config/config.json";
 +      "usr/share/oem/flex_config/config.json";
- 
-   virtual base::FilePath GetFullPath(
-       const std::string& path_without_root) const;
-diff --git a/oobe_config/minijail/oobe_config_restore.conf b/oobe_config/minijail/oobe_config_restore.conf
-index e51469404f..5a26022d02 100644
+   static constexpr char kFlexOobeConfigEncryptedDirPath[] =
+       "var/lib/oobe_config_restore/flex_config";
+   static constexpr char kFlexOobeConfigEncryptedFilePath[] =
 --- a/oobe_config/minijail/oobe_config_restore.conf
 +++ b/oobe_config/minijail/oobe_config_restore.conf
-@@ -36,6 +36,7 @@ bind-mount = /var/lib/metrics/structured,,1
+@@ -44,6 +44,7 @@
  bind-mount = /var/lib/metrics/structured/events,,1
  bind-mount = /var/lib/oobe_config_restore,,1
  mount = /mnt/stateful_partition,/mnt/stateful_partition,tmpfs,MS_NODEV|MS_NOEXEC|MS_NOSUID,mode=755,size=10M
@@ -38,7 +32,7 @@ index e51469404f..5a26022d02 100644
  bind-mount = /mnt/stateful_partition/unencrypted/preserve,,1
  u = oobe_config_restore
  G
-@@ -47,6 +48,6 @@ fs-path-rw = /run/dbus
+@@ -55,7 +56,7 @@
  fs-path-rw = /var/lib/metrics/structured/events
  fs-path-rw = /var/lib/oobe_config_restore
  fs-path-rw = /mnt/stateful_partition/unencrypted/preserve
@@ -46,3 +40,4 @@ index e51469404f..5a26022d02 100644
 +fs-path-rw = /usr/share/oem/flex_config
  fs-path-ro = /dev/log
  fs-path-ro = /sys/fs/pstore
+ fs-path-ro = /sys/block
