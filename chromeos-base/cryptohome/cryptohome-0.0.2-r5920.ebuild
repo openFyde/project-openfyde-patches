@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="06aae8e29fd1b276346b530dbb09b7e8f046b335"
-CROS_WORKON_TREE=("b34cd17a5119e65123516e3d20992ce4b303fa5b" "f52ce23bfe1acc733f39cdfd6f8ee2d6809b5f0b" "9f6f122db8b96d8fc6a6b026d0d1c66da21f79c1" "9050d91be8a513b5b9706395d3ed06adf219cf3e" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
+CROS_WORKON_TREE=("bd6ab6972071770b6091936ff7fa113ada50ddc1" "d48c039201920e424727b4affb664f28cd95f2d0" "2c2bce16c896cfc1084d3744954a690970ef21d7" "cb008a5c4fa1fe93ce66a75df355308657d0917e" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 PYTHON_COMPAT=( python3_{8..11} )
 
 CROS_WORKON_LOCALNAME="platform2"
@@ -25,8 +25,8 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 KEYWORDS="*"
-IUSE="device-mapper -direncription_allow_v2 -direncryption
-	+downloads_bind_mount fuzzer generic_tpm2 kernel-6_6 kernel-6_1 kernel-5_15
+IUSE="device-mapper -direncription_allow_v2 -direncryption fuzzer
+	generic_tpm2 kernel-6_10-enablement kernel-6_6 kernel-6_1 kernel-5_15
 	kernel-5_10 kernel-5_4 kernel-upstream lvm_application_containers
 	lvm_stateful_partition mount_oop pinweaver profiling slow_mount
 	systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
@@ -52,8 +52,8 @@ COMMON_DEPEND="
 	chromeos-base/libhwsec-foundation:=
 	chromeos-base/libstorage:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
+	chromeos-base/privacy:=
 	chromeos-base/secure-erase-file:=
-	chromeos-base/tpm_manager:=
 	dev-cpp/abseil-cpp:=
 	>=dev-libs/flatbuffers-2.0.0-r1:=
 	dev-libs/libxml2:=
@@ -67,9 +67,10 @@ COMMON_DEPEND="
 	sys-fs/lvm2:=
 "
 
-RDEPEND="${COMMON_DEPEND}"
+RDEPEND="${COMMON_DEPEND}
+	chromeos-base/tpm_manager:=
+"
 
-# TODO(b/230430190): Remove shill-client dependency after experiment ended.
 DEPEND="${COMMON_DEPEND}
 	test? (
 		app-crypt/trousers:=
@@ -82,7 +83,6 @@ DEPEND="${COMMON_DEPEND}
 	chromeos-base/device_management-client:=
 	chromeos-base/power_manager-client:=
 	chromeos-base/protofiles:=
-	chromeos-base/shill-client:=
 	chromeos-base/system_api:=[fuzzer?]
 	chromeos-base/tpm_manager-client:=
 	chromeos-base/vboot_reference:=
@@ -103,11 +103,11 @@ python_check_deps() {
 }
 
 src_install() {
-	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-upstream) || use uprev-4-to-5); then
+	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-6_10-enablement && use !kernel-upstream) || use uprev-4-to-5); then
 		die "direncription_allow_v2 is enabled where it shouldn't be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
-	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-upstream) && use !uprev-4-to-5; then
+	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-6_10-enablement || use kernel-upstream) && use !uprev-4-to-5; then
 		die "direncription_allow_v2 is not enabled where it should be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
@@ -143,11 +143,6 @@ src_install() {
 			sed -i '/env NO_LEGACY_MOUNT_FLAG=/s:=.*:="--nolegacymount":' \
 				"${D}/etc/init/cryptohomed.conf" ||
 				die "Can't replace nolegacymount flag in cryptohomed.conf"
-		fi
-		if use !downloads_bind_mount; then
-			sed -i '/env NO_DOWNLOAD_BINDMOUNT_FLAG=/s:=.*:="--no_downloads_bind_mount":' \
-				"${D}/etc/init/cryptohomed.conf" ||
-				die "Can't replace no_downloads_bind_mount flag in cryptohomed.conf"
 		fi
 		if use direncription_allow_v2; then
 			sed -i '/env FSCRYPT_V2_FLAG=/s:=.*:="--fscrypt_v2":' \

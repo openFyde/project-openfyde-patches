@@ -51,7 +51,7 @@ IUSE="
 	component_build
 	compressed_ash
 	cros-debug
-	crosier_binary
+	cuttlefish
 	debug_fission
 	+dwarf5
 	+fonts
@@ -60,7 +60,6 @@ IUSE="
 	hevc_codec
 	+highdpi
 	intel_oemcrypto
-	internal_gles_conform
 	+libcxx
 	libinput
 	merge_request
@@ -126,10 +125,9 @@ UNVETTED_AFDO_FILE=""
 
 COMMON_DEPEND="
 	app-crypt/mit-krb5
-	bluetooth? ( net-wireless/bluez )
+	bluetooth? ( net-wireless/libbluez:= )
 	chromeos-base/gestures
 	chromeos-base/libevdev:=
-	chrome_internal? ( chromeos-base/quickoffice )
 	dev-libs/expat
 	dev-libs/libffi
 	dev-libs/nspr
@@ -142,9 +140,8 @@ COMMON_DEPEND="
 	media-libs/minigbm
 	v4lplugin? ( media-libs/libv4lplugins )
 	media-libs/libcras
+	net-misc/curl:=
 	net-print/cups
-	opengl? ( virtual/opengl )
-	opengles? ( virtual/opengles )
 	sys-apps/dbus
 	sys-apps/pciutils
 	virtual/udev
@@ -175,6 +172,9 @@ RDEPEND="
 	chromeos-base/iioservice
 	chromeos-base/mojo_service_manager
 	oobe_config? ( chromeos-base/oobe_config )
+	chrome_internal? ( chromeos-base/quickoffice )
+	opengl? ( virtual/opengl )
+	opengles? ( virtual/opengles )
 "
 
 DEPEND="
@@ -238,6 +238,13 @@ echox() {
 echotf() { echox "${1:-$?}" true false ; }
 usetf()  { usex "$1" true false ; }
 
+# The section embedding logic makes assumptions about the size of allocations.
+# In binaries with some more invasive sanitizers enabled, these assumptions are
+# invalid.
+use_embedded_sections_chrome() {
+	! use asan && ! use msan
+}
+
 set_build_args() {
 	# shellcheck disable=SC2119
 	# suppressing the false warning not to specify the optional argument of 'echotf".
@@ -299,9 +306,13 @@ set_build_args() {
 		# Add hardware information to feedback logs and chrome://system.
 		"is_chromeos_with_hw_details=$(usetf hw_details)"
 
-		# Whether the target board has any device models supporting the
-		# "time of day" wallpaper and screensaver collections.
-		"is_time_of_day_supported=$(usetf feature_management)"
+		# Whether this is a Cuttlefish device.
+		"is_cuttlefish=$(usetf cuttlefish)"
+
+		# To include artifact/compile code for CBX features.
+		# When the USE flag is not set, it is guaranteed the artifcats will not
+		# be compiled in chrome.
+		"overlay_include_cbx=$(usetf feature_management)"
 
 		# Merge advanced features.
 		"enable_merge_request=$(usetf merge_request)"
@@ -344,7 +355,6 @@ set_build_args() {
 		"host_pkg_config=$(tc-getBUILD_PKG_CONFIG)"
 		"clang_diagnostic_dir=/tmp/clang_crash_diagnostics"
 	)
-	use internal_gles_conform && BUILD_ARGS+=( "internal_gles2_conform_tests=true" )
 
 	# Ozone platforms.
 	# TODO: Move this to browser side and delete these overrides.
@@ -406,8 +416,6 @@ set_build_args() {
 	if use chrome_internal; then
 		# Adding chrome branding specific variables.
 		BUILD_ARGS+=( "is_chrome_branded=true" )
-		# This test can only be build from internal sources.
-		BUILD_ARGS+=( "internal_gles2_conform_tests=true" )
 		export CHROMIUM_BUILD='_google_Chrome'
 		export OFFICIAL_BUILD='1'
 		export CHROME_BUILD_TYPE='_official'
@@ -425,11 +433,16 @@ set_build_args() {
 		BUILD_ARGS+=(
 			"use_remoteexec=true"
 		)
+		if cros-remoteexec_use_remoteexec_links; then
+			BUILD_ARGS+=(
+				"use_remoteexec_links=true"
+			)
+		fi
 		BUILD_STRING_ARGS+=(
 			# reclient configs in CHROME_ROOT are for simplechrome only. So for
 			# ebuilds, instead we override GN args here to specify the correct
 			# rewrapper config to use.
-			"rbe_cfg_dir=${CHROME_ROOT}/src/buildtools/reclient_cfgs/linux_chroot"
+			"reclient_cfg_dir=${CHROME_ROOT}/src/buildtools/reclient_cfgs/linux_chroot"
 
 			# For chroot based builds, this is overridden to be  '/'
 			# (where we run our build actions).
@@ -625,19 +638,6 @@ src_unpack() {
 	# a symlink here to add compatibility with autotest eclass which uses this.
 	ln -sf "${CHROME_ROOT}" "${WORKDIR}/${P}" || die
 
-	if use internal_gles_conform; then
-		local CHROME_GLES2_CONFORM=${CHROME_ROOT}/src/third_party/gles2_conform
-		local CROS_GLES2_CONFORM=/home/${WHOAMI}/trunk/src/third_party/gles2_conform
-		if [[ ! -d "${CHROME_GLES2_CONFORM}" ]]; then
-			if [[ -d "${CROS_GLES2_CONFORM}" ]]; then
-				ln -s "${CROS_GLES2_CONFORM}" "${CHROME_GLES2_CONFORM}" || die
-				einfo "Using GLES2 conformance test suite from ${CROS_GLES2_CONFORM}"
-			else
-				die "Trying to build GLES2 conformance test suite without ${CHROME_GLES2_CONFORM} or ${CROS_GLES2_CONFORM}"
-			fi
-		fi
-	fi
-
 	if use afdo_use; then
 		# Use AFDO profile downloaded in Chromium source code
 		# If needed profiles other than "silvermont", please set the variable
@@ -734,8 +734,11 @@ setup_test_lists() {
 
 	TEST_FILES=(
 		capture_unittests
+		cast_receiver
+		chromeos_integration_tests
 		dawn_end2end_tests
 		dawn_unittests
+		fake_chrome
 		fake_dmserver
 		libtest_trace_processor.so
 		libvk_swiftshader.so
@@ -743,6 +746,7 @@ setup_test_lists() {
 		ozone_gl_unittests
 		ozone_integration_tests
 		sandbox_linux_unittests
+		screen_ai_ocr_perf_test
 		wayland_client_integration_tests
 		wayland_client_perftests
 		wayland_hdr_client
@@ -769,15 +773,9 @@ setup_test_lists() {
 	if use v4l2_codec; then
 		TEST_FILES+=(
 			image_processor_perf_test
+			vulkan_overlay_adaptor_test
 			v4l2_stateless_decoder
 			v4l2_unittest
-		)
-	fi
-
-	if use crosier_binary; then
-		TEST_FILES+=(
-			chromeos_integration_tests
-			fake_chrome
 		)
 	fi
 
@@ -915,7 +913,7 @@ src_configure() {
 		"host_toolchain=//build/toolchain/cros:host"
 		"custom_toolchain=//build/toolchain/cros:target"
 		"v8_snapshot_toolchain=//build/toolchain/cros:v8_snapshot"
-		"cros_target_ld=${LD}"
+		"cros_target_ld=${usr_bin}${LD}"
 		"cros_target_nm=${NM}"
 		"cros_target_readelf=${READELF}"
 		"cros_target_extra_cflags=${CFLAGS}"
@@ -925,7 +923,7 @@ src_configure() {
 		"cros_host_cc=${usr_bin}${CC_host}"
 		"cros_host_cxx=${usr_bin}${CXX_host}"
 		"cros_host_ar=${AR_host}"
-		"cros_host_ld=${LD_host}"
+		"cros_host_ld=${usr_bin}${LD_host}"
 		"cros_host_nm=${NM_host}"
 		"cros_host_readelf=${READELF_host}"
 		"cros_host_extra_cflags=${CFLAGS_host}"
@@ -935,7 +933,7 @@ src_configure() {
 		"cros_v8_snapshot_cc=${usr_bin}${CC_host}"
 		"cros_v8_snapshot_cxx=${usr_bin}${CXX_host}"
 		"cros_v8_snapshot_ar=${AR_host}"
-		"cros_v8_snapshot_ld=${LD_host}"
+		"cros_v8_snapshot_ld=${usr_bin}${LD_host}"
 		"cros_v8_snapshot_nm=${NM_host}"
 		"cros_v8_snapshot_readelf=${READELF_host}"
 		"cros_v8_snapshot_extra_cflags=${CFLAGS_host}"
@@ -1013,8 +1011,13 @@ chrome_make() {
 		local j_limit=200
 		parallelism=$((num_parallel < j_limit ? num_parallel : j_limit))
 	fi
+
+	# ${DEPOT_TOOLS}/ninja has been deprecated for bot usage and is enforced
+	# as a developer-only tool. See b/375413012, b/376127473
+	local executable="${CHROME_ROOT}/src/third_party/ninja/ninja"
+
 	local command=(
-		"${ENINJA}"
+		"${executable}"
 		-j "${parallelism}"
 		-C "${build_dir}"
 		$(usex verbose -v "")
@@ -1050,6 +1053,8 @@ src_compile() {
 	local chrome_targets=( $(usex mojo "mojo_shell" "") )
 	if use app_shell; then
 		chrome_targets+=( app_shell )
+	elif use_embedded_sections_chrome; then
+		chrome_targets+=( section_embedded_chrome_binary )
 	else
 		chrome_targets+=( chrome )
 	fi
@@ -1191,27 +1196,21 @@ install_chrome_test_resources() {
 	if use chrome_internal; then
 		install_test_resources "${test_dir}" pdf/test
 	fi
-	# Add the gles_conform test data if needed.
-	if use chrome_internal || use internal_gles_conform; then
-		install_test_resources "${test_dir}" gpu/gles2_conform_support/gles2_conform_test_expectations.txt
-	fi
 
 	cp -a "${CHROME_ROOT}"/"${AUTOTEST_DEPS}"/chrome_test/setup_test_links.sh \
 		"${dest}" || die
 
-	if use crosier_binary; then
-		einfo "Copying Crosier test dependencies from: ${CHROME_ROOT}/src and ${from} to ${dest}"
-		cp -a -r -f "${CHROME_ROOT}"/src/chrome/test/base/chromeos/crosier/helper/test_sudo_helper.py \
-			"${CHROME_ROOT}"/src/chrome/test/base/chromeos/crosier/helper/reset_dut.py \
-			"${CHROME_ROOT}"/src/chrome/test/data/chromeos/web_handwriting \
-			"${CHROME_ROOT}"/src/third_party/test_fonts \
-			"${from}/crosier_metadata" \
-			"${dest}" || die
-		if use chrome_internal; then
-			cp -a -f "${CHROME_ROOT}/src/chrome/browser/internal/resources/chromeos/crosier/test_accounts.json" "${dest}" || die
-		fi
-		einfo "Crosier test dependencies copied successfully"
+	einfo "Copying Crosier test dependencies from: ${CHROME_ROOT}/src and ${from} to ${dest}"
+	cp -a -r -f "${CHROME_ROOT}"/src/chrome/test/base/chromeos/crosier/helper/test_sudo_helper.py \
+		"${CHROME_ROOT}"/src/chrome/test/base/chromeos/crosier/helper/reset_dut.py \
+		"${CHROME_ROOT}"/src/chrome/test/data/chromeos/web_handwriting \
+		"${CHROME_ROOT}"/src/third_party/test_fonts \
+		"${from}"/crosier_metadata \
+		"${dest}" || die
+	if use chrome_internal; then
+		cp -a -f "${CHROME_ROOT}/src/chrome/browser/internal/resources/chromeos/crosier/test_accounts.json" "${dest}" || die
 	fi
+	einfo "Crosier test dependencies and metadata copied successfully"
 }
 
 install_telemetry_dep_resources() {
@@ -1341,6 +1340,9 @@ src_install() {
 	if use compressed_ash; then
 		cmd+=(--compressed-ash)
 	fi
+	if use_embedded_sections_chrome; then
+		cmd+=( --sections-embedded )
+	fi
 	einfo "${cmd[*]}"
 	"${cmd[@]}" || die
 	ls=$(ls -alhS "${D}/${CHROME_DIR}")
@@ -1404,7 +1406,7 @@ src_install() {
 	# chromeos-base/chrome-icu is responsible for installing the icu
 	# data, so we remove it from ${D} here.
 	rm "${D_CHROME_DIR}/icudtl.dat" || die
-	rm "${D_CHROME_DIR}/icudtl.dat.hash" || die
+	rm -f "${D_CHROME_DIR}/icudtl.dat.hash" || die
 
 	if use camera_angle_backend; then
 		local from="${CHROME_CACHE_DIR}/src/${ANGLE_BUILD_OUT}/${BUILDTYPE}"

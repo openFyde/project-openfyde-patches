@@ -23,8 +23,8 @@ LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="~*"
 IUSE="
-	cros_embedded device-mapper direncryption +encrypted_stateful
-	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
+	cros_embedded device-mapper direncryption disable_lvm_install +encrypted_stateful
+	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition default_key_stateful
 	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
 	+udev unibuild vivid vtconsole vtpm_proxy"
 
@@ -32,6 +32,9 @@ REQUIRED_USE="
 	tpm_dynamic? ( tpm tpm2 )
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
 	unibuild
+	default_key_stateful? ( !lvm_stateful_partition !encrypted_stateful )
+	lvm_stateful_partition? ( !default_key_stateful )
+	encrypted_stateful? ( !default_key_stateful )
 "
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
@@ -112,8 +115,6 @@ src_install_upstart() {
 
 		doins upstart/report-boot-complete.conf
 		doins upstart/failsafe-delay.conf upstart/failsafe.conf
-		doins upstart/mount-encrypted.conf
-		doins upstart/send-mount-encrypted-metrics.conf
 		doins upstart/pre-shutdown.conf upstart/pre-startup.conf
 		doins upstart/pstore.conf upstart/reboot.conf
 		doins upstart/system-services.conf

@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="06aae8e29fd1b276346b530dbb09b7e8f046b335"
-CROS_WORKON_TREE="459556dffe9dd6c505c51d7907c73e278dd1b646"
+CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
+CROS_WORKON_TREE="4ab5b21da1f5768de45227a4d61546fbdbec5c6b"
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -24,6 +24,7 @@ IUSE="
 	android-vm-rvc
 	android-vm-sc
 	android-vm-tm
+	android-vm-vic
 	selinux_audit_all selinux_develop selinux_experimental
 	arc_first_release_n
 	nocheck
@@ -36,6 +37,7 @@ DEPEND="
 	android-vm-rvc? ( chromeos-base/android-vm-rvc:0= )
 	android-vm-sc? ( chromeos-base/android-vm-sc:0= )
 	android-vm-tm? ( chromeos-base/android-vm-tm:0= )
+	android-vm-vic? ( chromeos-base/android-vm-vic:0= )
 "
 
 RDEPEND="
@@ -142,6 +144,7 @@ has_arc() {
 	use android-vm-rvc ||
 	use android-vm-sc ||
 	use android-vm-tm ||
+	use android-vm-vic ||
 	use android-vm-master
 }
 
@@ -164,6 +167,9 @@ gen_m4_flags() {
 	elif use android-vm-tm; then
 		arc_type="vm"
 		arc_version="t"
+	elif use android-vm-vic; then
+		arc_type="vm"
+		arc_version="v"
 	elif use android-vm-master; then
 		arc_type="vm"
 		arc_version="master"

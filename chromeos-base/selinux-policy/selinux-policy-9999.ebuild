@@ -22,6 +22,7 @@ IUSE="
 	android-vm-rvc
 	android-vm-sc
 	android-vm-tm
+	android-vm-vic
 	selinux_audit_all selinux_develop selinux_experimental
 	arc_first_release_n
 	nocheck
@@ -34,6 +35,7 @@ DEPEND="
 	android-vm-rvc? ( chromeos-base/android-vm-rvc:0= )
 	android-vm-sc? ( chromeos-base/android-vm-sc:0= )
 	android-vm-tm? ( chromeos-base/android-vm-tm:0= )
+	android-vm-vic? ( chromeos-base/android-vm-vic:0= )
 "
 
 RDEPEND="
@@ -140,6 +142,7 @@ has_arc() {
 	use android-vm-rvc ||
 	use android-vm-sc ||
 	use android-vm-tm ||
+	use android-vm-vic ||
 	use android-vm-master
 }
 
@@ -162,6 +165,9 @@ gen_m4_flags() {
 	elif use android-vm-tm; then
 		arc_type="vm"
 		arc_version="t"
+	elif use android-vm-vic; then
+		arc_type="vm"
+		arc_version="v"
 	elif use android-vm-master; then
 		arc_type="vm"
 		arc_version="master"

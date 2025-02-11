@@ -54,8 +54,6 @@ COMMON_DEPEND="
 
 RDEPEND="
 	${COMMON_DEPEND}
-	cr50_onboard? ( chromeos-base/chromeos-cr50 )
-	ti50_onboard? ( chromeos-base/chromeos-ti50 )
 	generic_tpm2? ( chromeos-base/chromeos-cr50-scripts )
 	!tpm_dynamic? ( !app-crypt/tpm-tools )
 	chromeos-base/libhwsec-foundation
@@ -65,6 +63,11 @@ DEPEND="
 	${COMMON_DEPEND}
 	chromeos-base/chromeos-ec-headers:=
 	"
+
+PDEPEND="
+	cr50_onboard? ( chromeos-base/chromeos-cr50 )
+	ti50_onboard? ( chromeos-base/chromeos-ti50 )
+"
 
 BDEPEND="
 	chromeos-base/chromeos-dbus-bindings

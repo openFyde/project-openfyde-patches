@@ -2,8 +2,8 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="06aae8e29fd1b276346b530dbb09b7e8f046b335"
-CROS_WORKON_TREE=("b34cd17a5119e65123516e3d20992ce4b303fa5b" "b7bfbb19e75b67e028ee53a734c4cc46df9600db" "353ddd3e314c5dfa9e60c672a71bb67482f247f5" "d151f506358c08ae319134ea9b6ea1aa546a0e16" "0e2e8468d1a663b7af9ead8a1c7fe0f85ff15016" "9050d91be8a513b5b9706395d3ed06adf219cf3e" "f90469f0bb47a738fae51bbb2bc124c427c2fbb5" "1a0387c9b012cec6f920128725766de73b934731" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
+CROS_WORKON_TREE=("bd6ab6972071770b6091936ff7fa113ada50ddc1" "fcef7b76b9c2248d87a9325bff96964d59e3cd74" "b7ba44bfee0d723fc17eeab34f45250f86f70a1c" "59bf75be81d01d8270f4af982d970987c8f73528" "5bca05369a61f33a55ec8501a1ab79d93f9733aa" "cb008a5c4fa1fe93ce66a75df355308657d0917e" "f0e3b97371601803c1f17183e2ef4cfc8c516d43" "272667aee0b44fda32f1d1f932d178147d01db5d" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
@@ -25,8 +25,8 @@ LICENSE="BSD-Google"
 SLOT="0/0"
 KEYWORDS="*"
 IUSE="
-	cros_embedded device-mapper direncryption +encrypted_stateful
-	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition
+	cros_embedded device-mapper direncryption disable_lvm_install +encrypted_stateful
+	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition default_key_stateful
 	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
 	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
 	-upper_case_product_uuid
@@ -38,6 +38,9 @@ REQUIRED_USE="
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
 	unibuild
 	tpm2_simulator_deprecated? ( tpm2_simulator )
+	default_key_stateful? ( !lvm_stateful_partition !encrypted_stateful )
+	lvm_stateful_partition? ( !default_key_stateful )
+	encrypted_stateful? ( !default_key_stateful )
 "
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
@@ -118,8 +121,6 @@ src_install_upstart() {
 
 		doins upstart/report-boot-complete.conf
 		doins upstart/failsafe-delay.conf upstart/failsafe.conf
-		doins upstart/mount-encrypted.conf
-		doins upstart/send-mount-encrypted-metrics.conf
 		doins upstart/pre-shutdown.conf upstart/pre-startup.conf
 		doins upstart/pstore.conf upstart/reboot.conf
 		doins upstart/system-services.conf

@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="06aae8e29fd1b276346b530dbb09b7e8f046b335"
-CROS_WORKON_TREE=("b34cd17a5119e65123516e3d20992ce4b303fa5b" "9050d91be8a513b5b9706395d3ed06adf219cf3e" "1a0387c9b012cec6f920128725766de73b934731" "e77c7fa9ccb6a95345e9b35e83c8d430a40265fd" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
+CROS_WORKON_TREE=("bd6ab6972071770b6091936ff7fa113ada50ddc1" "cb008a5c4fa1fe93ce66a75df355308657d0917e" "272667aee0b44fda32f1d1f932d178147d01db5d" "df98ec72a83b8004b7f2eea793cd5f845ddde1f3" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -65,8 +65,6 @@ COMMON_DEPEND="
 
 RDEPEND="
 	${COMMON_DEPEND}
-	cr50_onboard? ( chromeos-base/chromeos-cr50 )
-	ti50_onboard? ( chromeos-base/chromeos-ti50 )
 	generic_tpm2? ( chromeos-base/chromeos-cr50-scripts )
 	!tpm_dynamic? ( !app-crypt/tpm-tools )
 	chromeos-base/libhwsec-foundation
@@ -76,6 +74,11 @@ DEPEND="
 	${COMMON_DEPEND}
 	chromeos-base/chromeos-ec-headers:=
 	"
+
+PDEPEND="
+	cr50_onboard? ( chromeos-base/chromeos-cr50 )
+	ti50_onboard? ( chromeos-base/chromeos-ti50 )
+"
 
 BDEPEND="
 	chromeos-base/chromeos-dbus-bindings

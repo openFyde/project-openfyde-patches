@@ -23,8 +23,8 @@ SRC_URI=""
 
 LICENSE="BSD-Google"
 KEYWORDS="~*"
-IUSE="device-mapper -direncription_allow_v2 -direncryption
-	+downloads_bind_mount fuzzer generic_tpm2 kernel-6_6 kernel-6_1 kernel-5_15
+IUSE="device-mapper -direncription_allow_v2 -direncryption fuzzer
+	generic_tpm2 kernel-6_10-enablement kernel-6_6 kernel-6_1 kernel-5_15
 	kernel-5_10 kernel-5_4 kernel-upstream lvm_application_containers
 	lvm_stateful_partition mount_oop pinweaver profiling slow_mount
 	systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
@@ -49,8 +49,8 @@ COMMON_DEPEND="
 	chromeos-base/libhwsec-foundation:=
 	chromeos-base/libstorage:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
+	chromeos-base/privacy:=
 	chromeos-base/secure-erase-file:=
-	chromeos-base/tpm_manager:=
 	dev-cpp/abseil-cpp:=
 	>=dev-libs/flatbuffers-2.0.0-r1:=
 	dev-libs/libxml2:=
@@ -64,9 +64,10 @@ COMMON_DEPEND="
 	sys-fs/lvm2:=
 "
 
-RDEPEND="${COMMON_DEPEND}"
+RDEPEND="${COMMON_DEPEND}
+	chromeos-base/tpm_manager:=
+"
 
-# TODO(b/230430190): Remove shill-client dependency after experiment ended.
 DEPEND="${COMMON_DEPEND}
 	test? (
 		app-crypt/trousers:=
@@ -79,7 +80,6 @@ DEPEND="${COMMON_DEPEND}
 	chromeos-base/device_management-client:=
 	chromeos-base/power_manager-client:=
 	chromeos-base/protofiles:=
-	chromeos-base/shill-client:=
 	chromeos-base/system_api:=[fuzzer?]
 	chromeos-base/tpm_manager-client:=
 	chromeos-base/vboot_reference:=
@@ -100,11 +100,11 @@ python_check_deps() {
 }
 
 src_install() {
-	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-upstream) || use uprev-4-to-5); then
+	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-6_10-enablement && use !kernel-upstream) || use uprev-4-to-5); then
 		die "direncription_allow_v2 is enabled where it shouldn't be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
-	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-upstream) && use !uprev-4-to-5; then
+	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-6_10-enablement || use kernel-upstream) && use !uprev-4-to-5; then
 		die "direncription_allow_v2 is not enabled where it should be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
@@ -140,11 +140,6 @@ src_install() {
 			sed -i '/env NO_LEGACY_MOUNT_FLAG=/s:=.*:="--nolegacymount":' \
 				"${D}/etc/init/cryptohomed.conf" ||
 				die "Can't replace nolegacymount flag in cryptohomed.conf"
-		fi
-		if use !downloads_bind_mount; then
-			sed -i '/env NO_DOWNLOAD_BINDMOUNT_FLAG=/s:=.*:="--no_downloads_bind_mount":' \
-				"${D}/etc/init/cryptohomed.conf" ||
-				die "Can't replace no_downloads_bind_mount flag in cryptohomed.conf"
 		fi
 		if use direncription_allow_v2; then
 			sed -i '/env FSCRYPT_V2_FLAG=/s:=.*:="--fscrypt_v2":' \
