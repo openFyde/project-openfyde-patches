@@ -1,0 +1,11 @@
+#!/bin/bash
+
+declare -r CACHE_DIR="/mnt/stateful_partition/unencrypted/cache/vpd"
+
+declare -r FILTERED_FILE="${CACHE_DIR}/filtered.txt"
+
+if [[ ! -f "$FILTERED_FILE" ]] || [[ ! -s "$FILTERED_FILE" ]]; then
+  /usr/sbin/dump_vpd_log > /dev/null 2>&1
+fi
+
+cat "$FILTERED_FILE" 2> /dev/null

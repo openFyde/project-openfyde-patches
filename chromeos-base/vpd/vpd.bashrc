@@ -12,9 +12,14 @@ cros_pre_src_compile_openfyde_patches() {
 }
 
 cros_post_src_install_openfyde_patches() {
-	insinto /etc/init
-  doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/check_serial_number.conf
+  insinto /etc/init
+  doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/init/check_serial_number.conf
+  doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/init/vpd-log.conf
   insinto /usr/share/cros/init
   doins vpd.gz
-  doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/check_serial_number.sh
+  doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/scripts/check_serial_number.sh
+
+  exeinto /usr/sbin
+  doexe ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/scripts/dump_filtered_vpd
+  doexe ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/scripts/dump_vpd_log
 }
