@@ -21,11 +21,14 @@ DESCRIPTION="DLC package for termina."
 if [[ ${PV} == 9999 ]]; then
 	SRC_URI=""
 else
-	SRC_URI="
-		amd64? ( gs://termina-component-testing/uprev-test/amd64/${PV}/guest-vm-base.tar.xz -> termina_amd64_${PV}.tar.xz )
-		arm? ( gs://termina-component-testing/uprev-test/arm/${PV}/guest-vm-base.tar.xz -> termina_arm_${PV}.tar.xz )
-		arm64? ( gs://termina-component-testing/uprev-test/arm/${PV}/guest-vm-base.tar.xz -> termina_arm_${PV}.tar.xz )
-	"
+  SRC_URI="
+    amd64? (
+      !fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-io-amd64-${PV}.tar.xz -> termina_io_amd64_fydeos_${PV}.tar.xz )
+      fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-com-amd64-${PV}.tar.xz -> termina_com_amd64_fydeos_${PV}.tar.xz )
+    )
+    arm? ( gs://termina-component-testing/uprev-test/arm/${PV}/guest-vm-base.tar.xz -> termina_arm_${PV}.tar.xz )
+    arm64? ( gs://termina-component-testing/uprev-test/arm/${PV}/guest-vm-base.tar.xz -> termina_arm_${PV}.tar.xz )
+  "
 fi
 
 RESTRICT="mirror"
@@ -35,7 +38,7 @@ SLOT="0"
 KEYWORDS="*"
 S="${WORKDIR}"
 
-IUSE="kvm_host dlc amd64 arm"
+IUSE="kvm_host dlc amd64 arm -fydeos_com"
 REQUIRED_USE="
 	dlc
 	kvm_host
@@ -50,9 +53,9 @@ REQUIRED_USE="
 #
 # 1MiB = 256 x 4KiB blocks
 if [[ ${PV} == 9999 ]]; then
-	DLC_PREALLOC_BLOCKS="$((250 * 256))"
+	DLC_PREALLOC_BLOCKS="$((600 * 256))"
 else
-	DLC_PREALLOC_BLOCKS="$((200 * 256))"
+	DLC_PREALLOC_BLOCKS="$((550 * 256))"
 fi
 
 DLC_PRELOAD=true
@@ -83,9 +86,9 @@ src_compile() {
 		return
 	fi
 	if use amd64; then
-		vm_board="tatl"
+		vm_board="tatl-fydeos"
 	else
-		vm_board="tael"
+		vm_board="tael-fydeos"
 	fi
 	image_path="/mnt/host/source/src/build/images/${vm_board}/latest/chromiumos_test_image.bin"
 	[[ ! -f "${image_path}" ]] && die "Couldn't find VM image at ${image_path}, try building a test image: cros build-image --board=${vm_board}"
