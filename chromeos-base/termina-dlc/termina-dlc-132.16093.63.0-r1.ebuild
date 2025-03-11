@@ -81,6 +81,13 @@ src_unpack() {
 	fi
 }
 
+src_configure() {
+  if use fydeos_com; then
+    DLC_PREALLOC_BLOCKS="$((1900 * 256))"
+  fi
+  default
+}
+
 src_compile() {
 	if [[ ${PV} != 9999 ]]; then
 		return
