@@ -1,0 +1,25 @@
+# Copyright 2012 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+description   "Extract Chrome OS machine info for Enterprise enrollment"
+author        "chromium-os-dev@chromium.org"
+
+# This starts every time the UI (re)starts in order to restore
+# /tmp/machine-info if needed.
+start on starting ui and stopped check_serial_number
+
+# Remove /tmp/machine-info when a user logs in, in which case session_manager
+# emits the start-user-session signal. Also stop when the ui terminates so
+# restarts of the ui job trigger a full stop/start cycle.
+stop on start-user-session or stopping ui
+
+# The task should complete quickly, and do nothing on idle.
+# No need to be killed.
+oom score never
+
+env MACHINE_INFO=/tmp/machine-info
+
+# This is a pre-start so that this task will run before the "start" stanza
+# of the ui job.
+pre-start exec /usr/share/cros/init/write-machine-info
