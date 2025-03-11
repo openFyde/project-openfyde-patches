@@ -89,7 +89,7 @@ src_unpack() {
 
 src_configure() {
   if use fydeos_com; then
-    DLC_PREALLOC_BLOCKS="$((1900 * 256))"
+    DLC_PREALLOC_BLOCKS="$((850 * 256))"
   fi
   default
 }
