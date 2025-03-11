@@ -26,8 +26,14 @@ else
       !fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-io-amd64-${PV}.tar.xz -> termina_io_amd64_fydeos_${PV}.tar.xz )
       fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-com-amd64-${PV}.tar.xz -> termina_com_amd64_fydeos_${PV}.tar.xz )
     )
-    arm? ( gs://termina-component-testing/uprev-test/arm/${PV}/guest-vm-base.tar.xz -> termina_arm_${PV}.tar.xz )
-    arm64? ( gs://termina-component-testing/uprev-test/arm/${PV}/guest-vm-base.tar.xz -> termina_arm_${PV}.tar.xz )
+    arm? (
+      !fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-io-arm-${PV}.tar.xz -> termina_io_arm_fydeos_${PV}.tar.xz )
+      fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-com-arm-${PV}.tar.xz -> termina_com_arm_fydeos_${PV}.tar.xz )
+    )
+    arm64? (
+      !fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-io-arm-${PV}.tar.xz -> termina_io_arm_fydeos_${PV}.tar.xz )
+      fydeos_com? ( ${OPENFYDE_PREBUILT_PKGS_HOST_URL}/${PN}/${PN}-com-arm-${PV}.tar.xz -> termina_com_arm_fydeos_${PV}.tar.xz )
+    )
   "
 fi
 
