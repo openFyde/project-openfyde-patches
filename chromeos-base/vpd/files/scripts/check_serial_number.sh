@@ -1,13 +1,21 @@
-#!/bin/sh
-OEM_PATH=/usr/share/oem
-LICENCE=${OEM_PATH}/.oem_licence
-NET_NODE=/sys/class/net
-LAN_MAC_NODE=$NET_NODE/eth0/address
-WLAN_MAC_NODE=$NET_NODE/wlan0/address
+#!/usr/bin/env bash
+
+declare -r OEM_PATH=/usr/share/oem
+declare -r LICENCE=${OEM_PATH}/.oem_licence
+
+declare -r NET_NODE=/sys/class/net
+declare -r LAN_MAC_NODE=$NET_NODE/eth0/address
+declare -r WLAN_MAC_NODE=$NET_NODE/wlan0/address
+
+declare -r ZTE_CONF_FILE="$OEM_PATH/flex_config/config.json"
 
 die() {
-  logger -t "${JOB}" "Error:" $@
-  exit 1 
+  logger -t "${UPSTART_JOB}" "Error:" "$@"
+  exit 1
+}
+
+info() {
+  logger -t "${UPSTART_JOB}" "$@"
 }
 
 get_system_mac() {
@@ -27,17 +35,27 @@ get_system_mac() {
     fi
 
     if [ -n "$mac" ]; then
-      echo $mac
+      echo "$mac"
       break
     fi
 
-    logger -t "$JOB" "Cannot get mac, maybe NIC driver is not ready yet, waiting to retry"
+    info "Cannot get mac, maybe NIC driver is not ready yet, waiting to retry $i times"
     sleep 1s
   done
 }
 
+get_serial_number() {
+  local sn=""
+  sn=$(get_system_mac)
+  echo "$sn"
+}
+
+# serial_number_helper.sh contains the function get_seirl_number
+# shellcheck source=/dev/null
+[[ -f /usr/share/cros/init/serial_number_helper.sh ]] && source "/usr/share/cros/init/serial_number_helper.sh"
+
 is_booting_from_usb() {
-  [ -n "$(udevadm info $(rootdev -d) | grep ID_BUS |grep usb)" ]  
+  udevadm info "$(rootdev -d)" | grep ID_BUS |grep -q usb
 }
 
 remount_oem_writable() {
@@ -48,39 +66,56 @@ remount_oem_readonly() {
   mount -o remount,ro "$OEM_PATH"
 }
 
-count_chars() {
-  printf $1 | wc -c
-}
-
-update_serial_number() {
-	local serial=$1
-  vpd -i RO_VPD  \
-    -s "serial_number=${serial}"
+dump_vpd() {
   dump_vpd_log --force
 }
 
+update_serial_number() {
+  local serial=$1
+  remount_oem_writable || die "Remount OEM partition failed"
+  vpd -i RO_VPD -s "serial_number=${serial}"
+  remount_oem_readonly
+
+  dump_vpd
+}
+
 check_vpd() {
-  if [ ! -s "${LICENCE}" ]; then
-    cat /usr/share/cros/init/vpd.gz | gunzip > ${LICENCE}
-  fi  
+  if [[ ! -s "${LICENCE}" ]]; then
+    remount_oem_writable || die "Remount OEM partition failed"
+    gzip -d -c /usr/share/cros/init/vpd.gz > ${LICENCE}
+  fi
+}
+
+should_block() {
+  [[ -f "$ZTE_CONF_FILE" ]]
 }
 
 check_serial_number() {
-  local serial=$(vpd -i RO_VPD -g serial_number 2>/dev/null)
-  local mac_serial=$(get_system_mac | sed "s/://g")
-  if [ -z "$mac_serial" ]; then 
+  local serial=""
+  serial=$(vpd -i RO_VPD -g serial_number 2>/dev/null)
+  local new_sn=""
+  new_sn=$(get_system_mac | sed "s/://g")
+  if [ -z "$new_sn" ]; then
     exit 1
   fi
-  if [ "$serial" != "$mac_serial" ]; then
+  if [ "$serial" != "$new_sn" ]; then
     if is_booting_from_usb; then
-      update_serial_number $mac_serial
+      update_serial_number "$new_sn"
     elif [ -z "$serial" ]; then
-      update_serial_number $mac_serial
+      update_serial_number "$new_sn"
     fi
   fi
 }
 
-remount_oem_writable || die "Remount OEM partition failed"
-check_vpd || die "Cann't init vpd system"
-check_serial_number
-remount_oem_readonly
+main() {
+  check_vpd || die "Cann't init vpd system"
+  if should_block; then
+    info "Trying to get serial number and update if necessary, running in block mode"
+    check_serial_number
+  else
+    info "Trying to get serial number and update if necessary, running in background"
+    check_serial_number &
+  fi
+}
+
+main "$@"
