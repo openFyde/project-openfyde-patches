@@ -1,0 +1,19 @@
+Index: kernel-6_6/arch/x86/pci/acpi.c
+===================================================================
+--- kernel-6_6.orig/arch/x86/pci/acpi.c
++++ kernel-6_6/arch/x86/pci/acpi.c
+@@ -192,6 +192,14 @@ static const struct dmi_system_id pci_cr
+ 			DMI_MATCH(DMI_BOARD_NAME, "X170KM-G"),
+ 		},
+ 	},
++	{
++		.callback = set_nouse_crs,
++		.ident = "IdeaPad 14sIIL 2020",
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "LENOVO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "81WD"),
++		},
++	},
+ 	{}
+ };
+ 

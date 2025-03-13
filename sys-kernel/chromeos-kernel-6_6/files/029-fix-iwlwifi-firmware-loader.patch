@@ -1,7 +1,7 @@
-Index: kernel-5_15/drivers/net/wireless/iwl7000/hdrs/config.h
+Index: kernel-6_6/drivers/net/wireless/iwl7000/hdrs/config.h
 ===================================================================
---- kernel-5_15.orig/drivers/net/wireless/iwl7000/hdrs/config.h
-+++ kernel-5_15/drivers/net/wireless/iwl7000/hdrs/config.h
+--- kernel-6_6.orig/drivers/net/wireless/iwl7000/hdrs/config.h
++++ kernel-6_6/drivers/net/wireless/iwl7000/hdrs/config.h
 @@ -30,7 +30,7 @@
  #define CPTCFG_IWLWIFI_DEBUG 1
  #define CPTCFG_IWLWIFI_SUPPORT_DEBUG_OVERRIDES 1

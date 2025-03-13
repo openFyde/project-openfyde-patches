@@ -1,0 +1,17 @@
+Index: kernel-6_6/drivers/platform/x86/intel/hid.c
+===================================================================
+--- kernel-6_6.orig/drivers/platform/x86/intel/hid.c
++++ kernel-6_6/drivers/platform/x86/intel/hid.c
+@@ -156,6 +156,12 @@ static const struct dmi_system_id dmi_vg
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "HP Elite Dragonfly G2 Notebook PC"),
+ 		},
+ 	},
++  {
++    .matches = {
++      DMI_MATCH(DMI_SYS_VENDOR, "Prowise"),
++      DMI_MATCH(DMI_PRODUCT_NAME, "EduBook II"),
++    },
++  },
+ 	{ }
+ };
+ 

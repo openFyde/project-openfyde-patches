@@ -99,7 +99,7 @@ Index: kernel-5_15/drivers/pci/pci.c
  /**
   * pci_update_current_state - Read power state of given device and cache it
   * @dev: PCI device to handle.
-@@ -3022,11 +3030,8 @@ bool pci_bridge_d3_possible(struct pci_d
+@@ -3040,11 +3048,8 @@ bool pci_bridge_d3_possible(struct pci_d
  		if (dmi_check_system(bridge_d3_blacklist))
  			return false;
  
@@ -117,7 +117,7 @@ Index: kernel-5_15/drivers/pci/pci.h
 ===================================================================
 --- kernel-5_15.orig/drivers/pci/pci.h
 +++ kernel-5_15/drivers/pci/pci.h
-@@ -715,18 +715,31 @@ static inline void pci_aer_clear_fatal_s
+@@ -712,18 +712,31 @@ static inline void pci_aer_clear_fatal_s
  static inline int pci_aer_clear_status(struct pci_dev *dev) { return -EINVAL; }
  static inline int pci_aer_raw_clear_status(struct pci_dev *dev) { return -EINVAL; }
  #endif
@@ -153,7 +153,7 @@ Index: kernel-5_15/include/linux/acpi.h
 ===================================================================
 --- kernel-5_15.orig/include/linux/acpi.h
 +++ kernel-5_15/include/linux/acpi.h
-@@ -1020,6 +1020,12 @@ struct acpi_s2idle_dev_ops {
+@@ -1021,6 +1021,12 @@ struct acpi_s2idle_dev_ops {
  };
  int acpi_register_lps0_dev(struct acpi_s2idle_dev_ops *arg);
  void acpi_unregister_lps0_dev(struct acpi_s2idle_dev_ops *arg);

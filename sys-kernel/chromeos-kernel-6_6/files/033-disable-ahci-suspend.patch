@@ -1,8 +1,8 @@
-Index: kernel-5_15/drivers/ata/ahci.c
+Index: kernel-6_6/drivers/ata/ahci.c
 ===================================================================
---- kernel-5_15.orig/drivers/ata/ahci.c
-+++ kernel-5_15/drivers/ata/ahci.c
-@@ -1301,18 +1301,24 @@ static bool ahci_broken_suspend(struct p
+--- kernel-6_6.orig/drivers/ata/ahci.c
++++ kernel-6_6/drivers/ata/ahci.c
+@@ -1299,18 +1299,24 @@ static bool ahci_broken_suspend(struct p
  			},
  			.driver_data = "20091216",	/* V3.04 */
  		},

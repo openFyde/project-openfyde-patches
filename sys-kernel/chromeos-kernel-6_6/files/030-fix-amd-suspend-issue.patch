@@ -1,0 +1,115 @@
+Index: kernel-6_6/drivers/acpi/x86/s2idle.c
+===================================================================
+--- kernel-6_6.orig/drivers/acpi/x86/s2idle.c
++++ kernel-6_6/drivers/acpi/x86/s2idle.c
+@@ -141,6 +141,7 @@ static void lpi_device_get_constraints_a
+ 				acpi_status status;
+ 
+ 				list = &lpi_constraints_table[lpi_constraints_table_size];
++        dev_info.min_dstate = -EINVAL;
+ 
+ 				for (k = 0; k < info_obj->package.count; k++) {
+ 					union acpi_object *obj = &info_obj->package.elements[k];
+@@ -252,7 +253,7 @@ static void lpi_device_get_constraints(v
+ 		acpi_handle_debug(lps0_device_handle,
+ 				  "index:%d Name:%s\n", i, info.name);
+ 
+-		constraint->min_dstate = -1;
++		constraint->min_dstate = -EINVAL;
+ 
+ 		for (j = 0; j < package_count; j++) {
+ 			union acpi_object *info_obj = &info.package[j];
+Index: kernel-6_6/drivers/pci/pci.c
+===================================================================
+--- kernel-6_6.orig/drivers/pci/pci.c
++++ kernel-6_6/drivers/pci/pci.c
+@@ -1086,6 +1086,14 @@ static inline bool platform_pci_bridge_d
+ 	return acpi_pci_bridge_d3(dev);
+ }
+ 
++static inline bool platform_constraint_d3(struct pci_dev *dev)
++{
++	if (pci_use_mid_pm())
++		return false;
++
++	return acpi_pci_device_constraint_d3(dev);
++}
++
+ /**
+  * pci_update_current_state - Read power state of given device and cache it
+  * @dev: PCI device to handle.
+@@ -3065,11 +3073,8 @@ bool pci_bridge_d3_possible(struct pci_d
+ 		if (dmi_check_system(bridge_d3_blacklist))
+ 			return false;
+ 
+-		/*
+-		 * It should be safe to put PCIe ports from 2015 or newer
+-		 * to D3.
+-		 */
+-		if (dmi_get_bios_year() >= 2015)
++		/* the platform indicates in a device constraint that D3 is needed */
++		if (platform_constraint_d3(bridge))
+ 			return true;
+ 		break;
+ 	}
+Index: kernel-6_6/drivers/pci/pci-acpi.c
+===================================================================
+--- kernel-6_6.orig/drivers/pci/pci-acpi.c
++++ kernel-6_6/drivers/pci/pci-acpi.c
+@@ -1053,6 +1053,25 @@ static void acpi_pci_config_space_access
+ 			enable ? "connect" : "disconnect", ret);
+ }
+ 
++/*
++ * acpi_pci_device_constraint_d3 - determine if device constraints require D3
++ * @dev: PCI device to check
++ *
++ * Returns true if the PEP constraints for the device is enabled and
++ * requires D3.
++ */
++bool acpi_pci_device_constraint_d3(struct pci_dev *dev)
++{
++ int constraint = acpi_get_lps0_constraint(ACPI_COMPANION(&dev->dev));
++
++ if (constraint < 0) {
++   pci_dbg(dev, "ACPI device constraint not present\n");
++   return false;
++ }
++
++ return constraint >= 3;
++}
++
+ int acpi_pci_set_power_state(struct pci_dev *dev, pci_power_t state)
+ {
+ 	struct acpi_device *adev = ACPI_COMPANION(&dev->dev);
+Index: kernel-6_6/drivers/pci/pci.h
+===================================================================
+--- kernel-6_6.orig/drivers/pci/pci.h
++++ kernel-6_6/drivers/pci/pci.h
+@@ -719,6 +719,7 @@ static inline void pci_save_aer_state(st
+ static inline void pci_restore_aer_state(struct pci_dev *dev) { }
+ #endif
+ 
++
+ #ifdef CONFIG_ACPI
+ int pci_acpi_program_hp_params(struct pci_dev *dev);
+ extern const struct attribute_group pci_dev_acpi_attr_group;
+@@ -732,6 +733,7 @@ void acpi_pci_refresh_power_state(struct
+ int acpi_pci_wakeup(struct pci_dev *dev, bool enable);
+ bool acpi_pci_need_resume(struct pci_dev *dev);
+ pci_power_t acpi_pci_choose_state(struct pci_dev *pdev);
++bool acpi_pci_device_constraint_d3(struct pci_dev *dev);
+ #else
+ static inline int pci_dev_acpi_reset(struct pci_dev *dev, bool probe)
+ {
+@@ -771,6 +773,10 @@ static inline pci_power_t acpi_pci_choos
+ {
+ 	return PCI_POWER_ERROR;
+ }
++static inline bool acpi_pci_device_constraint_d3(struct pci_dev *dev)
++{
++ return false;
++}
+ #endif
+ 
+ #ifdef CONFIG_PCIEASPM
