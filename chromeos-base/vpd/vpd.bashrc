@@ -16,6 +16,7 @@ cros_post_src_install_openfyde_patches() {
   doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/init/check_serial_number.conf
   doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/init/vpd-log.conf
   doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/init/machine-info.override
+  doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/init/ui-collect-machine-info.override
   insinto /usr/share/cros/init
   doins vpd.gz
   doins ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/scripts/check_serial_number.sh
