@@ -1,0 +1,45 @@
+From: Fangzhou Chen <fangzhou@fydeos.io>
+Date: 2025-03-17T06:09:18
+Subject: keep factory install dlc image and remove encrypted.block when clobber
+Signed-off-by: Fangzhou Chen <fangzhou@fydeos.io>
+
+keep factory install dlc image when powerwash(safe wipe) or dev clobber
+
+powerwash command from chrome and session manager equals
+
+```
+echo 'ast safe keepimg preserve_lvs reason=some_reason' > /mnt/stateful_partition/factory_install_reset
+```
+
+dev clobber commajnd is `echo 'clobber' > /mnt/stateful_partition/.update_available`,
+this patch keeps the behavior of removing `encrypted.block` and
+`encrypted.key`, to reduce confusion
+
+
+diff --git a/init/clobber/clobber_state.cc b/init/clobber/clobber_state.cc
+index b2632a27fb..6e245c3d5c 100644
+--- a/init/clobber/clobber_state.cc
++++ b/init/clobber/clobber_state.cc
+@@ -509,7 +509,7 @@ std::vector<base::FilePath> ClobberState::GetPreservedFilesList() {
+     preserved_files.push_back(base::FilePath(path));
+   }
+ 
+-  if (args_.factory_wipe) {
++  if (args_.factory_wipe || args_.safe_wipe) {
+     base::FileEnumerator crx_enumerator(
+         stateful_.Append("unencrypted/import_extensions/extensions"), false,
+         base::FileEnumerator::FileType::FILES, "*.crx");
+diff --git a/init/startup/stateful_mount.cc b/init/startup/stateful_mount.cc
+index fed2e2c88a..3185ad6358 100644
+--- a/init/startup/stateful_mount.cc
++++ b/init/startup/stateful_mount.cc
+@@ -562,8 +562,7 @@ bool StatefulMount::DevUpdateStatefulPartition(
+     std::vector<base::FilePath> preserved_paths = {
+         stateful_.Append(kLabMachine),
+         stateful_.Append(kDevModeFile),
+-        stateful_.Append("encrypted.block"),
+-        stateful_.Append("encrypted.key"),
++        stateful_.Append("unencrypted/dlc-factory-images"),
+         stateful_dev_image,
+         var_target,
+         preserve_dir};
