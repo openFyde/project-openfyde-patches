@@ -13,4 +13,6 @@ cros_pre_src_prepare_openfyde_patches() {
 
   eapply  ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/mount_widevine.patch
   eapply  ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/apply-chrome-dev-flags-in-base-mode.patch
+
+  eapply -p2 "${OPENFYDE_PATCHES_BASHRC_FILESDIR}"/init_scripts_write_fydeos_license_id_to_machine_info_file.patch
 }

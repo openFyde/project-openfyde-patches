@@ -1,0 +1,24 @@
+--- a/login_manager/init/scripts/ui-collect-machine-info
++++ b/login_manager/init/scripts/ui-collect-machine-info
+@@ -22,3 +22,9 @@
+ udevadm info --query=property --name="${ROOTDEV}" |
+     awk -F = '/^ID_SERIAL=/ { print "\"root_disk_serial_number\"=\"" $2 "\""}' \
+     >> "${UI_MACHINE_INFO_FILE}"
++
++FYDEOS_LICENSE_UTIL_SCRIPT="/usr/share/fydeos_shell/license-utils.sh"
++if [ -x "${FYDEOS_LICENSE_UTIL_SCRIPT}" ]; then
++  FYDEOS_LICENSE_ID=$("${FYDEOS_LICENSE_UTIL_SCRIPT}" id || true)
++  echo "\"fydeos_license_id\"=\"${FYDEOS_LICENSE_ID}\"" >> "${UI_MACHINE_INFO_FILE}"
++fi
+--- a/login_manager/init/scripts/write-machine-info
++++ b/login_manager/init/scripts/write-machine-info
+@@ -75,3 +75,9 @@
+ if [ -n "${MACHINE_INFO_ERR}" ]; then
+   logger -t write-machine-info "${MACHINE_INFO_ERR}"
+ fi
++
++FYDEOS_LICENSE_UTIL_SCRIPT="/usr/share/fydeos_shell/license-utils.sh"
++if [ -x "${FYDEOS_LICENSE_UTIL_SCRIPT}" ]; then
++  FYDEOS_LICENSE_ID=$("${FYDEOS_LICENSE_UTIL_SCRIPT}" id || true)
++  echo "fydeos_license_id=\"${FYDEOS_LICENSE_ID}\"" >> "${MACHINE_INFO}"
++fi
