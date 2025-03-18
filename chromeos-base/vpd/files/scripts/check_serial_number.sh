@@ -9,6 +9,9 @@ declare -r WLAN_MAC_NODE=$NET_NODE/wlan0/address
 
 declare -r ZTE_CONF_FILE="$OEM_PATH/flex_config/config.json"
 
+# this file should be deleted on every boot
+declare -r FINISHED_MARKER=/var/run/check_serial_number.finished
+
 die() {
   logger -t "${UPSTART_JOB}" "Error:" "$@"
   exit 1
@@ -108,6 +111,9 @@ check_serial_number() {
 }
 
 main() {
+  if [[ -f "$FINISHED_MARKER" ]]; then
+    exit 0
+  fi
   check_vpd || die "Cann't init vpd system"
   if should_block; then
     info "Trying to get serial number and update if necessary, running in block mode"
@@ -116,6 +122,8 @@ main() {
     info "Trying to get serial number and update if necessary, running in background"
     check_serial_number &
   fi
+
+  touch "$FINISHED_MARKER"
 }
 
 main "$@"
