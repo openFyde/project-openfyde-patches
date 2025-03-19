@@ -49,7 +49,7 @@ get_system_mac() {
 
 get_serial_number() {
   local sn=""
-  sn=$(get_system_mac)
+  sn=$(get_system_mac | sed "s/://g")
   echo "$sn"
 }
 
@@ -97,7 +97,7 @@ check_serial_number() {
   local serial=""
   serial=$(vpd -i RO_VPD -g serial_number 2>/dev/null)
   local new_sn=""
-  new_sn=$(get_system_mac | sed "s/://g")
+  new_sn=$(get_serial_number)
   if [ -z "$new_sn" ]; then
     exit 1
   fi
