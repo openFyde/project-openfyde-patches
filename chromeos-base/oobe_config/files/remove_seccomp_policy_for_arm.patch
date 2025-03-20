@@ -1,0 +1,12 @@
+diff --git a/oobe_config/minijail/oobe_config_restore.conf b/oobe_config/minijail/oobe_config_restore.conf
+index 8aaae014ed..f18c76870d 100644
+--- a/oobe_config/minijail/oobe_config_restore.conf
++++ b/oobe_config/minijail/oobe_config_restore.conf
+@@ -47,7 +47,6 @@ mount = /mnt/stateful_partition,/mnt/stateful_partition,tmpfs,MS_NODEV|MS_NOEXEC
+ bind-mount = /mnt/stateful_partition/unencrypted/preserve,,1
+ u = oobe_config_restore
+ G
+-S = /usr/share/policy/oobe_config_restore-seccomp.policy
+ 
+ # Landlocking
+ fs-default-paths
