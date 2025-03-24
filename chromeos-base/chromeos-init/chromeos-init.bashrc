@@ -18,6 +18,7 @@ cros_post_src_prepare_openfyde_patches() {
   eapply ${FILESDIR}/skip_call_ExtendPCRForVersionAttestation.patch
 
   eapply -p2 ${FILESDIR}/keep_dlc_factory_image_and_remove_encrypted_block_for_clobber.patch
+  eapply -p2 ${FILESDIR}/powerwash_keep_dev_image_and_var_ovarlay.patch
 
   if ! use upper_case_product_uuid; then
     eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/tpm/prevent_product_uuid_uppercase_convert.patch

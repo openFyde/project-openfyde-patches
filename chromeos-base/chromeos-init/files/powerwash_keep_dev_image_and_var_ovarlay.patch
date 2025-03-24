@@ -1,0 +1,93 @@
+diff --git a/init/clobber/clobber_state.cc b/init/clobber/clobber_state.cc
+index b2632a27fb..954a588e84 100644
+--- a/init/clobber/clobber_state.cc
++++ b/init/clobber/clobber_state.cc
+@@ -66,6 +66,9 @@ constexpr char kLastPowerWashTimePath[] =
+ constexpr char kRmaStateFilePath[] = "unencrypted/rma-data/state";
+ constexpr char kBioWashPath[] = "/usr/bin/bio_wash";
+ constexpr char kPreservedFilesTarPath[] = "/tmp/preserve.tar";
++constexpr char kPreservedExtraFilesTarPath[] = "/tmp/preserve_dev_image_var_overlay.tar";
++constexpr char kStatefulDevImage[] = "dev_image";
++constexpr char kStatefulVarOverlay[] = "var_overlay";
+ constexpr char kStatefulClobberLogPath[] = "unencrypted/clobber.log";
+ constexpr char kMountEncryptedPath[] = "/usr/sbin/mount-encrypted";
+ constexpr char kRollbackFileForPstorePath[] =
+@@ -255,7 +258,8 @@ bool ClobberState::WriteLastPowerwashTime(const base::FilePath& path,
+ int ClobberState::PreserveFiles(
+     const base::FilePath& preserved_files_root,
+     const std::vector<base::FilePath>& preserved_files,
+-    const base::FilePath& tar_file_path) {
++    const base::FilePath& tar_file_path,
++    bool no_recursion) {
+   // Remove any stale tar files from previous clobber-state runs.
+   brillo::DeleteFile(tar_file_path);
+ 
+@@ -300,7 +304,9 @@ int ClobberState::PreserveFiles(
+   tar.AddArg("-c");
+   tar.AddStringOption("-f", tar_file_path.value());
+   tar.AddStringOption("-C", preserved_files_root.value());
+-  tar.AddArg("--no-recursion");
++  if (no_recursion) {
++    tar.AddArg("--no-recursion");
++  }
+   tar.AddArg("--");
+ 
+   // Add paths in reverse order because we built up the list of paths backwards.
+@@ -703,6 +709,22 @@ int ClobberState::Run() {
+     LOG(ERROR) << "Preserving files failed with code " << ret;
+   }
+ 
++  std::vector<base::FilePath> recursion_preserved_files = {
++    base::FilePath(kStatefulDevImage),
++    base::FilePath(kStatefulVarOverlay)
++  };
++  base::FilePath extra_preserved_tar_file(kPreservedExtraFilesTarPath);
++  if (args_.safe_wipe) {
++    for (const base::FilePath& fp : recursion_preserved_files) {
++      LOG(INFO) << "Preserving file/dir recursively: " << fp.value();
++    }
++    ret = PreserveFiles(stateful_, recursion_preserved_files,
++                        extra_preserved_tar_file, false);
++    if (ret) {
++      LOG(ERROR) << "Preserving extra files failed with code " << ret;
++    }
++  }
++
+   if (encrypted_stateful_mounted) {
+     // Preserve a rollback data file separately as it's sensitive and must not
+     // be stored unencrypted on the hard drive.
+@@ -878,6 +900,20 @@ int ClobberState::Run() {
+     }
+   }
+ 
++  if (base::PathExists(extra_preserved_tar_file)) {
++    brillo::ProcessImpl tar;
++    tar.AddArg("/bin/tar");
++    tar.AddStringOption("-C", stateful_.value());
++    tar.AddArg("-x");
++    tar.AddStringOption("-f", extra_preserved_tar_file.value());
++    tar.RedirectOutputToMemory(true);
++    ret = tar.Run();
++    init::AppendToLog("tar", tar.GetOutputString(STDOUT_FILENO));
++    if (ret != 0) {
++      LOG(WARNING) << "Restoring extra preserved files failed with code " << ret;
++    }
++  }
++
+   brillo::ProcessImpl log_restore;
+   log_restore.AddArg("/sbin/clobber-log");
+   log_restore.AddArg("--restore");
+diff --git a/init/clobber/clobber_state.h b/init/clobber/clobber_state.h
+index f64c086b27..9f5f07158f 100644
+--- a/init/clobber/clobber_state.h
++++ b/init/clobber/clobber_state.h
+@@ -87,7 +87,8 @@ class ClobberState {
+   // The directory structure of the preserved files is preserved.
+   static int PreserveFiles(const base::FilePath& preserved_files_root,
+                            const std::vector<base::FilePath>& preserved_files,
+-                           const base::FilePath& tar_file_path);
++                           const base::FilePath& tar_file_path,
++                           bool no_recursion = true);
+ 
+   // Determine the devices to be wiped and their properties, and populate
+   // `wipe_info_out` with the results. Returns true if successful.
