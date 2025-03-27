@@ -1,0 +1,28 @@
+Index: kernel-6_6/security/chromiumos/lsm.c
+===================================================================
+--- kernel-6_6.orig/security/chromiumos/lsm.c
++++ kernel-6_6/security/chromiumos/lsm.c
+@@ -50,6 +50,14 @@ static int __init allow_overlayfs_set(ch
+ }
+ __setup("chromiumos.allow_overlayfs", allow_overlayfs_set);
+ 
++static int allow_exec_ramfs = 1;
++static int __init allow_exec_ramfs_set(char *__unused)
++{
++    allow_exec_ramfs = 1;
++      return 1;
++}
++__setup("chromiumos.allow_exec_ramfs", allow_exec_ramfs_set);
++
+ #if defined(CONFIG_SECURITY_CHROMIUMOS_NO_UNPRIVILEGED_UNSAFE_MOUNTS) || \
+ 	defined(CONFIG_SECURITY_CHROMIUMOS_NO_SYMLINK_MOUNT)
+ static void report(const char *origin, const struct path *path, char *operation)
+@@ -278,7 +286,7 @@ static int chromiumos_bprm_creds_for_exe
+ {
+ 	struct file *file = bprm->file;
+ 
+-	if (shmem_file(file)) {
++	if (!allow_exec_ramfs && shmem_file(file)) {
+ 		char *cmdline = printable_cmdline(current);
+ 
+ 		audit_log(
