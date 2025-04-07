@@ -112,7 +112,7 @@ check_serial_number() {
 
 main() {
   if [[ -f "$FINISHED_MARKER" ]]; then
-    exit 0
+    return 0
   fi
   check_vpd || die "Cann't init vpd system"
   if should_block; then
