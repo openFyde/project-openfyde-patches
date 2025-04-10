@@ -1,0 +1,13 @@
+diff --git a/text/display_boot_message b/text/display_boot_message
+index 1b07626..d1758bf 100755
+--- a/text/display_boot_message
++++ b/text/display_boot_message
+@@ -12,7 +12,7 @@
+ # Note pango-view and frecon uses different color code format (#rrggbb vs
+ # 0xrrggbb), so we use format 'rrggbb' in IMAGE_BACKGROUND_RGB and not
+ # allowing common names.
+-: ${IMAGE_BACKGROUND_RGB:=202124}
++: ${IMAGE_BACKGROUND_RGB:=000000}
+ : ${IMAGE_FONT_NAME:=sans-serif}
+ : ${IMAGE_FONT_SIZE:=22}
+ : ${IMAGE_MARGIN_SIZE:=5}
