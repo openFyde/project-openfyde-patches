@@ -90,12 +90,16 @@ check_vpd() {
 }
 
 should_block() {
-  [[ -f "$ZTE_CONF_FILE" ]]
+  true
 }
 
-check_serial_number() {
+update_serial_number_if_necessary() {
   local serial=""
-  serial=$(vpd -i RO_VPD -g serial_number 2>/dev/null)
+  if [[ $# -eq 1 ]]; then
+    serial=$1
+  else
+    serial=$(vpd -i RO_VPD -g serial_number 2>/dev/null)
+  fi
   local new_sn=""
   new_sn=$(get_serial_number)
   if [ -z "$new_sn" ]; then
@@ -116,11 +120,19 @@ main() {
   fi
   check_vpd || die "Cann't init vpd system"
   if should_block; then
-    info "Trying to get serial number and update if necessary, running in block mode"
-    check_serial_number
+    local serial=""
+    serial=$(vpd -i RO_VPD -g serial_number 2>/dev/null)
+    if [[ -n "$serial" ]]; then
+      info "serial number exists, running in background, update if necessary"
+      update_serial_number_if_necessary "$serial" &
+    else
+      info "Trying to get serial number and update if necessary, running in block mode"
+      update_serial_number_if_necessary "$serial"
+    fi
   else
+    # will not reach here, if should_block always return true
     info "Trying to get serial number and update if necessary, running in background"
-    check_serial_number &
+    update_serial_number_if_necessary &
   fi
 
   touch "$FINISHED_MARKER"
