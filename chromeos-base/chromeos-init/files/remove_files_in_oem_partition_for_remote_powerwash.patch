@@ -1,0 +1,118 @@
+diff --git a/init/clobber/clobber_state.cc b/init/clobber/clobber_state.cc
+index b2632a27fb..8900a3c158 100644
+--- a/init/clobber/clobber_state.cc
++++ b/init/clobber/clobber_state.cc
+@@ -99,6 +99,10 @@ constexpr char kDisableClobberCrashCollectionPath[] =
+ constexpr char kExt4DircryptoSupportedPath[] =
+     "/sys/fs/ext4/features/encryption";
+ 
++constexpr char kOemMountPoint[] = "/usr/share/oem";
++constexpr char kFlexConfigDir[] = "flex_config";
++constexpr char kFlexConfigFile[] = "config.json";
++
+ // Attempt to save logs from the boot when the clobber happened into the
+ // stateful partition.
+ void CollectClobberCrashReports() {
+@@ -323,7 +327,7 @@ bool ClobberState::GetDevicesToWipe(
+ 
+   if (partitions.root_a < 0 || partitions.root_b < 0 ||
+       partitions.kernel_a < 0 || partitions.kernel_b < 0 ||
+-      partitions.stateful < 0) {
++      partitions.stateful < 0 || partitions.oem < 0) {
+     LOG(ERROR) << "Invalid partition numbers for GetDevicesToWipe";
+     return false;
+   }
+@@ -372,6 +376,8 @@ bool ClobberState::GetDevicesToWipe(
+   base::FilePath kernel_device;
+   wipe_info.stateful_partition_device =
+       base::FilePath(base_device + std::to_string(partitions.stateful));
++  wipe_info.oem_partition_device =
++      base::FilePath(base_device + std::to_string(partitions.oem));
+ 
+   if (active_root_partition == partitions.root_a) {
+     kernel_device =
+@@ -623,6 +629,9 @@ int ClobberState::Run() {
+   bool user_triggered_powerwash =
+       (args_.reason.find("session_manager_dbus_request") != std::string::npos);
+ 
++  bool remote_powerwash =
++      (args_.reason.find("remote_wipe_request") != std::string::npos);
++
+   // Allow crash preservation across clobber if the device is in developer mode.
+   // For testing purposes, use a tmpfs path to disable collection.
+   bool preserve_dev_mode_crash_reports =
+@@ -741,6 +750,7 @@ int ClobberState::Run() {
+   partitions_.root_b = utils::GetPartitionNumber(root_disk_, "ROOT-B");
+   partitions_.kernel_a = utils::GetPartitionNumber(root_disk_, "KERN-A");
+   partitions_.kernel_b = utils::GetPartitionNumber(root_disk_, "KERN-B");
++  partitions_.oem = utils::GetPartitionNumber(root_disk_, "OEM");
+ 
+   if (!GetDevicesToWipe(root_disk_, root_device, partitions_, &wipe_info_)) {
+     LOG(ERROR) << "Getting devices to wipe failed, aborting run";
+@@ -902,6 +912,10 @@ int ClobberState::Run() {
+   // Remove keys that may alter device state.
+   RemoveVpdKeys();
+ 
++  if (remote_powerwash) {
++    RemoveFlexConfigFile();
++  }
++
+   if (!args_.keepimg) {
+     utils::EnsureKernelIsBootable(root_disk_,
+                                   wipe_info_.active_kernel_partition);
+@@ -1105,6 +1119,21 @@ bool ClobberState::WipeKeyMaterial() {
+   return clobber_wipe_->DropCaches();
+ }
+ 
++void ClobberState::RemoveFlexConfigFile() {
++  if (mount(wipe_info_.oem_partition_device.value().c_str(),
++            kOemMountPoint, "ext4",
++            MS_REMOUNT | MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_RELATIME, nullptr) != 0) {
++    PLOG(ERROR) << "Unable to remount oem partition at " << kOemMountPoint;
++    return;
++  }
++  base::FilePath flex_config_dir = base::FilePath(kOemMountPoint).Append(kFlexConfigDir);
++  base::FilePath flex_config_file = flex_config_dir.Append(kFlexConfigFile);
++
++  LOG(INFO) << "Remove flex config file " << flex_config_file;
++  brillo::DeleteFile(flex_config_file);
++  brillo::DeleteFile(flex_config_dir);
++}
++
+ void ClobberState::ForceDelay() {
+   base::TimeDelta elapsed = base::TimeTicks::Now() - wipe_start_time_;
+   LOG(INFO) << "Clobber has already run for " << elapsed.InSeconds()
+diff --git a/init/clobber/clobber_state.h b/init/clobber/clobber_state.h
+index f64c086b27..569b170785 100644
+--- a/init/clobber/clobber_state.h
++++ b/init/clobber/clobber_state.h
+@@ -66,6 +66,8 @@ class ClobberState {
+     base::FilePath inactive_root_device;
+     base::FilePath inactive_kernel_device;
+ 
++    base::FilePath oem_partition_device;
++
+     // The partition number for the currently booted kernel partition.
+     int active_kernel_partition = -1;
+   };
+@@ -130,6 +132,8 @@ class ClobberState {
+   // Wipe key information from the stateful partition for supported devices.
+   bool WipeKeyMaterial();
+ 
++  void RemoveFlexConfigFile();
++
+   // Forces a delay, writing progress to the TTY.  This is used to prevent
+   // developer mode transitions from happening too quickly.
+   void ForceDelay();
+diff --git a/init/clobber/clobber_wipe.h b/init/clobber/clobber_wipe.h
+index ab1237f6bb..808b366cbc 100644
+--- a/init/clobber/clobber_wipe.h
++++ b/init/clobber/clobber_wipe.h
+@@ -20,6 +20,7 @@ class ClobberWipe {
+     int root_b = -1;
+     int kernel_a = -1;
+     int kernel_b = -1;
++    int oem = -1;
+   };
+ 
+   explicit ClobberWipe(ClobberUi* ui);
