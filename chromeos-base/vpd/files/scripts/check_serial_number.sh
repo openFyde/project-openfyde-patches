@@ -106,11 +106,7 @@ update_serial_number_if_necessary() {
     exit 1
   fi
   if [ "$serial" != "$new_sn" ]; then
-    if is_booting_from_usb; then
-      update_serial_number "$new_sn"
-    elif [ -z "$serial" ]; then
-      update_serial_number "$new_sn"
-    fi
+    update_serial_number "$new_sn"
   fi
 }
 
