@@ -2,20 +2,21 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
-CROS_WORKON_TREE=("bd6ab6972071770b6091936ff7fa113ada50ddc1" "fcef7b76b9c2248d87a9325bff96964d59e3cd74" "b7ba44bfee0d723fc17eeab34f45250f86f70a1c" "59bf75be81d01d8270f4af982d970987c8f73528" "5bca05369a61f33a55ec8501a1ab79d93f9733aa" "cb008a5c4fa1fe93ce66a75df355308657d0917e" "f0e3b97371601803c1f17183e2ef4cfc8c516d43" "272667aee0b44fda32f1d1f932d178147d01db5d" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="4f44f7d6bdb3f6bf1e233eedea3f050174ef15d4"
+CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "95f897e6a02bd1183f425972401eed585c0c8c32" "db555432df16b57e54c925ffe7c29da9eef6fb30" "7693b3eb1717b791f41f4622e4803fa2c7f7e30d" "912716f95c3e82ab271b7d4cc01e81929f56d5e0" "5bca05369a61f33a55ec8501a1ab79d93f9733aa" "544e5cda3225c9cd373e1431dcb270e85d82bda5" "b4af51d5e5e8a5c42d7afd9dde169d1837a012f5" "b1a2e02e884ce6ecf10f2382a4f4775ff4b3d226" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_INCREMENTAL_BUILD=1
 # TODO(crbug.com/809389): Avoid #include-ing platform2 headers directly.
-CROS_WORKON_SUBTREE="common-mk dlcservice imageloader init libcrossystem libhwsec-foundation libstorage metrics .gn"
+CROS_WORKON_SUBTREE="common-mk chromeos-config dlcservice imageloader init libcrossystem libhwsec-foundation libstorage metrics .gn"
 
 # Tests probe the root device.
 PLATFORM_HOST_DEV_TEST="yes"
 PLATFORM_SUBDIR="init"
 
-inherit tmpfiles cros-workon platform user
+# protobuf is required for preseeded_files
+inherit tmpfiles cros-workon cros-protobuf platform user
 
 DESCRIPTION="Upstart init scripts for Chromium OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/HEAD/init/"
@@ -26,27 +27,26 @@ SLOT="0/0"
 KEYWORDS="*"
 IUSE="
 	cros_embedded device-mapper direncryption disable_lvm_install +encrypted_stateful
-	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition default_key_stateful
-	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
-	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
-	-upper_case_product_uuid
-	-tpm2_simulator_deprecated
-	+udev unibuild vivid vtconsole vtpm_proxy"
+	+encrypted_reboot_vault encstateful_ondisk_finalization frecon fsverity lvm_migration
+	lvm_stateful_partition default_key_stateful +oobe_config prjquota -s3halt +syslog systemd
+  fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+  -upper_case_product_uuid
+  -tpm2_simulator_deprecated
+	tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator +udev unibuild vivid vtconsole vtpm_proxy"
 
 REQUIRED_USE="
 	tpm_dynamic? ( tpm tpm2 )
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
 	unibuild
-	tpm2_simulator_deprecated? ( tpm2_simulator )
-	default_key_stateful? ( !lvm_stateful_partition !encrypted_stateful )
-	lvm_stateful_partition? ( !default_key_stateful )
-	encrypted_stateful? ( !default_key_stateful )
+  tpm2_simulator_deprecated? ( tpm2_simulator )
 "
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 # re2 is needed for process_killer.
+# e2fsprogs and protobuf is for file_preseeding
 COMMON_DEPEND="
 	chromeos-base/bootstat:=
+	chromeos-base/chromeos-config-tools:=
 	chromeos-base/dlcservice:=
 	chromeos-base/imageloader-client:=
 	chromeos-base/libcrossystem:=
@@ -57,10 +57,10 @@ COMMON_DEPEND="
 	chromeos-base/system_api:=
 	chromeos-base/vboot_reference:=
 	chromeos-base/vpd:=
-	dev-cpp/abseil-cpp:=
 	dev-libs/openssl:=
 	dev-libs/re2:=
 	sys-apps/rootdev:=
+	sys-fs/e2fsprogs:=
 	sys-libs/libselinux:=
 "
 

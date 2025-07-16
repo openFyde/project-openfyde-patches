@@ -1,9 +1,9 @@
-diff --git a/init/clobber/clobber_state.cc b/init/clobber/clobber_state.cc
-index b2632a27fb..954a588e84 100644
---- a/init/clobber/clobber_state.cc
-+++ b/init/clobber/clobber_state.cc
-@@ -66,6 +66,9 @@ constexpr char kLastPowerWashTimePath[] =
- constexpr char kRmaStateFilePath[] = "unencrypted/rma-data/state";
+Index: init/clobber/clobber_state.cc
+===================================================================
+--- init.orig/clobber/clobber_state.cc
++++ init/clobber/clobber_state.cc
+@@ -67,6 +67,9 @@ constexpr char kLastPowerWashTimePath[]
+     "unencrypted/preserve/last_powerwash_time";
  constexpr char kBioWashPath[] = "/usr/bin/bio_wash";
  constexpr char kPreservedFilesTarPath[] = "/tmp/preserve.tar";
 +constexpr char kPreservedExtraFilesTarPath[] = "/tmp/preserve_dev_image_var_overlay.tar";
@@ -12,7 +12,7 @@ index b2632a27fb..954a588e84 100644
  constexpr char kStatefulClobberLogPath[] = "unencrypted/clobber.log";
  constexpr char kMountEncryptedPath[] = "/usr/sbin/mount-encrypted";
  constexpr char kRollbackFileForPstorePath[] =
-@@ -255,7 +258,8 @@ bool ClobberState::WriteLastPowerwashTime(const base::FilePath& path,
+@@ -337,7 +340,8 @@ bool ClobberState::WriteLastPowerwashTim
  int ClobberState::PreserveFiles(
      const base::FilePath& preserved_files_root,
      const std::vector<base::FilePath>& preserved_files,
@@ -22,7 +22,7 @@ index b2632a27fb..954a588e84 100644
    // Remove any stale tar files from previous clobber-state runs.
    brillo::DeleteFile(tar_file_path);
  
-@@ -300,7 +304,9 @@ int ClobberState::PreserveFiles(
+@@ -382,7 +386,9 @@ int ClobberState::PreserveFiles(
    tar.AddArg("-c");
    tar.AddStringOption("-f", tar_file_path.value());
    tar.AddStringOption("-C", preserved_files_root.value());
@@ -33,7 +33,7 @@ index b2632a27fb..954a588e84 100644
    tar.AddArg("--");
  
    // Add paths in reverse order because we built up the list of paths backwards.
-@@ -703,6 +709,22 @@ int ClobberState::Run() {
+@@ -741,6 +747,22 @@ int ClobberState::Run() {
      LOG(ERROR) << "Preserving files failed with code " << ret;
    }
  
@@ -56,7 +56,7 @@ index b2632a27fb..954a588e84 100644
    if (encrypted_stateful_mounted) {
      // Preserve a rollback data file separately as it's sensitive and must not
      // be stored unencrypted on the hard drive.
-@@ -878,6 +900,20 @@ int ClobberState::Run() {
+@@ -898,6 +920,20 @@ int ClobberState::Run() {
      }
    }
  
@@ -77,11 +77,11 @@ index b2632a27fb..954a588e84 100644
    brillo::ProcessImpl log_restore;
    log_restore.AddArg("/sbin/clobber-log");
    log_restore.AddArg("--restore");
-diff --git a/init/clobber/clobber_state.h b/init/clobber/clobber_state.h
-index f64c086b27..9f5f07158f 100644
---- a/init/clobber/clobber_state.h
-+++ b/init/clobber/clobber_state.h
-@@ -87,7 +87,8 @@ class ClobberState {
+Index: init/clobber/clobber_state.h
+===================================================================
+--- init.orig/clobber/clobber_state.h
++++ init/clobber/clobber_state.h
+@@ -96,7 +96,8 @@ class ClobberState {
    // The directory structure of the preserved files is preserved.
    static int PreserveFiles(const base::FilePath& preserved_files_root,
                             const std::vector<base::FilePath>& preserved_files,

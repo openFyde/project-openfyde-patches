@@ -3,9 +3,9 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
-CROS_WORKON_TREE=("bd6ab6972071770b6091936ff7fa113ada50ddc1" "d48c039201920e424727b4affb664f28cd95f2d0" "2c2bce16c896cfc1084d3744954a690970ef21d7" "cb008a5c4fa1fe93ce66a75df355308657d0917e" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
-PYTHON_COMPAT=( python3_{8..11} )
+CROS_WORKON_COMMIT="aace9a0b19e922f7c57f6e061bbcb8bbad1233e0"
+CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "73a52a54b55f8340cc15c34b72a98187aa4ec3ec" "a10269602c120683d70021b605b4e705db7bddf2" "544e5cda3225c9cd373e1431dcb270e85d82bda5" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+PYTHON_COMPAT=( python3_11 )
 
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -26,11 +26,11 @@ SRC_URI=""
 LICENSE="BSD-Google"
 KEYWORDS="*"
 IUSE="device-mapper -direncription_allow_v2 -direncryption fuzzer
-	generic_tpm2 kernel-6_10-enablement kernel-6_6 kernel-6_1 kernel-5_15
+	generic_tpm2 kernel-6_12 kernel-6_10-enablement kernel-6_6 kernel-6_1 kernel-5_15
 	kernel-5_10 kernel-5_4 kernel-upstream lvm_application_containers
 	lvm_stateful_partition mount_oop pinweaver profiling slow_mount
 	systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
-	-tpm2_simulator_deprecated
+  -tpm2_simulator_deprecated
 	uprev-4-to-5 user_session_isolation +vault_legacy_mount"
 
 REQUIRED_USE="
@@ -103,11 +103,11 @@ python_check_deps() {
 }
 
 src_install() {
-	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-6_10-enablement && use !kernel-upstream) || use uprev-4-to-5); then
+	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-6_10-enablement && use !kernel-6_12 && use !kernel-upstream) || use uprev-4-to-5); then
 		die "direncription_allow_v2 is enabled where it shouldn't be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
-	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-6_10-enablement || use kernel-upstream) && use !uprev-4-to-5; then
+	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-6_10-enablement || use kernel-6_12 || use kernel-upstream) && use !uprev-4-to-5; then
 		die "direncription_allow_v2 is not enabled where it should be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 

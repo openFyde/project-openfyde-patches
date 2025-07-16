@@ -3,7 +3,7 @@
 
 EAPI=7
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_11 )
 
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -24,7 +24,7 @@ SRC_URI=""
 LICENSE="BSD-Google"
 KEYWORDS="~*"
 IUSE="device-mapper -direncription_allow_v2 -direncryption fuzzer
-	generic_tpm2 kernel-6_10-enablement kernel-6_6 kernel-6_1 kernel-5_15
+	generic_tpm2 kernel-6_12 kernel-6_10-enablement kernel-6_6 kernel-6_1 kernel-5_15
 	kernel-5_10 kernel-5_4 kernel-upstream lvm_application_containers
 	lvm_stateful_partition mount_oop pinweaver profiling slow_mount
 	systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
@@ -100,11 +100,11 @@ python_check_deps() {
 }
 
 src_install() {
-	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-6_10-enablement && use !kernel-upstream) || use uprev-4-to-5); then
+	if use direncription_allow_v2 && ( (use !kernel-5_4 && use !kernel-5_10 && use !kernel-5_15 && use !kernel-6_1 && use !kernel-6_6 && use !kernel-6_10-enablement && use !kernel-6_12 && use !kernel-upstream) || use uprev-4-to-5); then
 		die "direncription_allow_v2 is enabled where it shouldn't be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 
-	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-6_10-enablement || use kernel-upstream) && use !uprev-4-to-5; then
+	if use !direncription_allow_v2 && (use kernel-5_4 || use kernel-5_10 || use kernel-5_15 || use kernel-6_1 || use kernel-6_6 || use kernel-6_10-enablement || use kernel-6_12 || use kernel-upstream) && use !uprev-4-to-5; then
 		die "direncription_allow_v2 is not enabled where it should be. Do you need to change the board overlay? Note, uprev boards should have it disabled!"
 	fi
 

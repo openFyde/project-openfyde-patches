@@ -1,7 +1,9 @@
 index e30c0c35b7..95513be33f 100644
---- a/init/BUILD.gn
-+++ b/init/BUILD.gn
-@@ -65,6 +65,7 @@
+Index: init/BUILD.gn
+===================================================================
+--- init.orig/BUILD.gn
++++ init/BUILD.gn
+@@ -74,6 +74,7 @@ pkg_config("target_defaults") {
      "USE_TPM1=${use.tpm}",
      "USE_TPM2=${use.tpm2}",
      "USE_TPM2_SIMULATOR=${use.tpm2_simulator}",
@@ -9,9 +11,11 @@ index e30c0c35b7..95513be33f 100644
      "USE_VTPM_PROXY=${use.vtpm_proxy}",
    ]
    pkg_deps = [
---- a/init/tpm_encryption/tpm_setup.cc
-+++ b/init/tpm_encryption/tpm_setup.cc
-@@ -279,7 +279,7 @@
+Index: init/tpm_encryption/tpm_setup.cc
+===================================================================
+--- init.orig/tpm_encryption/tpm_setup.cc
++++ init/tpm_encryption/tpm_setup.cc
+@@ -282,7 +282,7 @@ bool TpmSystemKey::ShallUseTpmForSystemK
    }
  
    /* Assume we have tpm for system_key when we are using vtpm tpm2 simulator. */

@@ -7,13 +7,14 @@ CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_INCREMENTAL_BUILD=1
 # TODO(crbug.com/809389): Avoid #include-ing platform2 headers directly.
-CROS_WORKON_SUBTREE="common-mk dlcservice imageloader init libcrossystem libhwsec-foundation libstorage metrics .gn"
+CROS_WORKON_SUBTREE="common-mk chromeos-config dlcservice imageloader init libcrossystem libhwsec-foundation libstorage metrics .gn"
 
 # Tests probe the root device.
 PLATFORM_HOST_DEV_TEST="yes"
 PLATFORM_SUBDIR="init"
 
-inherit tmpfiles cros-workon platform user
+# protobuf is required for preseeded_files
+inherit tmpfiles cros-workon cros-protobuf platform user
 
 DESCRIPTION="Upstart init scripts for Chromium OS"
 HOMEPAGE="https://chromium.googlesource.com/chromiumos/platform2/+/HEAD/init/"
@@ -24,23 +25,22 @@ SLOT="0/0"
 KEYWORDS="~*"
 IUSE="
 	cros_embedded device-mapper direncryption disable_lvm_install +encrypted_stateful
-	+encrypted_reboot_vault frecon fsverity lvm_migration lvm_stateful_partition default_key_stateful
-	+oobe_config prjquota -s3halt +syslog systemd tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator
-	+udev unibuild vivid vtconsole vtpm_proxy"
+	+encrypted_reboot_vault encstateful_ondisk_finalization frecon fsverity lvm_migration
+	lvm_stateful_partition default_key_stateful +oobe_config prjquota -s3halt +syslog systemd
+	tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator +udev unibuild vivid vtconsole vtpm_proxy"
 
 REQUIRED_USE="
 	tpm_dynamic? ( tpm tpm2 )
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
 	unibuild
-	default_key_stateful? ( !lvm_stateful_partition !encrypted_stateful )
-	lvm_stateful_partition? ( !default_key_stateful )
-	encrypted_stateful? ( !default_key_stateful )
 "
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
 # re2 is needed for process_killer.
+# e2fsprogs and protobuf is for file_preseeding
 COMMON_DEPEND="
 	chromeos-base/bootstat:=
+	chromeos-base/chromeos-config-tools:=
 	chromeos-base/dlcservice:=
 	chromeos-base/imageloader-client:=
 	chromeos-base/libcrossystem:=
@@ -51,10 +51,10 @@ COMMON_DEPEND="
 	chromeos-base/system_api:=
 	chromeos-base/vboot_reference:=
 	chromeos-base/vpd:=
-	dev-cpp/abseil-cpp:=
 	dev-libs/openssl:=
 	dev-libs/re2:=
 	sys-apps/rootdev:=
+	sys-fs/e2fsprogs:=
 	sys-libs/libselinux:=
 "
 

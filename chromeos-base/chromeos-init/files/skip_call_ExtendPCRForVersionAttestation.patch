@@ -2,7 +2,7 @@ Index: init/startup/chromeos_startup.cc
 ===================================================================
 --- init.orig/startup/chromeos_startup.cc
 +++ init/startup/chromeos_startup.cc
-@@ -851,7 +851,8 @@ int ChromeosStartup::Run() {
+@@ -1142,7 +1142,8 @@ int ChromeosStartup::Run() {
  
    base::FilePath pcr_extend_failed =
        stateful_.Append(kVersionPCRExtendFailedFile);

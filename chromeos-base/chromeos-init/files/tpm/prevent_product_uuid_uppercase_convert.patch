@@ -1,6 +1,8 @@
---- a/init/tpm_encryption/encryption_key.cc
-+++ b/init/tpm_encryption/encryption_key.cc
-@@ -193,7 +193,7 @@
+Index: init/tpm_encryption/encryption_key.cc
+===================================================================
+--- init.orig/tpm_encryption/encryption_key.cc
++++ init/tpm_encryption/encryption_key.cc
+@@ -197,7 +197,7 @@ bool EncryptionKey::SetInsecureFallbackS
    std::string product_uuid;
    if (platform_->ReadFileToString(rootdir_.Append(paths::kProductUUID),
                                    &product_uuid)) {

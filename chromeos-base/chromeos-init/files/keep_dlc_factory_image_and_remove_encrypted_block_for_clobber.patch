@@ -18,24 +18,24 @@ this patch keeps the behavior of removing `encrypted.block` and
 keep tpm2-simulator data for dev clobber, removing these data will cause tpm errors
 
 
-diff --git a/init/clobber/clobber_state.cc b/init/clobber/clobber_state.cc
-index b2632a27fb..6e245c3d5c 100644
---- a/init/clobber/clobber_state.cc
-+++ b/init/clobber/clobber_state.cc
-@@ -509,7 +509,7 @@ std::vector<base::FilePath> ClobberState::GetPreservedFilesList() {
-     preserved_files.push_back(base::FilePath(path));
-   }
+Index: init/clobber/clobber_state.cc
+===================================================================
+--- init.orig/clobber/clobber_state.cc
++++ init/clobber/clobber_state.cc
+@@ -517,7 +517,7 @@ std::vector<base::FilePath> ClobberState
+           args_.safe_wipe, args_.ad_migration_wipe, args_.rollback_wipe,
+           args_.rma_wipe, debug_build == 1, false);
  
--  if (args_.factory_wipe) {
-+  if (args_.factory_wipe || args_.safe_wipe) {
-     base::FileEnumerator crx_enumerator(
-         stateful_.Append("unencrypted/import_extensions/extensions"), false,
-         base::FileEnumerator::FileType::FILES, "*.crx");
-diff --git a/init/startup/stateful_mount.cc b/init/startup/stateful_mount.cc
-index fed2e2c88a..0d025ff56b 100644
---- a/init/startup/stateful_mount.cc
-+++ b/init/startup/stateful_mount.cc
-@@ -562,8 +562,8 @@ bool StatefulMount::DevUpdateStatefulPartition(
+-  if (args_.factory_wipe || args_.default_key_migration_wipe) {
++  if (args_.factory_wipe || args_.default_key_migration_wipe || args_.safe_wipe) {
+     for (auto& path :
+          libpreservation::GetFactoryPreservationPathList(stateful_)) {
+       stateful_paths.insert(path);
+Index: init/startup/stateful_mount.cc
+===================================================================
+--- init.orig/startup/stateful_mount.cc
++++ init/startup/stateful_mount.cc
+@@ -606,8 +606,8 @@ bool StatefulMount::DevUpdateStatefulPar
      std::vector<base::FilePath> preserved_paths = {
          stateful_.Append(kLabMachine),
          stateful_.Append(kDevModeFile),
@@ -43,6 +43,6 @@ index fed2e2c88a..0d025ff56b 100644
 -        stateful_.Append("encrypted.key"),
 +        stateful_.Append("unencrypted/dlc-factory-images"),
 +        stateful_.Append("unencrypted/tpm2-simulator"),
-         stateful_dev_image,
-         var_target,
-         preserve_dir};
+         stateful_.Append(kUnencrypted).Append(kClobberLogFile),
+         stateful_.Append(kUnencrypted).Append(kClobberStateLogFile),
+         stateful_.Append(kUnencrypted).Append(kDevImageBlockFile),

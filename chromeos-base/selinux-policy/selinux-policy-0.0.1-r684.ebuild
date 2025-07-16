@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="84f8e557c8d14023d36cd69a8ca557c8d5f38a1d"
-CROS_WORKON_TREE="4ab5b21da1f5768de45227a4d61546fbdbec5c6b"
+CROS_WORKON_COMMIT="a151d103ecf057fcb4f078c8963d084f9f25c005"
+CROS_WORKON_TREE="af5b4042778b55c6c49610f299c9b26923d74781"
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -18,24 +18,17 @@ KEYWORDS="*"
 
 # Keep this in sync with has_arc().
 IUSE="
-	android-container-pi
 	android-container-rvc
 	android-vm-master
-	android-vm-rvc
-	android-vm-sc
 	android-vm-tm
 	android-vm-vic
 	selinux_audit_all selinux_develop selinux_experimental
-	arc_first_release_n
 	nocheck
 	cheets_user cheets_user_64
 "
 DEPEND="
-	android-container-pi? ( chromeos-base/android-container-pi:0= )
 	android-container-rvc? ( chromeos-base/android-container-rvc:0= )
 	android-vm-master? ( chromeos-base/android-vm-master:0= )
-	android-vm-rvc? ( chromeos-base/android-vm-rvc:0= )
-	android-vm-sc? ( chromeos-base/android-vm-sc:0= )
 	android-vm-tm? ( chromeos-base/android-vm-tm:0= )
 	android-vm-vic? ( chromeos-base/android-vm-vic:0= )
 "
@@ -139,10 +132,7 @@ version_cil() {
 
 # Keep this in sync with IUSE/DEPEND.
 has_arc() {
-	use android-container-pi ||
 	use android-container-rvc ||
-	use android-vm-rvc ||
-	use android-vm-sc ||
 	use android-vm-tm ||
 	use android-vm-vic ||
 	use android-vm-master
@@ -152,18 +142,9 @@ gen_m4_flags() {
 	M4_COMMON_FLAGS=()
 	local arc_type="none"
 	local arc_version="none"
-	if use android-container-pi; then
-		arc_type="container"
-		arc_version="p"
-	elif use android-container-rvc; then
+	if use android-container-rvc; then
 		arc_type="container"
 		arc_version="r"
-	elif use android-vm-rvc; then
-		arc_type="vm"
-		arc_version="r"
-	elif use android-vm-sc; then
-		arc_type="vm"
-		arc_version="s"
 	elif use android-vm-tm; then
 		arc_type="vm"
 		arc_version="t"
@@ -178,7 +159,6 @@ gen_m4_flags() {
 		"-Darc_type=${arc_type}"
 		"-Darc_version=${arc_version}"
 		"-Duse_selinux_develop=$(usex selinux_develop y n)"
-		"-Duse_arc_first_release_n=$(usex arc_first_release_n y n)"
 	)
 	einfo "m4 flags: ${M4_COMMON_FLAGS[*]}"
 }
@@ -390,58 +370,4 @@ src_install() {
 	fi
 
 	udev_dorules "${FILESDIR}/50-selinux.rules"
-}
-
-# Check policy violation for neverallow rules extracted from CTS SELinuxNeverallowRulesTest.
-src_test() {
-	if ! use android-container-pi; then
-		ewarn "********************************************************"
-		ewarn "WARNING: Build-time SELinux policy tests only apply to"
-		ewarn "boards shipping android-container-pi."
-		ewarn "Test again using e.g. coral to ensure full test coverage."
-		ewarn "********************************************************"
-		return
-	fi
-
-	if ! ( use cheets_user || use cheets_user_64 ); then
-		ewarn "********************************************************"
-		ewarn "WARNING: Build-time SELinux policy tests are skipped on"
-		ewarn "boards shipping ARC userdebug builds (including betty)."
-		ewarn "Test again using e.g. coral to ensure full test coverage."
-		ewarn "********************************************************"
-		return
-	fi
-
-	local neverallowjava="${SYSROOT}/etc/selinux/intermediates/SELinuxNeverallowRulesTest.java"
-	if [ ! -f "${neverallowjava}" ]; then
-		die "No SELinuxNeverallowRulesTest.java found"
-	fi
-
-	# Extract 'String neverallowRule = "neverallow ...";' lines from the Java source code and
-	# write the extracted lines to ./neverallows.
-	(
-		grep "boolean compatiblePropertyOnly = false;" -B 2 |
-		grep "boolean fullTrebleOnly = false;" -B 1 |
-		grep neverallowRule |
-		sed -E 's/.*"(neverallow.*)";/\1/g'
-	) < "${neverallowjava}" > neverallows
-
-	local loc="$(wc -l neverallows | awk '{print $1;}')"
-	if [[ "${loc}" -lt "100" ]]; then
-		die "too few test cases. something is wrong."
-	fi
-	local fail
-	while read -r rule; do
-		if ! sepolicy-analyze "${SEPOLICY_FILENAME}" neverallow -n "${rule}"; then
-			eerror "sepolicy-analyze failed for rule: ${rule}"
-			fail=1
-		fi
-	done < neverallows
-
-	if [[ -n "${fail}" ]]; then
-		die "SELinux neverallow check(s) failed, see logs above." \
-			"If you're seeing this failure in CQ, make sure to" \
-			"use the same failing board(s) when testing locally" \
-			"as SELinux rules may differ by board."
-	fi
 }

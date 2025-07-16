@@ -4,9 +4,9 @@ Index: init/startup/chromeos_startup.cc
 ===================================================================
 --- init.orig/startup/chromeos_startup.cc
 +++ init/startup/chromeos_startup.cc
-@@ -136,6 +136,15 @@ const std::array<const char*, 4> kPreser
-     "usr/local/etc/wifi_creds",
- };
+@@ -149,6 +149,15 @@ constexpr char kOobeCompletedFile[] = "/
+ 
+ constexpr char kMetaDataFSType[] = "ext4";
  
 +void RunFydeOSFactoryInstall() {
 +  brillo::ProcessImpl proc;
@@ -20,7 +20,7 @@ Index: init/startup/chromeos_startup.cc
  }  // namespace
  
  namespace startup {
-@@ -940,7 +949,7 @@ int ChromeosStartup::Run() {
+@@ -1233,7 +1242,7 @@ int ChromeosStartup::Run() {
                          MS_REMOUNT | MS_RDONLY | kCommonMountFlags, "")) {
      PLOG(WARNING) << "Failed to remount " << kernel_sec << " as readonly.";
    }
