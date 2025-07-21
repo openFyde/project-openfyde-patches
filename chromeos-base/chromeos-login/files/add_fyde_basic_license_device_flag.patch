@@ -25,7 +25,7 @@ index c1e854eaac..f2600971a6 100644
  
 +namespace {
 +const char kFydeOobeConfigFilePath[] = "/usr/share/oem/flex_config/config.json";
-+const char kFydeBasicLicenseKey[] = "fydeos_basic_license";
++const char kFydeBasicLicenseKey[] = "fydeBasicLicenseToken";
 +const char kFydeBasicLicenseFlag[] = "--fyde-basic-license-device";
 +}
 +
