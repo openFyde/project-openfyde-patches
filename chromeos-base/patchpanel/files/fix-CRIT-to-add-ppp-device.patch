@@ -2,12 +2,12 @@ Index: patchpanel/arc_service.cc
 ===================================================================
 --- patchpanel.orig/arc_service.cc
 +++ patchpanel/arc_service.cc
-@@ -695,7 +695,7 @@ void ArcService::AddDevice(const ShillCl
+@@ -527,7 +527,7 @@ void ArcService::AddDevice(const ShillCl
    RecordEvent(metrics_, ArcServiceUmaEvent::kAddDevice);
  
    if (devices_.find(shill_device.ifname) != devices_.end()) {
--    LOG(DFATAL) << "Attemping to add already tracked shill device "
-+    LOG(WARNING) << "Attemping to add already tracked shill device "
+-    LOG(DFATAL) << shill_device.logging_tag << " " << __func__
++    LOG(WARNING) << shill_device.logging_tag << " " << __func__
+                 << ": Attemping to add already tracked shill device "
                  << shill_device;
      return;
-   }
