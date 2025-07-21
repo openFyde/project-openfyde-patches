@@ -1,0 +1,64 @@
+diff --git a/login_manager/chrome_setup.cc b/login_manager/chrome_setup.cc
+index c1e854eaac..f2600971a6 100644
+--- a/login_manager/chrome_setup.cc
++++ b/login_manager/chrome_setup.cc
+@@ -20,6 +20,7 @@
+ #include <base/functional/bind.h>
+ #include <base/hash/sha1.h>
+ #include <base/json/json_writer.h>
++#include <base/json/json_reader.h>
+ #include <base/logging.h>
+ #include <base/process/launch.h>
+ #include <base/strings/string_number_conversions.h>
+@@ -556,6 +557,8 @@ std::optional<ChromeSetup::Result> ChromeSetup::Run() {
+   AddDeviceSpecificFlags(&builder);
+   AddMantisFlags(&builder);
+ 
++  AddFydeBasicLicenseFlags(&builder);
++
+   // Apply any modifications requested by the developer.
+   /*if (builder.is_developer_end_user()) { */
+     builder.ApplyUserConfig(base::FilePath(kChromeDevConfigPath),
+@@ -1299,6 +1302,30 @@ void AddMantisFlags(ChromiumCommandBuilder* builder) {
+   }
+ }
+ 
++namespace {
++const char kFydeOobeConfigFilePath[] = "/usr/share/oem/flex_config/config.json";
++const char kFydeBasicLicenseKey[] = "fydeos_basic_license";
++const char kFydeBasicLicenseFlag[] = "--fyde-basic-license-device";
++}
++
++void AddFydeBasicLicenseFlags(ChromiumCommandBuilder* builder) {
++  std::string config;
++  const base::FilePath flex_config(kFydeOobeConfigFilePath);
++  if (!base::ReadFileToString(flex_config, &config)) {
++    return;
++  }
++  std::optional<base::Value> json = base::JSONReader::Read(config);
++  if (!json.has_value() || !json->is_dict()) {
++    return;
++  }
++  auto& dict = json->GetDict();
++  const std::string* fydeos_basic_license;
++  if (!(fydeos_basic_license = dict.FindString(kFydeBasicLicenseKey)) || fydeos_basic_license->empty()) {
++    return;
++  }
++  builder->AddArg(kFydeBasicLicenseFlag);
++}
++
+ void SetUpDebugfsGpu() {
+   // Location where GPU debug information is bind-mounted.
+   static const char kDebugfsGpuPath[] = "/run/debugfs_gpu";
+diff --git a/login_manager/chrome_setup.h b/login_manager/chrome_setup.h
+index aab80755f6..24b21d1219 100644
+--- a/login_manager/chrome_setup.h
++++ b/login_manager/chrome_setup.h
+@@ -296,6 +296,7 @@ void AddDeviceSpecificFlags(chromeos::ui::ChromiumCommandBuilder* builder);
+ // Adds flags related to the Mantis project
+ void AddMantisFlags(chromeos::ui::ChromiumCommandBuilder* builder);
+ 
++void AddFydeBasicLicenseFlags(chromeos::ui::ChromiumCommandBuilder* builder);
+ // Allows Chrome to access GPU memory information despite /sys/kernel/debug
+ // being owned by debugd. This limits the security attack surface versus
+ // leaving the whole debug directory world-readable. See crbug.com/175828
