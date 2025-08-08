@@ -21,6 +21,14 @@ info() {
   logger -t "${UPSTART_JOB}" "$@"
 }
 
+is_arc_ns_mac() {
+  local mac="$1"
+
+  local ret=""
+  ret=$(grep "$mac" /sys/class/net/*/address 2> /dev/null)
+  [[ "$ret" = "/sys/class/net/arc_ns"*"/address"* ]]
+}
+
 get_system_mac() {
   local mac
 
@@ -28,13 +36,18 @@ get_system_mac() {
   # that the NIC drivers may not even loaded, so it failed to get a mac address. This is to workaround
   # that issue, by keep trying for about 1min until get one. This does not impact subsequential boots
   # as the mac is stored.
-  for i in $(seq 20); do
+  local trigged=0
+  # make it longer than failsafe delay, try the best to get a mac address
+  for i in $(seq 35); do
     if [ -e $LAN_MAC_NODE ]; then
       mac=$(cat $LAN_MAC_NODE)
     elif [ -e $WLAN_MAC_NODE ]; then
       mac=$(cat $WLAN_MAC_NODE)
     else
       mac=$(ifconfig -a | awk '/ether/ {print $2;exit}')
+      if is_arc_ns_mac "$mac"; then
+        mac=""
+      fi
     fi
 
     if [ -n "$mac" ]; then
@@ -43,6 +56,11 @@ get_system_mac() {
     fi
 
     info "Cannot get mac, maybe NIC driver is not ready yet, waiting to retry $i times"
+    if [[ $trigged -eq 0 ]]; then
+      info "Running udevadm trigger -w --action=add"
+      udevadm trigger -w --action=add > /dev/null
+      trigged=1
+    fi
     sleep 1s
   done
 }
