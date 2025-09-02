@@ -2,13 +2,14 @@ Index: vm_tools/concierge/service_arc.cc
 ===================================================================
 --- vm_tools.orig/concierge/service_arc.cc
 +++ vm_tools/concierge/service_arc.cc
-@@ -91,9 +91,10 @@ const VariationsFeature kArcVmAAudioMMAP
+@@ -111,10 +111,11 @@ const VariationsFeature kOverrideLmkdPsi
  // file when in dev mode.
  base::FilePath GetImagePath(const base::FilePath& image_path,
                              bool is_dev_mode) {
 +#if 0
-   if (!is_dev_mode)
+   if (!is_dev_mode) {
      return image_path;
+   }
 -
 +#endif
    // When in dev mode, the Android images might be on the stateful partition and
