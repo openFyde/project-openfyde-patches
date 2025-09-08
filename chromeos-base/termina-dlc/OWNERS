@@ -2,4 +2,4 @@
 include chromiumos/containers/cros-container-guest-tools:/OWNERS
 
 # Pupr uprev bot
-chromeos-ci-prod@chromeos-bot.iam.gserviceaccount.com
+include chromiumos/owners:v1:/bots/OWNERS.pupr
