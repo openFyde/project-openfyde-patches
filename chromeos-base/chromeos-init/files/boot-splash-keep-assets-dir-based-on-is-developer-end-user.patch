@@ -1,0 +1,22 @@
+diff --git init/upstart/boot-splash.conf init/upstart/boot-splash.conf
+index 8cf34120db..b50322e3f3 100644
+--- init.orig/upstart/boot-splash.conf
++++ init/upstart/boot-splash.conf
+@@ -28,7 +28,7 @@ pre-start script
+   # initialized in firmware (brightness is set in firmware).
+   if [ "$(cros_config /firmware has-splash-screen)" = "false" ] ||
+      ! grep -qsF "active=1" /sys/kernel/debug/dri/0/state ||
+-     crossystem devsw_boot?1; then
++     is_developer_end_user; then
+     # Set the backlight to 40% of its maximum level.
+     BACKLIGHT_DIR=/sys/class/backlight
+     if [ -d ${BACKLIGHT_DIR} ] &&
+@@ -45,7 +45,7 @@ script
+ 
+   if [ "$(cros_config /firmware has-splash-screen)" = "false" ] ||
+      ! grep -qsF "active=1" /sys/kernel/debug/dri/0/state ||
+-     crossystem devsw_boot?1; then
++     is_developer_end_user; then
+     ASSETS=/usr/share/chromeos-assets
+     ASSETS_200=${ASSETS}/images_200_percent
+     ASSETS_100=${ASSETS}/images_100_percent

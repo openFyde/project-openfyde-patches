@@ -27,6 +27,8 @@ cros_post_src_prepare_openfyde_patches() {
   if use tpm2_simulator_deprecated; then
     eapply -p1 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/tpm/use_insecure_system_key_for_tpm2_simualtor_deprecated_compitable.patch
   fi
+
+  eapply -p1 ${FILESDIR}/boot-splash-keep-assets-dir-based-on-is-developer-end-user.patch
 }
 
 cros_post_src_install_openfyde_patches() {
