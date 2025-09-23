@@ -1,0 +1,13 @@
+diff --git a/update_engine/cros/install_action.cc b/update_engine/cros/install_action.cc
+index e7a1507b2f..e5144060b5 100644
+--- update_engine/cros/install_action.cc
++++ update_engine/cros/install_action.cc
+@@ -29,7 +29,7 @@
+ namespace chromeos_update_engine {
+ 
+ namespace {
+-constexpr char kBandaidUrl[] = "https://edgedl.me.gvt1.com/edgedl/dlc";
++constexpr char kBandaidUrl[] = "https://otaserv.fydeos.io/edgedl/dlc";
+ constexpr char kLorryUrl[] = "https://dl.google.com/dlc";
+ 
+ constexpr char kBandaidArtifactsMetaUrl[] = "https://edgedl.me.gvt1.com/edgedl";
