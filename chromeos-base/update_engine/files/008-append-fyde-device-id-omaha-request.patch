@@ -1,0 +1,86 @@
+diff --git a/update_engine/cros/fydeos_license_checker.cc b/update_engine/cros/fydeos_license_checker.cc
+index d249d28b3d..bc565b2eba 100644
+--- a/update_engine/cros/fydeos_license_checker.cc
++++ b/update_engine/cros/fydeos_license_checker.cc
+@@ -14,6 +14,8 @@ namespace fydeos {
+ namespace {
+   const char kShellCmd[] = "/usr/share/fydeos_shell/license-utils.sh";
+   const char kParamId[] = "id";
++
++  const char kFydeDeviceIdBin[] = "/usr/bin/fyde_device_id";
+ } // namespace
+ 
+ FydeLicenseChecker::FydeLicenseChecker() = default;
+@@ -31,6 +33,11 @@ void FydeLicenseChecker::Setup() {
+ }
+ 
+ void FydeLicenseChecker::Init() {
++  FetchLicenseId();
++  FetchDeviceId();
++}
++
++void FydeLicenseChecker::FetchLicenseId() {
+   int exit_code = 0;
+   std::string value, error;
+   std::vector<std::string> cmd = {kShellCmd, kParamId};
+@@ -42,6 +49,18 @@ void FydeLicenseChecker::Init() {
+   LOG(INFO) << "FydeOS license id: " << license_id_;
+ }
+ 
++void FydeLicenseChecker::FetchDeviceId() {
++  int exit_code = 0;
++  std::string value, error;
++  std::vector<std::string> cmd = {kFydeDeviceIdBin};
++  if (!chromeos_update_engine::Subprocess::SynchronousExec(cmd, &exit_code, &value, &error) || exit_code) {
++    LOG(ERROR) << "Get fyde device id error, exit_code: " << exit_code;
++    return;
++  }
++  base::TrimWhitespaceASCII(value, base::TRIM_ALL, &device_id_);
++  LOG(INFO) << "Fyde device id: " << device_id_;
++}
++
+ FydeLicenseChecker* FydeLicenseChecker::license_checker_singleton_ = nullptr;
+ 
+ } // namespace fydeos
+diff --git a/update_engine/cros/fydeos_license_checker.h b/update_engine/cros/fydeos_license_checker.h
+index a8169650eb..4291ec0c9c 100644
+--- a/update_engine/cros/fydeos_license_checker.h
++++ b/update_engine/cros/fydeos_license_checker.h
+@@ -15,11 +15,15 @@ class FydeLicenseChecker {
+     void Setup();
+     void Init();
+     std::string GetLicenseId() const { return license_id_; };
++    std::string GetDeviceId() const { return device_id_; };
+ 
+   private:
++    void FetchLicenseId();
++    void FetchDeviceId();
+     static FydeLicenseChecker* license_checker_singleton_;
+ 
+     std::string license_id_;
++    std::string device_id_;
+ };
+ 
+ } // namespace fydeos
+diff --git a/update_engine/cros/omaha_request_builder_xml.cc b/update_engine/cros/omaha_request_builder_xml.cc
+index 3331838ac8..1ef3ca97fa 100644
+--- a/update_engine/cros/omaha_request_builder_xml.cc
++++ b/update_engine/cros/omaha_request_builder_xml.cc
+@@ -303,6 +303,9 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+   string license_id = fydeos::FydeLicenseChecker::Get().GetLicenseId();
+   string fydeos_license_id =
+       "fydeos_license_id=\"" + XmlEncodeWithDefault(license_id) + "\" ";
++  string device_id = fydeos::FydeLicenseChecker::Get().GetDeviceId();
++  string fyde_device_id =
++      "fyde_device_id=\"" + XmlEncodeWithDefault(device_id) + "\" ";
+   // ---***FYDEOS END***---
+ 
+   string download_channel = params->download_channel();
+@@ -405,6 +408,7 @@ string OmahaRequestBuilderXml::GetApp(const OmahaAppData& app_data) const {
+       install_date_in_days_str +
+       // ---***FYDEOS BEGIN***---
+       fydeos_license_id +
++      fyde_device_id +
+       // ---***FYDEOS END***---
+       ">\n" +
+          app_body +

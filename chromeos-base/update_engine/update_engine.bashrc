@@ -16,6 +16,8 @@ cros_pre_src_prepare_openfyde_patches() {
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/005-set-is-official-build-false.patch
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/006-skip_SetFirstActiveOmahaPingSent_to_avoid_tons_of_vpd_errors.patch
 
+  eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/008-append-fyde-device-id-omaha-request.patch
+
   apply_io_spcified_patches
 
   # skip_removable patch from r96 was removed here
