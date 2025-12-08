@@ -47,9 +47,20 @@ get_system_mac() {
   done
 }
 
+get_sn_by_fyde_device_id() {
+  local sn=""
+  if [[ -x "/usr/bin/fyde_device_id" ]]; then
+    sn=$(fyde_device_id --sn)
+  fi
+  echo "$sn"
+}
+
 get_serial_number() {
   local sn=""
-  sn=$(get_system_mac | sed "s/://g")
+  sn=$(get_sn_by_fyde_device_id)
+  if [[ -z "$sn" ]]; then
+    sn=$(get_system_mac | sed "s/://g")
+  fi
   echo "$sn"
 }
 
