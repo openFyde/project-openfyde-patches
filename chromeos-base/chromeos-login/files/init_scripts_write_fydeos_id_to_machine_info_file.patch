@@ -1,6 +1,8 @@
+diff --git a/login_manager/init/scripts/ui-collect-machine-info b/login_manager/init/scripts/ui-collect-machine-info
+index a4b5b475ef..aa73e5a147 100755
 --- a/login_manager/init/scripts/ui-collect-machine-info
 +++ b/login_manager/init/scripts/ui-collect-machine-info
-@@ -22,3 +22,9 @@
+@@ -22,3 +22,15 @@ ROOTDEV=$(rootdev -s -d || true)
  udevadm info --query=property --name="${ROOTDEV}" |
      awk -F = '/^ID_SERIAL=/ { print "\"root_disk_serial_number\"=\"" $2 "\""}' \
      >> "${UI_MACHINE_INFO_FILE}"
@@ -10,9 +12,17 @@
 +  FYDEOS_LICENSE_ID=$("${FYDEOS_LICENSE_UTIL_SCRIPT}" id || true)
 +  echo "\"fydeos_license_id\"=\"${FYDEOS_LICENSE_ID}\"" >> "${UI_MACHINE_INFO_FILE}"
 +fi
++
++FYDE_DEVICE_ID_BIN="/usr/bin/fyde_device_id"
++if [ -x "${FYDE_DEVICE_ID_BIN}" ]; then
++  FYDE_DEVICE_ID=$("${FYDE_DEVICE_ID_BIN}" || true)
++  echo "\"fyde_device_id\"=\"${FYDE_DEVICE_ID}\"" >> "${UI_MACHINE_INFO_FILE}"
++fi
+diff --git a/login_manager/init/scripts/write-machine-info b/login_manager/init/scripts/write-machine-info
+index c529db6f09..516c6bedb4 100755
 --- a/login_manager/init/scripts/write-machine-info
 +++ b/login_manager/init/scripts/write-machine-info
-@@ -75,3 +75,9 @@
+@@ -70,3 +70,15 @@ MACHINE_INFO_ERR=$( {
  if [ -n "${MACHINE_INFO_ERR}" ]; then
    logger -t write-machine-info "${MACHINE_INFO_ERR}"
  fi
@@ -21,4 +31,10 @@
 +if [ -x "${FYDEOS_LICENSE_UTIL_SCRIPT}" ]; then
 +  FYDEOS_LICENSE_ID=$("${FYDEOS_LICENSE_UTIL_SCRIPT}" id || true)
 +  echo "fydeos_license_id=\"${FYDEOS_LICENSE_ID}\"" >> "${MACHINE_INFO}"
++fi
++
++FYDE_DEVICE_ID_BIN="/usr/bin/fyde_device_id"
++if [ -x "${FYDE_DEVICE_ID_BIN}" ]; then
++  FYDE_DEVICE_ID=$("${FYDE_DEVICE_ID_BIN}" || true)
++  echo "fyde_device_id=\"${FYDE_DEVICE_ID}\"" >> "${MACHINE_INFO}"
 +fi
