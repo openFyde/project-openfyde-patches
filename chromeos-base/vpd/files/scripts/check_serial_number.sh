@@ -64,6 +64,12 @@ get_serial_number() {
   echo "$sn"
 }
 
+get_legacy_serial_number() {
+  local sn=""
+  sn=$(get_system_mac | sed "s/://g")
+  echo "$sn"
+}
+
 # serial_number_helper.sh contains the function get_seirl_number
 # shellcheck source=/dev/null
 [[ -f /usr/share/cros/init/serial_number_helper.sh ]] && source "/usr/share/cros/init/serial_number_helper.sh"
@@ -84,10 +90,20 @@ dump_vpd() {
   dump_vpd_log --force
 }
 
-update_serial_number() {
-  local serial=$1
+
+LEGACY_SERIAL_NUMBER_TO_UPDATE=""
+SERIAL_NUMBER_TO_UPDATE=""
+update_vpd() {
+  if [[ -z "$LEGACY_SERIAL_NUMBER_TO_UPDATE" ]] && [[ -z "$SERIAL_NUMBER_TO_UPDATE" ]]; then
+    return
+  fi
   remount_oem_writable || die "Remount OEM partition failed"
-  vpd -i RO_VPD -s "serial_number=${serial}"
+  if [[ -n "$LEGACY_SERIAL_NUMBER_TO_UPDATE" ]]; then
+    vpd -i RO_VPD -s "legacy_serial_number=${LEGACY_SERIAL_NUMBER_TO_UPDATE}"
+  fi
+  if [[ -n "$SERIAL_NUMBER_TO_UPDATE" ]]; then
+    vpd -i RO_VPD -s "serial_number=${SERIAL_NUMBER_TO_UPDATE}"
+  fi
   remount_oem_readonly
 
   dump_vpd
@@ -104,7 +120,20 @@ should_block() {
   true
 }
 
-update_serial_number_if_necessary() {
+_update_legacy_serial_number_if_necessary() {
+  local serial=""
+  serial=$(vpd -i RO_VPD -g legacy_serial_number 2>/dev/null)
+  local new_sn=""
+  new_sn=$(get_legacy_serial_number)
+  if [ -z "$new_sn" ]; then
+    return 1
+  fi
+  if [ "$serial" != "$new_sn" ]; then
+    LEGACY_SERIAL_NUMBER_TO_UPDATE="$new_sn"
+  fi
+}
+
+_update_serial_number_if_necessary() {
   local serial=""
   if [[ $# -eq 1 ]]; then
     serial=$1
@@ -114,11 +143,17 @@ update_serial_number_if_necessary() {
   local new_sn=""
   new_sn=$(get_serial_number)
   if [ -z "$new_sn" ]; then
-    exit 1
+    return 1
   fi
   if [ "$serial" != "$new_sn" ]; then
-    update_serial_number "$new_sn"
+    SERIAL_NUMBER_TO_UPDATE="$new_sn"
   fi
+}
+
+update_serial_number_if_necessary() {
+  _update_serial_number_if_necessary "$@"
+  _update_legacy_serial_number_if_necessary
+  update_vpd
 }
 
 main() {
