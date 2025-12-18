@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="aace9a0b19e922f7c57f6e061bbcb8bbad1233e0"
-CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "73a52a54b55f8340cc15c34b72a98187aa4ec3ec" "a10269602c120683d70021b605b4e705db7bddf2" "544e5cda3225c9cd373e1431dcb270e85d82bda5" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="bb766b745b4885e21f0889acbec6bffef03380d2"
+CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "1f19d157dc94c20226d50ed56efaebe31cd723d6" "80939ad83b8001fb19198ab7e719925c124a4f6a" "fd1ab55bfbe3f597d446ba2bce050e54013f473a" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 PYTHON_COMPAT=( python3_11 )
 
 CROS_WORKON_LOCALNAME="platform2"
@@ -30,7 +30,7 @@ IUSE="device-mapper -direncription_allow_v2 -direncryption fuzzer
 	kernel-5_10 kernel-5_4 kernel-upstream lvm_application_containers
 	lvm_stateful_partition mount_oop pinweaver profiling slow_mount
 	systemd test tpm tpm_dynamic tpm_insecure_fallback tpm2
-  -tpm2_simulator_deprecated
+	-tpm2_simulator_deprecated
 	uprev-4-to-5 user_session_isolation +vault_legacy_mount"
 
 REQUIRED_USE="
@@ -184,4 +184,8 @@ src_install() {
 pkg_preinst() {
 	enewuser "cryptohome"
 	enewgroup "cryptohome"
+}
+
+src_configure() {
+	platform_src_configure
 }
