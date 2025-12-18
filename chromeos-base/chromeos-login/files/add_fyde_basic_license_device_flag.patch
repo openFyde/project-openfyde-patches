@@ -35,7 +35,7 @@ index c1e854eaac..495c113fb6 100644
 +  if (!base::ReadFileToString(flex_config, &config)) {
 +    return;
 +  }
-+  std::optional<base::Value> json = base::JSONReader::Read(config);
++  std::optional<base::Value> json = base::JSONReader::Read(config, 0);
 +  if (!json.has_value() || !json->is_dict()) {
 +    return;
 +  }
