@@ -2,14 +2,14 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
-CROS_WORKON_COMMIT="4f44f7d6bdb3f6bf1e233eedea3f050174ef15d4"
-CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "95f897e6a02bd1183f425972401eed585c0c8c32" "db555432df16b57e54c925ffe7c29da9eef6fb30" "7693b3eb1717b791f41f4622e4803fa2c7f7e30d" "912716f95c3e82ab271b7d4cc01e81929f56d5e0" "5bca05369a61f33a55ec8501a1ab79d93f9733aa" "544e5cda3225c9cd373e1431dcb270e85d82bda5" "b4af51d5e5e8a5c42d7afd9dde169d1837a012f5" "b1a2e02e884ce6ecf10f2382a4f4775ff4b3d226" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="1ed9d40d226e3a8e82c61041268b1c647f2b6b68"
+CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "a2a00d640fbf4809c60065d23f775043ca22bc1e" "c31e97063e2752dbc73de60e6e99bf9d59ffbaaf" "56ecb7c9eaf6f9e6ee9b4e674ea558f9c704f553" "048a6dff062bdbaefe5b9508de4a52f87f0d256a" "5bca05369a61f33a55ec8501a1ab79d93f9733aa" "fd1ab55bfbe3f597d446ba2bce050e54013f473a" "6d4854120336dffc7505f1e7fb19d46061b7080d" "cfa9a5f0f694278c44ffdc06134b2cc5d7b5e3df" "d308409644dd989573e0b6d181527438c5c76847" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_PROJECT="chromiumos/platform2"
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_OUTOFTREE_BUILD=1
 CROS_WORKON_INCREMENTAL_BUILD=1
 # TODO(crbug.com/809389): Avoid #include-ing platform2 headers directly.
-CROS_WORKON_SUBTREE="common-mk chromeos-config dlcservice imageloader init libcrossystem libhwsec-foundation libstorage metrics .gn"
+CROS_WORKON_SUBTREE="common-mk chromeos-config dlcservice imageloader init libcrossystem libhwsec-foundation libsegmentation libstorage metrics .gn"
 
 # Tests probe the root device.
 PLATFORM_HOST_DEV_TEST="yes"
@@ -29,16 +29,16 @@ IUSE="
 	cros_embedded device-mapper direncryption disable_lvm_install +encrypted_stateful
 	+encrypted_reboot_vault encstateful_ondisk_finalization frecon fsverity lvm_migration
 	lvm_stateful_partition default_key_stateful +oobe_config prjquota -s3halt +syslog systemd
-  fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
-  -upper_case_product_uuid
-  -tpm2_simulator_deprecated
+	fydeos_factory_install fixcgroup fixcgroup-memory kvm_host
+	-upper_case_product_uuid
+	-tpm2_simulator_deprecated
 	tpm tpm_dynamic tpm_insecure_fallback tpm2 tpm2_simulator +udev unibuild vivid vtconsole vtpm_proxy"
 
 REQUIRED_USE="
 	tpm_dynamic? ( tpm tpm2 )
 	!tpm_dynamic? ( ?? ( tpm tpm2 ) )
 	unibuild
-  tpm2_simulator_deprecated? ( tpm2_simulator )
+	tpm2_simulator_deprecated? ( tpm2_simulator )
 "
 
 # secure-erase-file, vboot_reference, and rootdev are needed for clobber-state.
@@ -51,6 +51,7 @@ COMMON_DEPEND="
 	chromeos-base/imageloader-client:=
 	chromeos-base/libcrossystem:=
 	chromeos-base/libhwsec-foundation:=
+	chromeos-base/libsegmentation:=
 	chromeos-base/libstorage:=
 	>=chromeos-base/metrics-0.0.1-r3152:=
 	chromeos-base/secure-erase-file:=
