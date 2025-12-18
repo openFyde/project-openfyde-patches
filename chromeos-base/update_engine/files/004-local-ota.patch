@@ -47,7 +47,7 @@ Index: update_engine/cros/fydeos_toggle_ota.cc
 +   if (!ReadFileToString(base::FilePath(config_path), &config_json))
 +       LOG(FATAL) << "Failed to read " << config_path;
 +
-+  std::optional<base::Value> config = base::JSONReader::Read(config_json);
++  std::optional<base::Value> config = base::JSONReader::Read(config_json, 0);
 +  if (!config || !config->is_dict()) {
 +    LOG(FATAL) << "Failed to parse " << config_json;
 +  }
