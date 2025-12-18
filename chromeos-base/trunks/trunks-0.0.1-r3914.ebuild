@@ -3,8 +3,8 @@
 
 EAPI=7
 
-CROS_WORKON_COMMIT="aace9a0b19e922f7c57f6e061bbcb8bbad1233e0"
-CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "544e5cda3225c9cd373e1431dcb270e85d82bda5" "b1a2e02e884ce6ecf10f2382a4f4775ff4b3d226" "6900e4186ff4fce92bf6474d0fd7957824df7dee" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
+CROS_WORKON_COMMIT="9e326fba430b11163a3040c05aa1a8fb0d6625b3"
+CROS_WORKON_TREE=("80d4baed48e7c7c409c7ef85445449ee538906d7" "fd1ab55bfbe3f597d446ba2bce050e54013f473a" "d308409644dd989573e0b6d181527438c5c76847" "680531e0d0fe18c1d105c6181f14eb7ed63b4753" "f91b6afd5f2ae04ee9a2c19109a3a4a36f7659e6")
 CROS_WORKON_INCREMENTAL_BUILD=1
 CROS_WORKON_LOCALNAME="platform2"
 CROS_WORKON_PROJECT="chromiumos/platform2"
@@ -31,7 +31,7 @@ IUSE="
 	tpm_dynamic
 	tpm2_simulator
 	key_eviction
-  -tpm2_simulator_deprecated
+	-tpm2_simulator_deprecated
 "
 
 # This depends on protobuf because it uses protoc and needs to be rebuilt
@@ -46,9 +46,9 @@ COMMON_DEPEND="
 	ftdi_tpm? ( dev-embedded/libftdi:= )
 	chromeos-base/tpm2:=
 	tpm2_simulator? (
-    !tpm2_simulator_deprecated? ( chromeos-base/tpm2-simulator:= )
-    tpm2_simulator_deprecated? ( chromeos-base/tpm2:= )
-  )
+		!tpm2_simulator_deprecated? ( chromeos-base/tpm2-simulator:= )
+		tpm2_simulator_deprecated? ( chromeos-base/tpm2:= )
+	)
 	dev-cpp/abseil-cpp:=
 	dev-libs/openssl:=
 	fuzzer? (
