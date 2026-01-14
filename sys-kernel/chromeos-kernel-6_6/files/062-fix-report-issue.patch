@@ -1,7 +1,7 @@
-Index: kernel-rockchip/security/chromiumos/lsm.c
+Index: v6.6/security/chromiumos/lsm.c
 ===================================================================
---- kernel-rockchip.orig/security/chromiumos/lsm.c
-+++ kernel-rockchip/security/chromiumos/lsm.c
+--- v6.6.orig/security/chromiumos/lsm.c
++++ v6.6/security/chromiumos/lsm.c
 @@ -84,6 +84,9 @@ static void report(const char *origin, c
  	kfree(cmdline);
  	kfree(alloced);

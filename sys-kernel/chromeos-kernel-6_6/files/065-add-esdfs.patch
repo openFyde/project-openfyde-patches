@@ -1,8 +1,8 @@
-Index: kernel-6_6/fs/Kconfig
+Index: v6.6/fs/Kconfig
 ===================================================================
---- kernel-6_6.orig/fs/Kconfig
-+++ kernel-6_6/fs/Kconfig
-@@ -309,6 +309,7 @@ source "fs/orangefs/Kconfig"
+--- v6.6.orig/fs/Kconfig
++++ v6.6/fs/Kconfig
+@@ -315,6 +315,7 @@ source "fs/orangefs/Kconfig"
  source "fs/adfs/Kconfig"
  source "fs/affs/Kconfig"
  source "fs/ecryptfs/Kconfig"
@@ -10,10 +10,10 @@ Index: kernel-6_6/fs/Kconfig
  source "fs/hfs/Kconfig"
  source "fs/hfsplus/Kconfig"
  source "fs/befs/Kconfig"
-Index: kernel-6_6/fs/Makefile
+Index: v6.6/fs/Makefile
 ===================================================================
---- kernel-6_6.orig/fs/Makefile
-+++ kernel-6_6/fs/Makefile
+--- v6.6.orig/fs/Makefile
++++ v6.6/fs/Makefile
 @@ -4,7 +4,7 @@
  #
  # 14 Sep 2000, Christoph Hellwig <hch@infradead.org>
@@ -40,10 +40,10 @@ Index: kernel-6_6/fs/Makefile
  obj-$(CONFIG_VXFS_FS)		+= freevxfs/
  obj-$(CONFIG_NFS_FS)		+= nfs/
  obj-$(CONFIG_EXPORTFS)		+= exportfs/
-Index: kernel-6_6/fs/esdfs/Kconfig
+Index: v6.6/fs/esdfs/Kconfig
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/Kconfig
++++ v6.6/fs/esdfs/Kconfig
 @@ -0,0 +1,7 @@
 +config ESD_FS
 +	tristate "Emulated 'SD card' file system for Android (EXPERIMENTAL)"
@@ -52,10 +52,10 @@ Index: kernel-6_6/fs/esdfs/Kconfig
 +	help
 +	  Esdfs is a wrapfs-based file system, designed to implement the
 +	  Android "sdcard" FUSE-backed file system from within the kernel.
-Index: kernel-6_6/fs/esdfs/Makefile
+Index: v6.6/fs/esdfs/Makefile
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/Makefile
++++ v6.6/fs/esdfs/Makefile
 @@ -0,0 +1,7 @@
 +ESDFS_VERSION="0.3"
 +
@@ -64,10 +64,10 @@ Index: kernel-6_6/fs/esdfs/Makefile
 +obj-$(CONFIG_ESD_FS) += esdfs.o
 +
 +esdfs-y := dentry.o file.o inode.o main.o super.o lookup.o mmap.o derive.o
-Index: kernel-6_6/fs/esdfs/dentry.c
+Index: v6.6/fs/esdfs/dentry.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/dentry.c
++++ v6.6/fs/esdfs/dentry.c
 @@ -0,0 +1,158 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -227,10 +227,10 @@ Index: kernel-6_6/fs/esdfs/dentry.c
 +	.d_compare	= esdfs_d_compare,
 +	.d_release	= esdfs_d_release,
 +};
-Index: kernel-6_6/fs/esdfs/derive.c
+Index: v6.6/fs/esdfs/derive.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/derive.c
++++ v6.6/fs/esdfs/derive.c
 @@ -0,0 +1,609 @@
 +/*
 + * Copyright (c) 2013-2014 Motorola Mobility LLC
@@ -841,10 +841,10 @@ Index: kernel-6_6/fs/esdfs/derive.c
 +	esdfs_revert_creds(creds, &mask);
 +	return err;
 +}
-Index: kernel-6_6/fs/esdfs/esdfs.h
+Index: v6.6/fs/esdfs/esdfs.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/esdfs.h
++++ v6.6/fs/esdfs/esdfs.h
 @@ -0,0 +1,631 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -1477,10 +1477,10 @@ Index: kernel-6_6/fs/esdfs/esdfs.h
 +}
 +
 +#endif	/* not _ESDFS_H_ */
-Index: kernel-6_6/fs/esdfs/file.c
+Index: v6.6/fs/esdfs/file.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/file.c
++++ v6.6/fs/esdfs/file.c
 @@ -0,0 +1,490 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -1972,10 +1972,10 @@ Index: kernel-6_6/fs/esdfs/file.c
 +	.fsync		= esdfs_fsync,
 +	.fasync		= esdfs_fasync,
 +};
-Index: kernel-6_6/fs/esdfs/inode.c
+Index: v6.6/fs/esdfs/inode.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/inode.c
++++ v6.6/fs/esdfs/inode.c
 @@ -0,0 +1,550 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -2527,10 +2527,10 @@ Index: kernel-6_6/fs/esdfs/inode.c
 +	.setattr	= esdfs_setattr,
 +	.getattr	= esdfs_getattr,
 +};
-Index: kernel-6_6/fs/esdfs/lookup.c
+Index: v6.6/fs/esdfs/lookup.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/lookup.c
++++ v6.6/fs/esdfs/lookup.c
 @@ -0,0 +1,473 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -3005,10 +3005,10 @@ Index: kernel-6_6/fs/esdfs/lookup.c
 +		dput(real_parent);
 +	return ret;
 +}
-Index: kernel-6_6/fs/esdfs/main.c
+Index: v6.6/fs/esdfs/main.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/main.c
++++ v6.6/fs/esdfs/main.c
 @@ -0,0 +1,728 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -3738,10 +3738,10 @@ Index: kernel-6_6/fs/esdfs/main.c
 +
 +module_init(init_esdfs_fs);
 +module_exit(exit_esdfs_fs);
-Index: kernel-6_6/fs/esdfs/mmap.c
+Index: v6.6/fs/esdfs/mmap.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/mmap.c
++++ v6.6/fs/esdfs/mmap.c
 @@ -0,0 +1,98 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -3841,10 +3841,10 @@ Index: kernel-6_6/fs/esdfs/mmap.c
 +	.open		= esdfs_vm_open,
 +	.close		= esdfs_vm_close,
 +};
-Index: kernel-6_6/fs/esdfs/super.c
+Index: v6.6/fs/esdfs/super.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/fs/esdfs/super.c
++++ v6.6/fs/esdfs/super.c
 @@ -0,0 +1,290 @@
 +/*
 + * Copyright (c) 1998-2014 Erez Zadok
@@ -4136,10 +4136,10 @@ Index: kernel-6_6/fs/esdfs/super.c
 +	.destroy_inode	= esdfs_destroy_inode,
 +	.drop_inode	= generic_delete_inode,
 +};
-Index: kernel-6_6/include/uapi/linux/magic.h
+Index: v6.6/include/uapi/linux/magic.h
 ===================================================================
---- kernel-6_6.orig/include/uapi/linux/magic.h
-+++ kernel-6_6/include/uapi/linux/magic.h
+--- v6.6.orig/include/uapi/linux/magic.h
++++ v6.6/include/uapi/linux/magic.h
 @@ -62,6 +62,8 @@
  #define REISER2FS_SUPER_MAGIC_STRING	"ReIsEr2Fs"
  #define REISER2FS_JR_SUPER_MAGIC_STRING	"ReIsEr3Fs"
@@ -4149,10 +4149,10 @@ Index: kernel-6_6/include/uapi/linux/magic.h
  #define SMB_SUPER_MAGIC		0x517B
  #define CIFS_SUPER_MAGIC	0xFF534D42      /* the first four bytes of SMB PDUs */
  #define SMB2_SUPER_MAGIC	0xFE534D42
-Index: kernel-6_6/fs/read_write.c
+Index: v6.6/fs/read_write.c
 ===================================================================
---- kernel-6_6.orig/fs/read_write.c
-+++ kernel-6_6/fs/read_write.c
+--- v6.6.orig/fs/read_write.c
++++ v6.6/fs/read_write.c
 @@ -477,6 +477,7 @@ ssize_t vfs_read(struct file *file, char
  	inc_syscr(current);
  	return ret;
@@ -4178,10 +4178,10 @@ Index: kernel-6_6/fs/read_write.c
  			ret = vfs_write(f.file, buf, count, &pos);
  		fdput(f);
  	}
-Index: kernel-6_6/kernel/user_namespace.c
+Index: v6.6/kernel/user_namespace.c
 ===================================================================
---- kernel-6_6.orig/kernel/user_namespace.c
-+++ kernel-6_6/kernel/user_namespace.c
+--- v6.6.orig/kernel/user_namespace.c
++++ v6.6/kernel/user_namespace.c
 @@ -1399,6 +1399,7 @@ const struct proc_ns_operations userns_o
  	.owner		= userns_owner,
  	.get_parent	= ns_get_owner,
@@ -4190,10 +4190,10 @@ Index: kernel-6_6/kernel/user_namespace.c
  
  static __init int user_namespaces_init(void)
  {
-Index: kernel-6_6/security/security.c
+Index: v6.6/security/security.c
 ===================================================================
---- kernel-6_6.orig/security/security.c
-+++ kernel-6_6/security/security.c
+--- v6.6.orig/security/security.c
++++ v6.6/security/security.c
 @@ -1881,6 +1881,7 @@ int security_path_chown(const struct pat
  		return 0;
  	return call_int_hook(path_chown, 0, path, uid, gid);

@@ -1,7 +1,7 @@
-Index: kernel-6_6/drivers/bluetooth/btusb.c
+Index: v6.6/drivers/bluetooth/btusb.c
 ===================================================================
---- kernel-6_6.orig/drivers/bluetooth/btusb.c
-+++ kernel-6_6/drivers/bluetooth/btusb.c
+--- v6.6.orig/drivers/bluetooth/btusb.c
++++ v6.6/drivers/bluetooth/btusb.c
 @@ -448,6 +448,7 @@ static const struct usb_device_id quirks
  	{ USB_DEVICE(0x1286, 0x2044), .driver_info = BTUSB_MARVELL },
  	{ USB_DEVICE(0x1286, 0x2046), .driver_info = BTUSB_MARVELL },

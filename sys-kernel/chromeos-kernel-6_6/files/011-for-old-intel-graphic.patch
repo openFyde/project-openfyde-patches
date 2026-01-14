@@ -1,7 +1,7 @@
-Index: kernel-6_6/drivers/gpu/drm/i915/display/intel_fb.c
+Index: v6.6/drivers/gpu/drm/i915/display/intel_fb.c
 ===================================================================
---- kernel-6_6.orig/drivers/gpu/drm/i915/display/intel_fb.c
-+++ kernel-6_6/drivers/gpu/drm/i915/display/intel_fb.c
+--- v6.6.orig/drivers/gpu/drm/i915/display/intel_fb.c
++++ v6.6/drivers/gpu/drm/i915/display/intel_fb.c
 @@ -1987,7 +1987,8 @@ int intel_framebuffer_init(struct intel_
  
  	if (!drm_any_plane_has_format(&dev_priv->drm,

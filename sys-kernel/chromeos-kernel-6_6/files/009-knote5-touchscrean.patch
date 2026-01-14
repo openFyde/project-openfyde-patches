@@ -1,7 +1,7 @@
-Index: kernel-6_6/drivers/platform/x86/touchscreen_dmi.c
+Index: v6.6/drivers/platform/x86/touchscreen_dmi.c
 ===================================================================
---- kernel-6_6.orig/drivers/platform/x86/touchscreen_dmi.c
-+++ kernel-6_6/drivers/platform/x86/touchscreen_dmi.c
+--- v6.6.orig/drivers/platform/x86/touchscreen_dmi.c
++++ v6.6/drivers/platform/x86/touchscreen_dmi.c
 @@ -1148,6 +1148,22 @@ static const struct ts_dmi_data vinga_tw
  	.properties	= vinga_twizzle_j116_props,
  };

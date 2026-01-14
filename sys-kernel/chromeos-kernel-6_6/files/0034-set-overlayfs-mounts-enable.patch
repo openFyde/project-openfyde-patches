@@ -1,7 +1,7 @@
-Index: kernel-5_15/security/chromiumos/lsm.c
+Index: v6.6/security/chromiumos/lsm.c
 ===================================================================
---- kernel-5_15.orig/security/chromiumos/lsm.c
-+++ kernel-5_15/security/chromiumos/lsm.c
+--- v6.6.orig/security/chromiumos/lsm.c
++++ v6.6/security/chromiumos/lsm.c
 @@ -41,7 +41,7 @@
  #include "inode_mark.h"
  #include "utils.h"

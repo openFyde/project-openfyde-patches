@@ -1,7 +1,7 @@
-Index: kernel-6_6/arch/x86/Kconfig
+Index: v6.6/arch/x86/Kconfig
 ===================================================================
---- kernel-6_6.orig/arch/x86/Kconfig
-+++ kernel-6_6/arch/x86/Kconfig
+--- v6.6.orig/arch/x86/Kconfig
++++ v6.6/arch/x86/Kconfig
 @@ -305,6 +305,7 @@ config X86
  	select FUNCTION_ALIGNMENT_4B
  	imply IMA_SECURE_AND_OR_TRUSTED_BOOT    if EFI
@@ -10,10 +10,10 @@ Index: kernel-6_6/arch/x86/Kconfig
  
  config INSTRUCTION_DECODER
  	def_bool y
-Index: kernel-6_6/arch/x86/include/asm/thread_info.h
+Index: v6.6/arch/x86/include/asm/thread_info.h
 ===================================================================
---- kernel-6_6.orig/arch/x86/include/asm/thread_info.h
-+++ kernel-6_6/arch/x86/include/asm/thread_info.h
+--- v6.6.orig/arch/x86/include/asm/thread_info.h
++++ v6.6/arch/x86/include/asm/thread_info.h
 @@ -50,6 +50,10 @@
   */
  #ifndef __ASSEMBLY__
@@ -68,11 +68,11 @@ Index: kernel-6_6/arch/x86/include/asm/thread_info.h
  }
  
  #else /* !__ASSEMBLY__ */
-Index: kernel-6_6/arch/x86/kernel/Makefile
+Index: v6.6/arch/x86/kernel/Makefile
 ===================================================================
---- kernel-6_6.orig/arch/x86/kernel/Makefile
-+++ kernel-6_6/arch/x86/kernel/Makefile
-@@ -149,6 +149,8 @@ obj-$(CONFIG_X86_CET)			+= cet.o
+--- v6.6.orig/arch/x86/kernel/Makefile
++++ v6.6/arch/x86/kernel/Makefile
+@@ -150,6 +150,8 @@ obj-$(CONFIG_X86_CET)			+= cet.o
  
  obj-$(CONFIG_X86_USER_SHADOW_STACK)	+= shstk.o
  
@@ -81,10 +81,10 @@ Index: kernel-6_6/arch/x86/kernel/Makefile
  ###
  # 64 bit specific files
  ifeq ($(CONFIG_X86_64),y)
-Index: kernel-6_6/arch/x86/kernel/alt-syscall.c
+Index: v6.6/arch/x86/kernel/alt-syscall.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/arch/x86/kernel/alt-syscall.c
++++ v6.6/arch/x86/kernel/alt-syscall.c
 @@ -0,0 +1,70 @@
 +#include <linux/sched.h>
 +#include <linux/mm.h>
@@ -156,10 +156,10 @@ Index: kernel-6_6/arch/x86/kernel/alt-syscall.c
 +
 +	return 0;
 +}
-Index: kernel-6_6/include/linux/alt-syscall.h
+Index: v6.6/include/linux/alt-syscall.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/include/linux/alt-syscall.h
++++ v6.6/include/linux/alt-syscall.h
 @@ -0,0 +1,60 @@
 +#ifndef _ALT_SYSCALL_H
 +#define _ALT_SYSCALL_H
@@ -221,30 +221,30 @@ Index: kernel-6_6/include/linux/alt-syscall.h
 +#endif
 +
 +#endif /* _ALT_SYSCALL_H */
-Index: kernel-6_6/arch/x86/entry/common.c
+Index: v6.6/arch/x86/entry/common.c
 ===================================================================
---- kernel-6_6.orig/arch/x86/entry/common.c
-+++ kernel-6_6/arch/x86/entry/common.c
+--- v6.6.orig/arch/x86/entry/common.c
++++ v6.6/arch/x86/entry/common.c
 @@ -45,13 +45,25 @@ static __always_inline bool do_syscall_x
  	 * numbers for comparisons.
  	 */
  	unsigned int unr = nr;
 -
 +#ifdef CONFIG_ALT_SYSCALL
-+  struct thread_info *ti;
++	struct thread_info *ti;
 +#endif
 +#ifdef CONFIG_ALT_SYSCALL
-+  ti = current_thread_info();
-+  if (likely(unr < ti->nr_syscalls)) {
-+    unr = array_index_nospec(unr, ti->nr_syscalls);
-+    regs->ax = ti->sys_call_table[unr](regs);
-+    return true;
-+  }
-+  return false;
++	ti = current_thread_info();
++	if (likely(unr < ti->nr_syscalls)) {
++		unr = array_index_nospec(unr, ti->nr_syscalls);
++		regs->ax = ti->sys_call_table[unr](regs);
++		return true;
++	}
++	return false;
 +#else
  	if (likely(unr < NR_syscalls)) {
  		unr = array_index_nospec(unr, NR_syscalls);
- 		regs->ax = sys_call_table[unr](regs);
+ 		regs->ax = x64_sys_call(regs, unr);
  		return true;
  	}
  	return false;
@@ -258,15 +258,15 @@ Index: kernel-6_6/arch/x86/entry/common.c
  	unsigned int unr = nr;
 -
 +#ifdef CONFIG_ALT_SYSCALL
-+  struct thread_info *ti = current_thread_info();
-+  if (likely(unr < ti->ia32_nr_syscalls)) {
-+    unr = array_index_nospec(unr, ti->ia32_nr_syscalls);
-+    regs->ax = ti->ia32_sys_call_table[unr](regs);
-+  }
++	struct thread_info *ti = current_thread_info();
++	if (likely(unr < ti->ia32_nr_syscalls)) {
++		unr = array_index_nospec(unr, ti->ia32_nr_syscalls);
++		regs->ax = ti->ia32_sys_call_table[unr](regs);
++	}
 +#else
  	if (likely(unr < IA32_NR_syscalls)) {
  		unr = array_index_nospec(unr, IA32_NR_syscalls);
- 		regs->ax = ia32_sys_call_table[unr](regs);
+ 		regs->ax = ia32_sys_call(regs, unr);
  	} else if (nr != -1) {
  		regs->ax = __ia32_sys_ni_syscall(regs);
  	}
@@ -274,10 +274,10 @@ Index: kernel-6_6/arch/x86/entry/common.c
  }
  
  #ifdef CONFIG_IA32_EMULATION
-Index: kernel-6_6/kernel/Makefile
+Index: v6.6/kernel/Makefile
 ===================================================================
---- kernel-6_6.orig/kernel/Makefile
-+++ kernel-6_6/kernel/Makefile
+--- v6.6.orig/kernel/Makefile
++++ v6.6/kernel/Makefile
 @@ -52,6 +52,8 @@ obj-y += dma/
  obj-y += entry/
  obj-$(CONFIG_MODULES) += module/
@@ -287,10 +287,10 @@ Index: kernel-6_6/kernel/Makefile
  obj-$(CONFIG_KCMP) += kcmp.o
  obj-$(CONFIG_FREEZER) += freezer.o
  obj-$(CONFIG_PROFILING) += profile.o
-Index: kernel-6_6/kernel/alt-syscall.c
+Index: v6.6/kernel/alt-syscall.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/kernel/alt-syscall.c
++++ v6.6/kernel/alt-syscall.c
 @@ -0,0 +1,65 @@
 +/*
 + * Alternate Syscall Table Infrastructure
@@ -357,20 +357,20 @@ Index: kernel-6_6/kernel/alt-syscall.c
 +
 +	return -ENOENT;
 +}
-Index: kernel-6_6/security/chromiumos/Makefile
+Index: v6.6/security/chromiumos/Makefile
 ===================================================================
---- kernel-6_6.orig/security/chromiumos/Makefile
-+++ kernel-6_6/security/chromiumos/Makefile
+--- v6.6.orig/security/chromiumos/Makefile
++++ v6.6/security/chromiumos/Makefile
 @@ -1,3 +1,5 @@
  obj-$(CONFIG_SECURITY_CHROMIUMOS) := chromiumos_lsm.o
  
  chromiumos_lsm-y := inode_mark.o lsm.o securityfs.o utils.o
 +
 +obj-$(CONFIG_ALT_SYSCALL_CHROMIUMOS) += alt-syscall.o
-Index: kernel-6_6/security/chromiumos/alt-syscall.c
+Index: v6.6/security/chromiumos/alt-syscall.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/security/chromiumos/alt-syscall.c
++++ v6.6/security/chromiumos/alt-syscall.c
 @@ -0,0 +1,556 @@
 +/*
 + * Chromium OS alt-syscall tables
@@ -928,10 +928,10 @@ Index: kernel-6_6/security/chromiumos/alt-syscall.c
 +	return 0;
 +}
 +module_init(chromiumos_alt_syscall_init);
-Index: kernel-6_6/security/chromiumos/alt-syscall.h
+Index: v6.6/security/chromiumos/alt-syscall.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/security/chromiumos/alt-syscall.h
++++ v6.6/security/chromiumos/alt-syscall.h
 @@ -0,0 +1,387 @@
 +/*
 + * Linux Security Module for Chromium OS
@@ -1320,10 +1320,10 @@ Index: kernel-6_6/security/chromiumos/alt-syscall.h
 +#endif
 +
 +#endif /* ALT_SYSCALL_H */
-Index: kernel-6_6/include/uapi/linux/prctl.h
+Index: v6.6/include/uapi/linux/prctl.h
 ===================================================================
---- kernel-6_6.orig/include/uapi/linux/prctl.h
-+++ kernel-6_6/include/uapi/linux/prctl.h
+--- v6.6.orig/include/uapi/linux/prctl.h
++++ v6.6/include/uapi/linux/prctl.h
 @@ -155,6 +155,9 @@ struct prctl_mm_map {
  #define PR_SET_PTRACER 0x59616d61
  # define PR_SET_PTRACER_ANY ((unsigned long)-1)
@@ -1334,10 +1334,10 @@ Index: kernel-6_6/include/uapi/linux/prctl.h
  #define PR_SET_CHILD_SUBREAPER	36
  #define PR_GET_CHILD_SUBREAPER	37
  
-Index: kernel-6_6/init/init_task.c
+Index: v6.6/init/init_task.c
 ===================================================================
---- kernel-6_6.orig/init/init_task.c
-+++ kernel-6_6/init/init_task.c
+--- v6.6.orig/init/init_task.c
++++ v6.6/init/init_task.c
 @@ -12,6 +12,7 @@
  #include <linux/audit.h>
  #include <linux/numa.h>
@@ -1346,10 +1346,10 @@ Index: kernel-6_6/init/init_task.c
  
  #include <linux/uaccess.h>
  
-Index: kernel-6_6/kernel/sys.c
+Index: v6.6/kernel/sys.c
 ===================================================================
---- kernel-6_6.orig/kernel/sys.c
-+++ kernel-6_6/kernel/sys.c
+--- v6.6.orig/kernel/sys.c
++++ v6.6/kernel/sys.c
 @@ -48,6 +48,7 @@
  
  #include <linux/compat.h>
@@ -1423,7 +1423,7 @@ Index: kernel-6_6/kernel/sys.c
  	case PR_GET_TSC:
  		error = GET_TSC_CTL(arg2);
  		break;
-@@ -2754,8 +2771,14 @@ SYSCALL_DEFINE5(prctl, int, option, unsi
+@@ -2756,8 +2773,14 @@ SYSCALL_DEFINE5(prctl, int, option, unsi
  	return error;
  }
  
@@ -1440,7 +1440,7 @@ Index: kernel-6_6/kernel/sys.c
  {
  	int err = 0;
  	int cpu = raw_smp_processor_id();
-@@ -2767,6 +2790,12 @@ SYSCALL_DEFINE3(getcpu, unsigned __user
+@@ -2769,6 +2792,12 @@ SYSCALL_DEFINE3(getcpu, unsigned __user
  	return err ? -EFAULT : 0;
  }
  
@@ -1453,10 +1453,10 @@ Index: kernel-6_6/kernel/sys.c
  /**
   * do_sysinfo - fill in sysinfo struct
   * @info: pointer to buffer to fill
-Index: kernel-6_6/security/Kconfig
+Index: v6.6/security/Kconfig
 ===================================================================
---- kernel-6_6.orig/security/Kconfig
-+++ kernel-6_6/security/Kconfig
+--- v6.6.orig/security/Kconfig
++++ v6.6/security/Kconfig
 @@ -377,5 +377,14 @@ config LSM
  
  source "security/Kconfig.hardening"
@@ -1472,10 +1472,10 @@ Index: kernel-6_6/security/Kconfig
 +
  endmenu
  
-Index: kernel-6_6/security/chromiumos/Kconfig
+Index: v6.6/security/chromiumos/Kconfig
 ===================================================================
---- kernel-6_6.orig/security/chromiumos/Kconfig
-+++ kernel-6_6/security/chromiumos/Kconfig
+--- v6.6.orig/security/chromiumos/Kconfig
++++ v6.6/security/chromiumos/Kconfig
 @@ -27,3 +27,11 @@ config SECURITY_CHROMIUMOS_NO_UNPRIVILEG
  	  is attempted that would cause the filesystem to have the exec, suid,
  	  or dev flags if the caller does not have the CAP_SYS_ADMIN capability
@@ -1488,10 +1488,10 @@ Index: kernel-6_6/security/chromiumos/Kconfig
 +    Register restricted, alternate syscall tables used by Chromium OS
 +    using the alt-syscall infrastructure.  Alternate syscall tables
 +    can be selected with prctl(PR_ALT_SYSCALL).
-Index: kernel-6_6/security/chromiumos/android_whitelists.h
+Index: v6.6/security/chromiumos/android_whitelists.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/security/chromiumos/android_whitelists.h
++++ v6.6/security/chromiumos/android_whitelists.h
 @@ -0,0 +1,655 @@
 +/*
 + * Linux Security Module for Chromium OS
@@ -2148,10 +2148,10 @@ Index: kernel-6_6/security/chromiumos/android_whitelists.h
 +#endif /* CONFIG_COMPAT */
 +
 +#endif /* ANDROID_WHITELISTS_H */
-Index: kernel-6_6/security/chromiumos/complete_whitelists.h
+Index: v6.6/security/chromiumos/complete_whitelists.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/security/chromiumos/complete_whitelists.h
++++ v6.6/security/chromiumos/complete_whitelists.h
 @@ -0,0 +1,373 @@
 +/*
 + * Linux Security Module for Chromium OS
@@ -2526,10 +2526,10 @@ Index: kernel-6_6/security/chromiumos/complete_whitelists.h
 +#endif /* CONFIG_COMPAT */
 +
 +#endif /* COMPLETE_WHITELISTS_H */
-Index: kernel-6_6/security/chromiumos/read_write_test_whitelists.h
+Index: v6.6/security/chromiumos/read_write_test_whitelists.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/security/chromiumos/read_write_test_whitelists.h
++++ v6.6/security/chromiumos/read_write_test_whitelists.h
 @@ -0,0 +1,60 @@
 +/*
 + * Linux Security Module for Chromium OS
@@ -2591,10 +2591,10 @@ Index: kernel-6_6/security/chromiumos/read_write_test_whitelists.h
 +#endif /* CONFIG_COMPAT */
 +
 +#endif /* READ_WRITE_TESTS_WHITELISTS_H */
-Index: kernel-6_6/security/chromiumos/third_party_whitelists.h
+Index: v6.6/security/chromiumos/third_party_whitelists.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/security/chromiumos/third_party_whitelists.h
++++ v6.6/security/chromiumos/third_party_whitelists.h
 @@ -0,0 +1,252 @@
 +/*
 + * Linux Security Module for Chromium OS
@@ -2848,10 +2848,10 @@ Index: kernel-6_6/security/chromiumos/third_party_whitelists.h
 +#endif /* CONFIG_COMPAT */
 +
 +#endif /* THIRD_PARTY_WHITELISTS_H */
-Index: kernel-6_6/include/linux/syscalls.h
+Index: v6.6/include/linux/syscalls.h
 ===================================================================
---- kernel-6_6.orig/include/linux/syscalls.h
-+++ kernel-6_6/include/linux/syscalls.h
+--- v6.6.orig/include/linux/syscalls.h
++++ v6.6/include/linux/syscalls.h
 @@ -1278,4 +1278,24 @@ int __sys_getsockopt(int fd, int level,
  		int __user *optlen);
  int __sys_setsockopt(int fd, int level, int optname, char __user *optval,
@@ -2877,11 +2877,11 @@ Index: kernel-6_6/include/linux/syscalls.h
 +int ksys_adjtimex_time32(struct old_timex32 __user *utp);
 +
  #endif
-Index: kernel-6_6/kernel/events/core.c
+Index: v6.6/kernel/events/core.c
 ===================================================================
---- kernel-6_6.orig/kernel/events/core.c
-+++ kernel-6_6/kernel/events/core.c
-@@ -12451,9 +12451,8 @@ perf_check_permission(struct perf_event_
+--- v6.6.orig/kernel/events/core.c
++++ v6.6/kernel/events/core.c
+@@ -12549,9 +12549,8 @@ perf_check_permission(struct perf_event_
   * @group_fd:		group leader event fd
   * @flags:		perf event open flags
   */
@@ -2893,7 +2893,7 @@ Index: kernel-6_6/kernel/events/core.c
  {
  	struct perf_event *group_leader = NULL, *output_event = NULL;
  	struct perf_event_pmu_context *pmu_ctx;
-@@ -12845,6 +12844,13 @@ err_fd:
+@@ -12943,6 +12942,13 @@ err_fd:
  	return err;
  }
  
@@ -2907,10 +2907,10 @@ Index: kernel-6_6/kernel/events/core.c
  /**
   * perf_event_create_kernel_counter
   *
-Index: kernel-6_6/kernel/kcmp.c
+Index: v6.6/kernel/kcmp.c
 ===================================================================
---- kernel-6_6.orig/kernel/kcmp.c
-+++ kernel-6_6/kernel/kcmp.c
+--- v6.6.orig/kernel/kcmp.c
++++ v6.6/kernel/kcmp.c
 @@ -132,8 +132,8 @@ static int kcmp_epoll_target(struct task
  }
  #endif
@@ -2935,11 +2935,11 @@ Index: kernel-6_6/kernel/kcmp.c
  static __init int kcmp_cookies_init(void)
  {
  	int i;
-Index: kernel-6_6/kernel/time/posix-timers.c
+Index: v6.6/kernel/time/posix-timers.c
 ===================================================================
---- kernel-6_6.orig/kernel/time/posix-timers.c
-+++ kernel-6_6/kernel/time/posix-timers.c
-@@ -1159,8 +1159,8 @@ int do_clock_adjtime(const clockid_t whi
+--- v6.6.orig/kernel/time/posix-timers.c
++++ v6.6/kernel/time/posix-timers.c
+@@ -1160,8 +1160,8 @@ int do_clock_adjtime(const clockid_t whi
  	return kc->clock_adj(which_clock, ktx);
  }
  
@@ -2950,7 +2950,7 @@ Index: kernel-6_6/kernel/time/posix-timers.c
  {
  	struct __kernel_timex ktx;
  	int err;
-@@ -1176,6 +1176,12 @@ SYSCALL_DEFINE2(clock_adjtime, const clo
+@@ -1177,6 +1177,12 @@ SYSCALL_DEFINE2(clock_adjtime, const clo
  	return err;
  }
  
@@ -2963,7 +2963,7 @@ Index: kernel-6_6/kernel/time/posix-timers.c
  /**
   * sys_clock_getres - Get the resolution of a clock
   * @which_clock:	The clock to get the resolution for
-@@ -1302,8 +1308,7 @@ SYSCALL_DEFINE2(clock_gettime32, clockid
+@@ -1303,8 +1309,7 @@ SYSCALL_DEFINE2(clock_gettime32, clockid
  	return err;
  }
  
@@ -2973,7 +2973,7 @@ Index: kernel-6_6/kernel/time/posix-timers.c
  {
  	struct __kernel_timex ktx;
  	int err;
-@@ -1320,6 +1325,12 @@ SYSCALL_DEFINE2(clock_adjtime32, clockid
+@@ -1321,6 +1326,12 @@ SYSCALL_DEFINE2(clock_adjtime32, clockid
  	return err;
  }
  
@@ -2986,10 +2986,10 @@ Index: kernel-6_6/kernel/time/posix-timers.c
  SYSCALL_DEFINE2(clock_getres_time32, clockid_t, which_clock,
  		struct old_timespec32 __user *, tp)
  {
-Index: kernel-6_6/kernel/time/time.c
+Index: v6.6/kernel/time/time.c
 ===================================================================
---- kernel-6_6.orig/kernel/time/time.c
-+++ kernel-6_6/kernel/time/time.c
+--- v6.6.orig/kernel/time/time.c
++++ v6.6/kernel/time/time.c
 @@ -266,7 +266,7 @@ COMPAT_SYSCALL_DEFINE2(settimeofday, str
  #endif
  
@@ -3033,10 +3033,10 @@ Index: kernel-6_6/kernel/time/time.c
  #endif
  
  /**
-Index: kernel-6_6/include/linux/android_aid.h
+Index: v6.6/include/linux/android_aid.h
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/include/linux/android_aid.h
++++ v6.6/include/linux/android_aid.h
 @@ -0,0 +1,28 @@
 +/* include/linux/android_aid.h
 + *
@@ -3066,10 +3066,10 @@ Index: kernel-6_6/include/linux/android_aid.h
 +#define AID_NET_BW_ACCT  (3007)  /* change bandwidth statistics accounting */
 +
 +#endif
-Index: kernel-6_6/drivers/net/tun.c
+Index: v6.6/drivers/net/tun.c
 ===================================================================
---- kernel-6_6.orig/drivers/net/tun.c
-+++ kernel-6_6/drivers/net/tun.c
+--- v6.6.orig/drivers/net/tun.c
++++ v6.6/drivers/net/tun.c
 @@ -3096,6 +3096,12 @@ static long __tun_chr_ioctl(struct file
  	int ret;
  	bool do_notify = false;
@@ -3083,10 +3083,10 @@ Index: kernel-6_6/drivers/net/tun.c
  	if (cmd == TUNSETIFF || cmd == TUNSETQUEUE ||
  	    (_IOC_TYPE(cmd) == SOCK_IOC_TYPE && cmd != SIOCGSKNS)) {
  		if (copy_from_user(&ifr, argp, ifreq_len))
-Index: kernel-6_6/include/net/netns/core.h
+Index: v6.6/include/net/netns/core.h
 ===================================================================
---- kernel-6_6.orig/include/net/netns/core.h
-+++ kernel-6_6/include/net/netns/core.h
+--- v6.6.orig/include/net/netns/core.h
++++ v6.6/include/net/netns/core.h
 @@ -13,6 +13,7 @@ struct netns_core {
  	struct ctl_table_header	*sysctl_hdr;
  
@@ -3095,11 +3095,11 @@ Index: kernel-6_6/include/net/netns/core.h
  	u8	sysctl_txrehash;
  
  #ifdef CONFIG_PROC_FS
-Index: kernel-6_6/include/net/sock.h
+Index: v6.6/include/net/sock.h
 ===================================================================
---- kernel-6_6.orig/include/net/sock.h
-+++ kernel-6_6/include/net/sock.h
-@@ -2928,6 +2928,8 @@ bool sk_ns_capable(const struct sock *sk
+--- v6.6.orig/include/net/sock.h
++++ v6.6/include/net/sock.h
+@@ -2941,6 +2941,8 @@ bool sk_ns_capable(const struct sock *sk
  		   struct user_namespace *user_ns, int cap);
  bool sk_capable(const struct sock *sk, int cap);
  bool sk_net_capable(const struct sock *sk, int cap);
@@ -3108,10 +3108,10 @@ Index: kernel-6_6/include/net/sock.h
  
  void sk_get_meminfo(const struct sock *sk, u32 *meminfo);
  
-Index: kernel-6_6/net/core/sock.c
+Index: v6.6/net/core/sock.c
 ===================================================================
---- kernel-6_6.orig/net/core/sock.c
-+++ kernel-6_6/net/core/sock.c
+--- v6.6.orig/net/core/sock.c
++++ v6.6/net/core/sock.c
 @@ -118,6 +118,7 @@
  #include <linux/mroute.h>
  #include <linux/mroute6.h>
@@ -3160,11 +3160,11 @@ Index: kernel-6_6/net/core/sock.c
  /*
   * Each address family might have different locking rules, so we have
   * one slock key per address family and separate keys for internal and
-Index: kernel-6_6/net/core/sysctl_net_core.c
+Index: v6.6/net/core/sysctl_net_core.c
 ===================================================================
---- kernel-6_6.orig/net/core/sysctl_net_core.c
-+++ kernel-6_6/net/core/sysctl_net_core.c
-@@ -666,6 +666,15 @@ static struct ctl_table net_core_table[]
+--- v6.6.orig/net/core/sysctl_net_core.c
++++ v6.6/net/core/sysctl_net_core.c
+@@ -670,6 +670,15 @@ static struct ctl_table net_core_table[]
  };
  
  static struct ctl_table netns_core_table[] = {
@@ -3180,7 +3180,7 @@ Index: kernel-6_6/net/core/sysctl_net_core.c
  #if IS_ENABLED(CONFIG_RPS)
  	{
  		.procname	= "rps_default_mask",
-@@ -711,6 +720,8 @@ static __net_init int sysctl_core_net_in
+@@ -715,6 +724,8 @@ static __net_init int sysctl_core_net_in
  {
  	struct ctl_table *tbl, *tmp;
  
@@ -3189,10 +3189,10 @@ Index: kernel-6_6/net/core/sysctl_net_core.c
  	tbl = netns_core_table;
  	if (!net_eq(net, &init_net)) {
  		tbl = kmemdup(tbl, sizeof(netns_core_table), GFP_KERNEL);
-Index: kernel-6_6/net/ipv4/af_inet.c
+Index: v6.6/net/ipv4/af_inet.c
 ===================================================================
---- kernel-6_6.orig/net/ipv4/af_inet.c
-+++ kernel-6_6/net/ipv4/af_inet.c
+--- v6.6.orig/net/ipv4/af_inet.c
++++ v6.6/net/ipv4/af_inet.c
 @@ -85,6 +85,7 @@
  #include <linux/netfilter_ipv4.h>
  #include <linux/random.h>
@@ -3211,10 +3211,10 @@ Index: kernel-6_6/net/ipv4/af_inet.c
  	sock->state = SS_UNCONNECTED;
  
  	/* Look for the requested type/protocol pair. */
-Index: kernel-6_6/net/ipv6/af_inet6.c
+Index: v6.6/net/ipv6/af_inet6.c
 ===================================================================
---- kernel-6_6.orig/net/ipv6/af_inet6.c
-+++ kernel-6_6/net/ipv6/af_inet6.c
+--- v6.6.orig/net/ipv6/af_inet6.c
++++ v6.6/net/ipv6/af_inet6.c
 @@ -39,6 +39,7 @@
  #include <linux/netdevice.h>
  #include <linux/icmpv6.h>
@@ -3233,3 +3233,37 @@ Index: kernel-6_6/net/ipv6/af_inet6.c
  	/* Look for the requested type/protocol pair. */
  lookup_protocol:
  	err = -ESOCKTNOSUPPORT;
+Index: v6.6/arch/x86/entry/syscall_32.c
+===================================================================
+--- v6.6.orig/arch/x86/entry/syscall_32.c
++++ v6.6/arch/x86/entry/syscall_32.c
+@@ -31,6 +31,14 @@ const sys_call_ptr_t sys_call_table[] =
+ #undef __SYSCALL
+ #endif
+ 
++#ifdef CONFIG_IA32_EMULATION
++#define __SYSCALL(nr, sym) __ia32_##sym,
++const sys_call_ptr_t ia32_sys_call_table[] = {
++#include <asm/syscalls_32.h>
++};
++#undef __SYSCALL
++#endif
++
+ #define __SYSCALL(nr, sym) case nr: return __ia32_##sym(regs);
+ 
+ long ia32_sys_call(const struct pt_regs *regs, unsigned int nr)
+Index: v6.6/arch/x86/include/asm/syscall.h
+===================================================================
+--- v6.6.orig/arch/x86/include/asm/syscall.h
++++ v6.6/arch/x86/include/asm/syscall.h
+@@ -20,6 +20,10 @@
+ typedef long (*sys_call_ptr_t)(const struct pt_regs *);
+ extern const sys_call_ptr_t sys_call_table[];
+ 
++#if defined(CONFIG_IA32_EMULATION)
++extern const sys_call_ptr_t ia32_sys_call_table[];
++#endif
++
+ /*
+  * These may not exist, but still put the prototypes in so we
+  * can use IS_ENABLED().

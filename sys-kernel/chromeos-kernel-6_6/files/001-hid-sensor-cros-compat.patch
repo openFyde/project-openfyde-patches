@@ -1,7 +1,7 @@
-Index: kernel-6_6/drivers/iio/common/hid-sensors/Makefile
+Index: v6.6/drivers/iio/common/hid-sensors/Makefile
 ===================================================================
---- kernel-6_6.orig/drivers/iio/common/hid-sensors/Makefile
-+++ kernel-6_6/drivers/iio/common/hid-sensors/Makefile
+--- v6.6.orig/drivers/iio/common/hid-sensors/Makefile
++++ v6.6/drivers/iio/common/hid-sensors/Makefile
 @@ -4,5 +4,6 @@
  #
  
@@ -9,10 +9,10 @@ Index: kernel-6_6/drivers/iio/common/hid-sensors/Makefile
 +obj-$(CONFIG_HID_SENSOR_IIO_COMMON) += hid-sensor-cros-compat.o
  obj-$(CONFIG_HID_SENSOR_IIO_TRIGGER) += hid-sensor-trigger.o
  hid-sensor-iio-common-y := hid-sensor-attributes.o
-Index: kernel-6_6/drivers/iio/common/hid-sensors/hid-sensor-cros-compat.c
+Index: v6.6/drivers/iio/common/hid-sensors/hid-sensor-cros-compat.c
 ===================================================================
 --- /dev/null
-+++ kernel-6_6/drivers/iio/common/hid-sensors/hid-sensor-cros-compat.c
++++ v6.6/drivers/iio/common/hid-sensors/hid-sensor-cros-compat.c
 @@ -0,0 +1,1077 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -1091,10 +1091,10 @@ Index: kernel-6_6/drivers/iio/common/hid-sensors/hid-sensor-cros-compat.c
 +MODULE_LICENSE("GPL");
 +MODULE_IMPORT_NS(IIO_HID_ATTRIBUTES);
 +MODULE_IMPORT_NS(IIO_HID);
-Index: kernel-6_6/drivers/hid/hid-sensor-hub.c
+Index: v6.6/drivers/hid/hid-sensor-hub.c
 ===================================================================
---- kernel-6_6.orig/drivers/hid/hid-sensor-hub.c
-+++ kernel-6_6/drivers/hid/hid-sensor-hub.c
+--- v6.6.orig/drivers/hid/hid-sensor-hub.c
++++ v6.6/drivers/hid/hid-sensor-hub.c
 @@ -685,9 +685,7 @@ static int sensor_hub_probe(struct hid_d
  			if (last_hsdev)
  				last_hsdev->end_collection_index = i;
