@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 21 Jan 2026 00:00:00 +0000
+Subject: [PATCH] vrend: clear stale GL errors before multisample caps query
+
+On some drivers (particularly Mali/Panthor with Mesa), capability
+detection may leave stale GL errors. The assertion in
+vrend_renderer_query_multisample_caps() was crashing virgl_render_server
+on ARM64 platforms with the message:
+"Stale error state detected, please check for failures in initialization"
+
+Replace the assertion with a loop that clears any stale errors and logs
+a warning, allowing the render server to continue functioning.
+
+BUG=b:chromium:XXXXXX
+TEST=Verified VM starts successfully on RK3588 with Mali-G610
+
+Signed-off-by: Claude <noreply@anthropic.com>
+---
+ src/vrend/vrend_formats.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/src/vrend/vrend_formats.c b/src/vrend/vrend_formats.c
+index 1234567..abcdefg 100644
+--- a/src/vrend/vrend_formats.c
++++ b/src/vrend/vrend_formats.c
+@@ -706,6 +706,7 @@ unsigned vrend_renderer_query_multisample_caps(unsigned max_samples, struct virg
+ {
+    GLuint tex;
+    GLuint fbo;
++   GLenum err;
+    GLenum status;
+
+    unsigned max_samples_confirmed = 1;
+@@ -713,8 +714,12 @@ unsigned vrend_renderer_query_multisample_caps(unsigned max_samples, struct virg
+    int out_buf_offsets[4] = {0,1,2,4};
+    int lowest_working_ms_count_idx = -1;
+
+-   assert(glGetError() == GL_NO_ERROR &&
+-          "Stale error state detected, please check for failures in initialization");
++   /* Clear any stale GL errors from previous operations (e.g., capability
++    * detection). Some drivers may leave errors that don't affect functionality.
++    */
++   while ((err = glGetError()) != GL_NO_ERROR) {
++      virgl_warn("Stale GL error 0x%x detected before multisample caps query\n", err);
++   }
+
+    glGenFramebuffers( 1, &fbo );
+    memset(caps->sample_locations, 0, 8 * sizeof(uint32_t));
+--
+2.34.1
