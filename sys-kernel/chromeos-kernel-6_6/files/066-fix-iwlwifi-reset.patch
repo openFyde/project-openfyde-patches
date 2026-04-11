@@ -1,0 +1,16 @@
+diff --git a/drivers/net/wireless/iwl7000/iwlwifi/pcie/trans-gen2.c b/drivers/net/wireless/iwl7000/iwlwifi/pcie/trans-gen2.c
+index 2418ea951400..f8797a121aee 100644
+--- a/drivers/net/wireless/iwl7000/iwlwifi/pcie/trans-gen2.c
++++ b/drivers/net/wireless/iwl7000/iwlwifi/pcie/trans-gen2.c
+@@ -147,8 +147,10 @@ static void _iwl_trans_pcie_gen2_stop_device(struct iwl_trans *trans)
+ 		return;
+ 
+ 	if (trans->state >= IWL_TRANS_FW_STARTED &&
+-	    trans_pcie->fw_reset_handshake)
++	    trans_pcie->fw_reset_handshake) {
++		trans->state = IWL_TRANS_NO_FW;
+ 		iwl_trans_pcie_fw_reset_handshake(trans);
++	}
+ 
+ 	trans_pcie->is_down = true;
+ 
