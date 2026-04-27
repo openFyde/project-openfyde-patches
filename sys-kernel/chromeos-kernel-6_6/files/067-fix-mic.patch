@@ -1,0 +1,46 @@
+diff --git a/sound/pci/hda/patch_realtek.c b/sound/pci/hda/patch_realtek.c
+index 50211854be49..ea92be354c65 100644
+--- a/sound/pci/hda/patch_realtek.c
++++ b/sound/pci/hda/patch_realtek.c
+@@ -7619,6 +7619,7 @@ enum {
+ 	ALC286_FIXUP_ACER_AIO_HEADSET_MIC,
+ 	ALC256_FIXUP_ASUS_HEADSET_MIC,
+ 	ALC256_FIXUP_ASUS_MIC_NO_PRESENCE,
++	ALC256_FIXUP_ASUS_VIVOBOOK_X415EA_MIC,
+ 	ALC255_FIXUP_PREDATOR_SUBWOOFER,
+ 	ALC299_FIXUP_PREDATOR_SPK,
+ 	ALC256_FIXUP_MEDION_HEADSET_NO_PRESENCE,
+@@ -9024,6 +9025,25 @@ static const struct hda_fixup alc269_fixups[] = {
+ 		.chained = true,
+ 		.chain_id = ALC256_FIXUP_ASUS_HEADSET_MODE
+ 	},
++	[ALC256_FIXUP_ASUS_VIVOBOOK_X415EA_MIC] = {
++		/* ASUS VivoBook X415EA (SSID 0x104317d2): BIOS exposes pin 0x12
++		 * and/or 0x13 as Internal Mic candidates but neither pin is
++		 * wired to the actual microphone on this board. The real
++		 * on-board digital mic sits on pin 0x1b (BIOS pincfg 0x90a70130,
++		 * auto-parsed by the driver as "Internal Mic 1"). Force-disable
++		 * the bogus candidates so the auto-parser defaults Capture
++		 * Source to pin 0x1b.
++		 */
++		.type = HDA_FIXUP_PINS,
++		.v.pins = (const struct hda_pintbl[]) {
++			{ 0x12, 0x40000000 },
++			{ 0x13, 0x40000000 },
++			{ 0x19, 0x04a11120 }, /* headset mic, no jack detect */
++			{ }
++		},
++		.chained = true,
++		.chain_id = ALC256_FIXUP_ASUS_HEADSET_MODE
++	},
+ 	[ALC255_FIXUP_PREDATOR_SUBWOOFER] = {
+ 		.type = HDA_FIXUP_PINS,
+ 		.v.pins = (const struct hda_pintbl[]) {
+@@ -10446,6 +10466,7 @@ static const struct hda_quirk alc269_fixup_tbl[] = {
+ 	SND_PCI_QUIRK(0x1043, 0x16f3, "ASUS UX7602VI/BZ", ALC245_FIXUP_CS35L41_SPI_2),
+ 	SND_PCI_QUIRK(0x1043, 0x1740, "ASUS UX430UA", ALC295_FIXUP_ASUS_DACS),
+ 	SND_PCI_QUIRK(0x1043, 0x17d1, "ASUS UX431FL", ALC294_FIXUP_ASUS_DUAL_SPK),
++	SND_PCI_QUIRK(0x1043, 0x17d2, "ASUS VivoBook X415EA", ALC256_FIXUP_ASUS_VIVOBOOK_X415EA_MIC),
+ 	SND_PCI_QUIRK(0x1043, 0x17f3, "ROG Ally NR2301L/X", ALC294_FIXUP_ASUS_ALLY),
+ 	SND_PCI_QUIRK(0x1043, 0x1863, "ASUS UX6404VI/VV", ALC245_FIXUP_CS35L41_SPI_2),
+ 	SND_PCI_QUIRK(0x1043, 0x1881, "ASUS Zephyrus S/M", ALC294_FIXUP_ASUS_GX502_PINS),
