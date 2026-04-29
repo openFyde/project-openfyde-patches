@@ -17,6 +17,7 @@ cros_pre_src_prepare_openfyde_patches() {
   eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/006-skip_SetFirstActiveOmahaPingSent_to_avoid_tons_of_vpd_errors.patch
 
   eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/008-append-fyde-device-id-omaha-request.patch
+  eapply ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/009-append-os-major-version-omaha-request.patch
 
   apply_io_spcified_patches
 

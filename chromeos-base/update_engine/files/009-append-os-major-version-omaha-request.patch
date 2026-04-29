@@ -1,0 +1,78 @@
+--- a/cros/fydeos_license_checker.cc
++++ b/cros/fydeos_license_checker.cc
+@@ -16,6 +16,8 @@
+   const char kParamId[] = "id";
+ 
+   const char kFydeDeviceIdBin[] = "/usr/bin/fyde_device_id";
++
++  const char kParamFydeOSVersion[] = "fydeos_version";
+ } // namespace
+ 
+ FydeLicenseChecker::FydeLicenseChecker() = default;
+@@ -35,6 +37,7 @@
+ void FydeLicenseChecker::Init() {
+   FetchLicenseId();
+   FetchDeviceId();
++  FetchOsMajorVersion();
+ }
+ 
+ void FydeLicenseChecker::FetchLicenseId() {
+@@ -61,6 +64,18 @@
+   LOG(INFO) << "Fyde device id: " << device_id_;
+ }
+ 
++void FydeLicenseChecker::FetchOsMajorVersion() {
++  int exit_code = 0;
++  std::string value, error;
++  std::vector<std::string> cmd = {kShellCmd, kParamFydeOSVersion};
++  if (!chromeos_update_engine::Subprocess::SynchronousExec(cmd, &exit_code, &value, &error) || exit_code) {
++    LOG(ERROR) << "Get fydeos os major version error, exit_code: " << exit_code;
++    return;
++  }
++  base::TrimWhitespaceASCII(value, base::TRIM_ALL, &os_major_version_);
++  LOG(INFO) << "FydeOS os major version: " << os_major_version_;
++}
++
+ FydeLicenseChecker* FydeLicenseChecker::license_checker_singleton_ = nullptr;
+ 
+ } // namespace fydeos
+--- a/cros/fydeos_license_checker.h
++++ b/cros/fydeos_license_checker.h
+@@ -16,14 +16,17 @@
+     void Init();
+     std::string GetLicenseId() const { return license_id_; };
+     std::string GetDeviceId() const { return device_id_; };
++    std::string GetOsMajorVersion() const { return os_major_version_; };
+ 
+   private:
+     void FetchLicenseId();
+     void FetchDeviceId();
++    void FetchOsMajorVersion();
+     static FydeLicenseChecker* license_checker_singleton_;
+ 
+     std::string license_id_;
+     std::string device_id_;
++    std::string os_major_version_;
+ };
+ 
+ } // namespace fydeos
+--- a/cros/omaha_request_builder_xml.cc
++++ b/cros/omaha_request_builder_xml.cc
+@@ -306,6 +306,9 @@
+   string device_id = fydeos::FydeLicenseChecker::Get().GetDeviceId();
+   string fyde_device_id =
+       "fyde_device_id=\"" + XmlEncodeWithDefault(device_id) + "\" ";
++  string major_version = fydeos::FydeLicenseChecker::Get().GetOsMajorVersion();
++  string os_major_version =
++      "os_major_version=\"" + XmlEncodeWithDefault(major_version) + "\" ";
+   // ---***FYDEOS END***---
+ 
+   string download_channel = params->download_channel();
+@@ -409,6 +412,7 @@
+       // ---***FYDEOS BEGIN***---
+       fydeos_license_id +
+       fyde_device_id +
++      os_major_version +
+       // ---***FYDEOS END***---
+       ">\n" +
+          app_body +
