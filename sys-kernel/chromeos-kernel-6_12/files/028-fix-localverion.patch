@@ -1,0 +1,13 @@
+Index: v6.6/scripts/setlocalversion
+===================================================================
+--- v6.6.orig/scripts/setlocalversion
++++ v6.6/scripts/setlocalversion
+@@ -113,7 +113,7 @@ scm_version()
+ 		# If only the short version is requested, don't bother
+ 		# running further git commands
+ 		if $short; then
+-			echo "+"
++			echo ""
+ 			return
+ 		fi
+ 
