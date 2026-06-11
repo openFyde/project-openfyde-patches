@@ -4,7 +4,7 @@ Index: init/startup/chromeos_startup.cc
 ===================================================================
 --- init.orig/startup/chromeos_startup.cc
 +++ init/startup/chromeos_startup.cc
-@@ -149,6 +149,15 @@ constexpr char kOobeCompletedFile[] = "/
+@@ -150,6 +150,15 @@
  
  constexpr char kMetaDataFSType[] = "ext4";
  
@@ -20,11 +20,10 @@ Index: init/startup/chromeos_startup.cc
  }  // namespace
  
  namespace startup {
-@@ -1233,7 +1242,7 @@ int ChromeosStartup::Run() {
-                         MS_REMOUNT | MS_RDONLY | kCommonMountFlags, "")) {
-     PLOG(WARNING) << "Failed to remount " << kernel_sec << " as readonly.";
-   }
--
+@@ -1242,6 +1251,7 @@
+   // up for future use. Saving in VPD is done after login.
+   feature_management_->GetFeatureLevel();
+ 
 +  RunFydeOSFactoryInstall();
    bootstat_.LogEvent("post-startup");
  
