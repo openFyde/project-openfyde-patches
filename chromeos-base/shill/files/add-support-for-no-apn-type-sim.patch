@@ -2,10 +2,10 @@ Index: shill/cellular/cellular_capability_3gpp.cc
 ===================================================================
 --- shill.orig/cellular/cellular_capability_3gpp.cc
 +++ shill/cellular/cellular_capability_3gpp.cc
-@@ -2202,14 +2202,20 @@ void CellularCapability3gpp::OnProfilesC
+@@ -2289,14 +2289,20 @@
      // originally being done by MM, before it started to list profiles without
      // an explicit APN type.
-     if (!base::Contains(profile, CellularBearer::kMMApnTypeProperty)) {
+     if (!profile.contains(CellularBearer::kMMApnTypeProperty)) {
 +      if (brillo::GetVariantValueOrDefault<std::string>(
 +              profile, CellularBearer::kMMApnProperty).compare("internet")) {
        SLOG(this, 3) << __func__ << ": ignoring profile with no type.";
