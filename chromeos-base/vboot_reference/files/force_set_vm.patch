@@ -1,8 +1,7 @@
 diff --git a/vboot_reference/host/lib/crossystem.c b/vboot_reference/host/lib/crossystem.c
-index 2dd4b525..93c202b1 100644
 --- a/vboot_reference/host/lib/crossystem.c
 +++ b/vboot_reference/host/lib/crossystem.c
-@@ -550,13 +550,13 @@ int VbGetSystemPropertyInt(const char *name)
+@@ -560,13 +560,13 @@
  				"mainfw_type", fwtype_buf, sizeof(fwtype_buf));
  			if (fwtype_ret == 0 &&
  			    !strcasecmp(fwtype_buf, "nonchrome")) {
@@ -15,6 +14,6 @@ index 2dd4b525..93c202b1 100644
  	} else if (!strcasecmp(name, "post_ec_sync_delay")) {
 -		value = vb2_get_nv_storage(VB2_NV_POST_EC_SYNC_DELAY);
 +		value = 0;
+ 	} else if (!strcasecmp(name, "oem_lock")) {
+ 		value = vb2_get_nv_storage(VB2_NV_OEM_LOCK);
  	}
- 
- 	return value;
