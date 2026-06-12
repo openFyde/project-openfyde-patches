@@ -1,0 +1,24 @@
+Revert upstream 70312762 ("CHROMIUM: processor_enable: Fix crash on
+ARM64/ARM"). On FydeOS ARM boards there is no ChromeOS firmware flash;
+letting the internal programmer proceed past processor detection makes
+libflashrom JEDEC-probe physical memory, which latches an asynchronous
+SError on rk3588 and panics the kernel (delivered during `futility show`
+from update-engine.conf's pre-start, since futility links libflashrom).
+Keeping processor detection failing on ARM restores the r144 behavior:
+flash access from flashrom/futility aborts harmlessly.
+
+Index: flashrom/processor_enable.c
+===================================================================
+--- flashrom.orig/processor_enable.c
++++ flashrom/processor_enable.c
+@@ -79,10 +79,6 @@ int processor_flash_enable(void)
+ 	 * FIXME: Move enable_flash_cs5536 and get_flashbase_sc520 here.
+ 	 */
+ 	ret = 0;
+-#elif defined(__aarch64__) || defined(__arm__)
+-	/* ARM and ARM64 processors do not have specific flash enable logic
+-	   in this generic helper. */
+-	ret = 0;
+ #endif
+ 	return ret;
+ }
