@@ -1,0 +1,12 @@
+diff --git a/third_party/cros_system_api/dbus/cros-disks/dbus-constants.h b/third_party/cros_system_api/dbus/cros-disks/dbus-constants.h
+index fc4f192..3c85a0a 100644
+--- a/third_party/cros_system_api/dbus/cros-disks/dbus-constants.h
++++ b/third_party/cros_system_api/dbus/cros-disks/dbus-constants.h
+@@ -45,6 +45,7 @@ const char kDeviceIsMediaAvailable[] = "DeviceIsMediaAvailable";
+ const char kDeviceIsMounted[] = "DeviceIsMounted";
+ const char kDeviceIsOnBootDevice[] = "DeviceIsOnBootDevice";
+ const char kDeviceIsOnRemovableDevice[] = "DeviceIsOnRemovableDevice";
++const char kDeviceIsDualBootHostDisk[] = "DeviceIsDualBootHostDisk";
+ const char kDeviceIsReadOnly[] = "DeviceIsReadOnly";
+ const char kDeviceIsVirtual[] = "DeviceIsVirtual";
+ const char kDeviceMediaType[] = "DeviceMediaType";

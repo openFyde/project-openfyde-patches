@@ -1,0 +1,170 @@
+diff --git a/cros-disks/cros_disks_server.cc b/cros-disks/cros_disks_server.cc
+index 5b356e4359..458e492ce9 100644
+--- a/cros-disks/cros_disks_server.cc
++++ b/cros-disks/cros_disks_server.cc
+@@ -270,6 +270,7 @@ bool CrosDisksServer::GetDeviceProperties(
+   temp_properties[kDeviceIsMounted] = disk.IsMounted();
+   temp_properties[kDeviceIsMediaAvailable] = disk.is_media_available;
+   temp_properties[kDeviceIsOnBootDevice] = disk.is_on_boot_device;
++  temp_properties[kDeviceIsDualBootHostDisk] = disk.is_dual_boot_host_disk;
+   temp_properties[kDeviceIsOnRemovableDevice] = disk.is_on_removable_device;
+   temp_properties[kDeviceIsVirtual] = disk.is_virtual;
+   temp_properties[kStorageDevicePath] = disk.storage_device_path;
+diff --git a/cros-disks/disk.h b/cros-disks/disk.h
+index 7fdf365fcd..f44097d362 100644
+--- a/cros-disks/disk.h
++++ b/cros-disks/disk.h
+@@ -45,6 +45,7 @@ struct Disk {
+   bool is_auto_mountable = false;
+   bool is_media_available = false;
+   bool is_on_boot_device = true;
++  bool is_dual_boot_host_disk = false;
+   bool is_on_removable_device = false;
+   bool is_rotational = false;
+   bool is_read_only = false;
+diff --git a/cros-disks/disk_manager.cc b/cros-disks/disk_manager.cc
+index e22b4fc5da..3de1dca93f 100644
+--- a/cros-disks/disk_manager.cc
++++ b/cros-disks/disk_manager.cc
+@@ -343,7 +343,7 @@ std::unique_ptr<MountPoint> DiskManager::DoMount(
+     return nullptr;
+   }
+ 
+-  if (disk.is_on_boot_device) {
++  if (disk.is_on_boot_device && !disk.is_dual_boot_host_disk) {
+     LOG(ERROR) << quote(source_path)
+                << " is on boot device and not allowed to mount";
+     *error = MountError::kInvalidDevicePath;
+diff --git a/cros-disks/disk_monitor.cc b/cros-disks/disk_monitor.cc
+index 7fbb62818e..83c3ada6f5 100644
+--- a/cros-disks/disk_monitor.cc
++++ b/cros-disks/disk_monitor.cc
+@@ -55,7 +55,7 @@ bool IsDeviceAllowed(const UdevDevice& device,
+   if (device.IsMobileBroadbandDevice()) {
+     return false;
+   }
+-  if (device.IsOnBootDevice()) {
++  if (device.IsOnBootDevice() && !device.IsDualBootHostDisk()) {
+     return false;
+   }
+   return true;
+@@ -237,7 +237,7 @@ void DiskMonitor::ProcessBlockDeviceEvents(
+ 
+   std::string device_path = device.NativePath();
+   if (disk_added) {
+-    if (device.IsAutoMountable()) {
++    if (device.IsAutoMountable() || device.IsDualBootHostDisk()) {
+       if (disks_detected_.contains(device_path)) {
+         // Disk already exists, so remove it and then add it again.
+         LOG(INFO) << "Re-add block device " << quote(device_path);
+diff --git a/cros-disks/udev_device.cc b/cros-disks/udev_device.cc
+index 2a2cb0dad2..96f9c444b6 100644
+--- a/cros-disks/udev_device.cc
++++ b/cros-disks/udev_device.cc
+@@ -15,6 +15,8 @@
+ #include <utility>
+ 
+ #include <base/check.h>
++#include <base/files/file_path.h>
++#include <base/files/file_util.h>
+ #include <base/functional/bind.h>
+ #include <base/hash/sha1.h>
+ #include <base/logging.h>
+@@ -76,6 +78,39 @@ const char* const kPartitionTypesToHide[] = {
+     "2e0a753d-9e48-43b0-8337-b15192cb1b5e",  // Chrome OS reserved
+ };
+ 
++static std::string GetDualBootHostDiskSysPath() {
++  static std::string cached;
++  static bool resolved = false;
++
++  if (resolved) {
++    return cached;
++  }
++
++  std::string cmdline;
++  if (!base::ReadFileToString(base::FilePath("/proc/cmdline"), &cmdline) ||
++      cmdline.find("fydeos_dualboot") == std::string::npos) {
++    resolved = true;  // Not dual-boot mode, never retry.
++    return cached;
++  }
++
++  char partition_dev[PATH_MAX];
++  if (!realpath("/dev/disk/by-label/FYDEOS-DUAL-BOOT", partition_dev)) {
++    // Label symlink not yet available, will retry on next call.
++    return cached;
++  }
++
++  const std::string blk =
++      "/sys/class/block/" + base::FilePath(partition_dev).BaseName().value();
++  char sysfs[PATH_MAX];
++  if (!realpath(blk.c_str(), sysfs)) {
++    return cached;
++  }
++
++  cached = base::FilePath(sysfs).DirName().value();
++  resolved = true;  // Successfully resolved, cache permanently.
++  return cached;
++}
++
+ }  // namespace
+ 
+ UdevDevice::UdevDevice(std::unique_ptr<brillo::UdevDevice> dev)
+@@ -386,6 +421,10 @@ bool UdevDevice::IsOnBootDevice() const {
+     return true;
+   }
+ 
++  if (IsDualBootHostDisk()) {
++    return true;
++  }
++
+   // Compare the device file path of the current device and all its parents
+   // with the boot device path. Any match indicates that the current device
+   // is on the boot device.
+@@ -397,6 +436,23 @@ bool UdevDevice::IsOnBootDevice() const {
+       boot_device_path));
+ }
+ 
++bool UdevDevice::IsDualBootHostDisk() const {
++  const std::string host_disk_sys = GetDualBootHostDiskSysPath();
++  if (host_disk_sys.empty()) {
++    return false;
++  }
++
++  const char* const current_sys = dev_->GetSysPath();
++  if (!current_sys) {
++    return false;
++  }
++
++  const std::string current_sys_str(current_sys);
++  return (current_sys_str == host_disk_sys) ||
++         (base::StartsWith(current_sys_str, host_disk_sys + "/",
++                          base::CompareCase::SENSITIVE));
++}
++
+ bool UdevDevice::IsOnSdDevice() const {
+   return EnumerateParentDevices(
+       base::BindRepeating([](const brillo::UdevDevice& device) {
+@@ -488,6 +544,7 @@ Disk UdevDevice::ToDisk() {
+   disk.is_hidden = IsHidden();
+   disk.is_media_available = IsMediaAvailable();
+   disk.is_on_boot_device = IsOnBootDevice();
++  disk.is_dual_boot_host_disk = IsDualBootHostDisk();
+   disk.is_on_removable_device = IsOnRemovableDevice();
+   disk.is_virtual = IsVirtual();
+   disk.media_type = GetDeviceMediaType();
+diff --git a/cros-disks/udev_device.h b/cros-disks/udev_device.h
+index cdeefd0f08..64e9da269c 100644
+--- a/cros-disks/udev_device.h
++++ b/cros-disks/udev_device.h
+@@ -96,6 +96,10 @@ class UdevDevice {
+   // Checks if the device is on the boot device.
+   bool IsOnBootDevice() const;
+ 
++  // Checks if the device is the FydeOS dual-boot host disk or one of its
++  // partitions.  Returns false when not running in dual-boot mode.
++  bool IsDualBootHostDisk() const;
++
+   // Checks if the device is on the removable device.
+   bool IsOnRemovableDevice() const;
+ 
