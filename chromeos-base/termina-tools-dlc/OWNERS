@@ -1,0 +1,5 @@
+# GuestOS team
+include chromiumos/containers/cros-container-guest-tools:/OWNERS
+
+# Pupr uprev bot
+include chromiumos/owners:v1:/bots/OWNERS.pupr
