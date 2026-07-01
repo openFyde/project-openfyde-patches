@@ -1,0 +1,74 @@
+[
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-fcommon",
+            "-march=goldmont",
+            "main.cc"
+          ],
+          "path": "./x86_64-cros-linux-gnu-gcc.real"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-march=goldmont",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-gcc"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-fcommon",
+            "-march=goldmont-plus",
+            "main.cc"
+          ],
+          "path": "./x86_64-cros-linux-gnu-gcc.real"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-march=goldmont-plus",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-gcc"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-fcommon",
+            "-march=skylake",
+            "main.cc"
+          ],
+          "path": "./x86_64-cros-linux-gnu-gcc.real"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-march=skylake",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-gcc"
+      }
+    }
+  }
+]

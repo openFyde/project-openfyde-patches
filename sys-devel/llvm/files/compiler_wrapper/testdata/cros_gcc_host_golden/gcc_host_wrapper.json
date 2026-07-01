@@ -1,0 +1,24 @@
+[
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-fcommon",
+            "main.cc"
+          ],
+          "path": "./gcc.real"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "main.cc"
+        ],
+        "path": "./gcc"
+      }
+    }
+  }
+]

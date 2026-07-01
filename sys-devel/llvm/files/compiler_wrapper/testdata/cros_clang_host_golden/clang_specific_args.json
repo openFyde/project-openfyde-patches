@@ -1,0 +1,130 @@
+[
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-mno-movbe",
+            "-Wclobbered",
+            "-Wno-psabi",
+            "-Wlogical-op",
+            "-Wmissing-parameter-type",
+            "-Wold-style-declaration",
+            "-Woverride-init",
+            "-Wunsafe-loop-optimizations",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-mno-movbe",
+          "-Wclobbered",
+          "-Wno-psabi",
+          "-Wlogical-op",
+          "-Wmissing-parameter-type",
+          "-Wold-style-declaration",
+          "-Woverride-init",
+          "-Wunsafe-loop-optimizations",
+          "-Wstrict-aliasing=abc",
+          "-finline-limit=abc",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-Wno-#warnings",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-Wno-error=cpp",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-Wno-error=uninitialized",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-Wno-error=maybe-uninitialized",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-someflag",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-Xclang-only=-someflag",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  }
+]

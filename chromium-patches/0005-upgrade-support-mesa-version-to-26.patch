@@ -1,0 +1,31 @@
+Index: src/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
+===================================================================
+--- src.orig/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
++++ src/sandbox/linux/seccomp-bpf-helpers/syscall_parameters_restrictions.cc
+@@ -281,6 +281,16 @@ ResultExpr RestrictMprotectFlags() {
+   return If((prot & ~kAllowedMask) == 0, Allow()).Else(CrashSIGSYS());
+ }
+ 
++// F_DUPFD_QUERY (Linux 6.10+) asks the kernel whether two file descriptors
++// refer to the same underlying file description. Mesa >= 25 uses it via
++// os_same_file_description() during GPU/driver init; without it the GPU process
++// is killed with SIGSYS on kernels that support the command. It is a read-only
++// query (the third argument is just another fd), so it is safe to allow.
++// Provide a fallback in case the build sysroot's headers predate it.
++#if !defined(F_DUPFD_QUERY)
++#define F_DUPFD_QUERY (F_LINUX_SPECIFIC_BASE + 3)
++#endif
++
+ ResultExpr RestrictFcntlCommands() {
+   // We also restrict the flags in F_SETFL. We don't want to permit flags with
+   // a history of trouble such as O_DIRECT. The flags you see are actually the
+@@ -313,7 +323,8 @@ ResultExpr RestrictFcntlCommands() {
+               F_SETLKW,
+               F_GETLK,
+               F_DUPFD,
+-              F_DUPFD_CLOEXEC},
++              F_DUPFD_CLOEXEC,
++              F_DUPFD_QUERY},
+              Allow())
+       .Case(F_SETFL,
+             If((long_arg & ~kAllowedMask) == 0, Allow()).Else(CrashSIGSYS()))

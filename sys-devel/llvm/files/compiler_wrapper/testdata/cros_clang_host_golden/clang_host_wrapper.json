@@ -1,0 +1,28 @@
+[
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "main.cc"
+        ],
+        "path": "./clang"
+      }
+    }
+  }
+]

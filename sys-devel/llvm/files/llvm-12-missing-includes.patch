@@ -1,0 +1,41 @@
+These are build errors when _LIBCPP_REMOVE_TRANSITIVE_INCLUDES is defined.
+
+Later versions of LLVM don't need these patches.
+
+diff --git a/include/llvm/Demangle/ItaniumDemangle.h b/include/llvm/Demangle/ItaniumDemangle.h
+index e5fca98..ab9f1f6 100644
+--- a/include/llvm/Demangle/ItaniumDemangle.h
++++ b/include/llvm/Demangle/ItaniumDemangle.h
+@@ -28,6 +28,8 @@
+ #include <cstring>
+ #include <numeric>
+ #include <utility>
++#include <exception>
++#include <type_traits>
+
+ #define FOR_EACH_NODE_KIND(X) \
+     X(NodeArrayNode) \
+diff --git a/include/llvm/Demangle/Utility.h b/include/llvm/Demangle/Utility.h
+index 846a5f0..11c63be 100644
+--- a/include/llvm/Demangle/Utility.h
++++ b/include/llvm/Demangle/Utility.h
+@@ -19,6 +19,7 @@
+ #include <cstring>
+ #include <iterator>
+ #include <limits>
++#include <exception>
+
+ DEMANGLE_NAMESPACE_BEGIN
+
+diff --git a/lib/Demangle/ItaniumDemangle.cpp b/lib/Demangle/ItaniumDemangle.cpp
+index fad9b6b..8297a6b 100644
+--- a/lib/Demangle/ItaniumDemangle.cpp
++++ b/lib/Demangle/ItaniumDemangle.cpp
+@@ -22,6 +22,7 @@
+ #include <numeric>
+ #include <utility>
+ #include <vector>
++#include <exception>
+
+ using namespace llvm;
+ using namespace llvm::itanium_demangle;

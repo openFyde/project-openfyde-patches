@@ -1,0 +1,232 @@
+[
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=kernel-address",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=kernel-address",
+          "-Wl,--no-undefined",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=kernel-address",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=kernel-address",
+          "-Wl,-z,defs",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=kernel-address",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=kernel-address",
+          "-D_FORTIFY_SOURCE=1",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=kernel-address",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=kernel-address",
+          "-D_FORTIFY_SOURCE=2",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=fuzzer",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=fuzzer",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=address",
+            "-fprofile-instr-generate",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=address",
+          "-fprofile-instr-generate",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fsanitize=address",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fsanitize=address",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  },
+  {
+    "cmds": [
+      {
+        "cmd": {
+          "args": [
+            "-Qunused-arguments",
+            "-Werror=poison-system-directories",
+            "-fdebug-default-version=5",
+            "-D_LIBCPP_ENABLE_CXX17_REMOVED_FEATURES",
+            "-fcommon",
+            "-fprofile-instr-generate",
+            "main.cc"
+          ],
+          "path": "/tmp/stable/clang"
+        }
+      }
+    ],
+    "wd": "/tmp/stable",
+    "wrapper": {
+      "cmd": {
+        "args": [
+          "-fprofile-instr-generate",
+          "main.cc"
+        ],
+        "path": "./x86_64-cros-linux-gnu-clang"
+      }
+    }
+  }
+]
