@@ -28,7 +28,7 @@ HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git
 LICENSE="GPL-2 GPL-2+ GPL-3 BSD MIT || ( MPL-1.1 GPL-2 )
 	redistributable? ( linux-fw-redistributable BSD-2 BSD BSD-4 ISC MIT )
 	unknown-license? ( all-rights-reserved )"
-SLOT="0"
+SLOT="${PV}"
 IUSE="bindist compress-xz compress-zstd deduplicate initramfs +redistributable savedconfig unknown-license"
 REQUIRED_USE="initramfs? ( redistributable )
 	?? ( compress-xz compress-zstd )
@@ -39,7 +39,7 @@ RESTRICT="binchecks strip test
 	unknown-license? ( bindist )"
 
 DEPEND="
-  savedconfig? ( sys-kernel/linux-firmware-config )
+  savedconfig? ( sys-kernel/linux-firmware-config:${PV} )
 "
 
 BDEPEND="initramfs? ( app-alternatives/cpio )

@@ -10,6 +10,7 @@ LICENSE="BSD-Google"
 SLOT="0"
 KEYWORDS="*"
 IUSE="intel-common amd-common nvidia-common surface-common"
+SLOT="${PV}"
 
 RDEPEND=""
 
@@ -17,14 +18,17 @@ DEPEND="${RDEPEND}"
 
 S=${WORKDIR}
 
-TARGET_CONFIG="linux-firmware-20240220"
+TARGET_CONFIG="linux-firmware-${PV}"
 
 src_compile() {
-  local file_list="${FILESDIR}/linux_firmware_list"
+  local file_list="${FILESDIR}/linux_firmware_list_${PV}"
   if use intel-common; then
-    cat $file_list | grep -v -E "amdgpu|nvidia|radeon" > $TARGET_CONFIG
+    # Intel CPU + all graphics cards: keep every GPU (i915/amdgpu/radeon/nvidia),
+    # drop AMD CPU-only firmware (microcode/SEV/TEE/PMF/NPU).
+    cat $file_list | grep -v -E "amd-ucode|amd[_-]sev|amdtee|amd_pmf|amdnpu" > $TARGET_CONFIG
   elif use amd-common; then
-    cat $file_list | grep -v -E "i915|nvidia" > $TARGET_CONFIG
+    # AMD CPU + AMD/NVIDIA graphics: keep AMD CPU firmware, drop Intel GPUs (i915/xe).
+    cat $file_list | grep -v -E "i915|^xe/|LICENSE\.xe" > $TARGET_CONFIG
   elif use nvidia-common; then
     cat $file_list | grep -v -E "i915|amdgpu|radeon" > $TARGET_CONFIG
   elif use surface-common; then

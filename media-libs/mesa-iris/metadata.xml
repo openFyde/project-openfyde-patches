@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<maintainer type="person">
+	<email>yang@fydeos.io</email>
+	<name>Yang Tsao</name>
+</maintainer>
+<use>
+	<flag name="libglvnd">Enable libglvnd support.</flag>
+	<flag name="vulkan">Build the Intel (ANV) and NVIDIA (NVK) Vulkan drivers.</flag>
+</use>
+<upstream>
+	<remote-id type="cpe">cpe:/a:mesa3d:mesa</remote-id>
+</upstream>
+</pkgmetadata>
