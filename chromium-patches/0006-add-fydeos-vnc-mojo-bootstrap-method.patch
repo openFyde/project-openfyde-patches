@@ -1,0 +1,13 @@
+diff --git a/third_party/cros_system_api/dbus/service_constants.h b/third_party/cros_system_api/dbus/service_constants.h
+index 2a282f9..540df7c 100644
+--- a/third_party/cros_system_api/dbus/service_constants.h
++++ b/third_party/cros_system_api/dbus/service_constants.h
+@@ -549,6 +549,8 @@ constexpr char kMojoConnectionServiceInterface[] =
+ // Methods
+ constexpr char kBootstrapMojoConnectionForRollbackNetworkConfigMethod[] =
+     "BootstrapMojoConnectionForRollbackNetworkConfigService";
++constexpr char kBootstrapMojoConnectionForFydeosVncMethod[] =
++    "BootstrapMojoConnectionForFydeosVnc";
+ }  // namespace mojo_connection_service
+ 
+ namespace virtual_file_provider {
