@@ -1,7 +1,7 @@
-Index: kernel-6_12/drivers/acpi/x86/s2idle.c
+Index: v6.12/drivers/acpi/x86/s2idle.c
 ===================================================================
---- kernel-6_12.orig/drivers/acpi/x86/s2idle.c
-+++ kernel-6_12/drivers/acpi/x86/s2idle.c
+--- v6.12.orig/drivers/acpi/x86/s2idle.c
++++ v6.12/drivers/acpi/x86/s2idle.c
 @@ -141,6 +141,7 @@ static void lpi_device_get_constraints_a
  				acpi_status status;
  
@@ -19,10 +19,20 @@ Index: kernel-6_12/drivers/acpi/x86/s2idle.c
  
  		for (j = 0; j < package_count; j++) {
  			union acpi_object *info_obj = &info.package[j];
-Index: kernel-6_12/drivers/pci/pci.c
+@@ -315,6 +316,9 @@ int acpi_get_lps0_constraint(struct acpi
+ {
+ 	struct lpi_constraints *entry;
+ 
++	if (!adev)
++		return ACPI_STATE_UNKNOWN;
++
+ 	for_each_lpi_constraint(entry) {
+ 		if (adev->handle == entry->handle)
+ 			return entry->min_dstate;
+Index: v6.12/drivers/pci/pci.c
 ===================================================================
---- kernel-6_12.orig/drivers/pci/pci.c
-+++ kernel-6_12/drivers/pci/pci.c
+--- v6.12.orig/drivers/pci/pci.c
++++ v6.12/drivers/pci/pci.c
 @@ -1214,6 +1214,14 @@ static inline bool platform_pci_bridge_d
  	return acpi_pci_bridge_d3(dev);
  }
@@ -51,11 +61,11 @@ Index: kernel-6_12/drivers/pci/pci.c
  			return true;
  		break;
  	}
-Index: kernel-6_12/drivers/pci/pci-acpi.c
+Index: v6.12/drivers/pci/pci-acpi.c
 ===================================================================
---- kernel-6_12.orig/drivers/pci/pci-acpi.c
-+++ kernel-6_12/drivers/pci/pci-acpi.c
-@@ -1074,6 +1074,25 @@ static void acpi_pci_config_space_access
+--- v6.12.orig/drivers/pci/pci-acpi.c
++++ v6.12/drivers/pci/pci-acpi.c
+@@ -1076,6 +1076,25 @@ static void acpi_pci_config_space_access
  			enable ? "connect" : "disconnect", ret);
  }
  
@@ -70,7 +80,7 @@ Index: kernel-6_12/drivers/pci/pci-acpi.c
 +{
 + int constraint = acpi_get_lps0_constraint(ACPI_COMPANION(&dev->dev));
 +
-+ if (constraint < 0) {
++ if (constraint < 0 || constraint == ACPI_STATE_UNKNOWN) {
 +   pci_dbg(dev, "ACPI device constraint not present\n");
 +   return false;
 + }
@@ -81,10 +91,10 @@ Index: kernel-6_12/drivers/pci/pci-acpi.c
  int acpi_pci_set_power_state(struct pci_dev *dev, pci_power_t state)
  {
  	struct acpi_device *adev = ACPI_COMPANION(&dev->dev);
-Index: kernel-6_12/drivers/pci/pci.h
+Index: v6.12/drivers/pci/pci.h
 ===================================================================
---- kernel-6_12.orig/drivers/pci/pci.h
-+++ kernel-6_12/drivers/pci/pci.h
+--- v6.12.orig/drivers/pci/pci.h
++++ v6.12/drivers/pci/pci.h
 @@ -846,6 +846,7 @@ static inline void pci_save_aer_state(st
  static inline void pci_restore_aer_state(struct pci_dev *dev) { }
  #endif

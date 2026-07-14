@@ -1,0 +1,48 @@
+i915/pxp: only run plane key check for protected framebuffers
+
+check_protection() called intel_pxp_key_check() for every plane on
+DISPLAY_VER >= 11, regardless of whether the framebuffer object was
+protected. On Alder Lake-P this has two bad effects:
+
+  1. When the PXP session never becomes active (consumer CSME firmware
+     that doesn't provision PXP), every atomic commit logs
+     "PXP key_check failed: PXP not active!" via drm_err_ratelimited.
+
+  2. With CONFIG_DRM_I915_PXP=n, intel_pxp_init() never allocates
+     i915->pxp, so i915->pxp is NULL. intel_pxp_key_check(NULL, ...)
+     then dereferences pxp->ctrl_gt in the "not active" error path,
+     causing a NULL-pointer kernel panic during display bring-up at boot.
+
+Non-protected planes always resolve to decrypt=false / force_black=false,
+so guard the key check with i915_gem_object_is_protected(). This removes
+the log spam, keeps PXP fully functional for real protected content, and
+avoids the NULL deref.
+Index: v6.12/drivers/gpu/drm/i915/display/skl_universal_plane.c
+===================================================================
+--- v6.12.orig/drivers/gpu/drm/i915/display/skl_universal_plane.c
++++ v6.12/drivers/gpu/drm/i915/display/skl_universal_plane.c
+@@ -2124,10 +2124,22 @@ static void check_protection(struct inte
+ 	if (DISPLAY_VER(i915) < 11)
+ 		return;
+ 
++	/*
++	 * Only protected framebuffers need a PXP key check. Calling
++	 * intel_pxp_key_check() for every plane spams the log with
++	 * "PXP not active!" on systems where the PXP session never comes up,
++	 * and dereferences a NULL i915->pxp when CONFIG_DRM_I915_PXP is off.
++	 * Non-protected planes always resolve to decrypt=false/force_black=false.
++	 */
++	if (!i915_gem_object_is_protected(obj)) {
++		plane_state->decrypt = false;
++		plane_state->force_black = false;
++		return;
++	}
++
+ 	key_ret = intel_pxp_key_check(i915->pxp, obj, false);
+ 	plane_state->decrypt = key_ret == 0;
+-	plane_state->force_black = i915_gem_object_is_protected(obj) &&
+-		!plane_state->decrypt;
++	plane_state->force_black = !plane_state->decrypt;
+ 
+ 	if (plane_state->force_black)
+ 		drm_err_ratelimited(&i915->drm,

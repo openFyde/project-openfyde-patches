@@ -248,6 +248,37 @@ src_install() {
 	# Copy-firmware.sh may have made empty copies of files we removed
 	find -empty -delete || die
 
+	# openFyde: consumer Ampere GPUs (GA103/GA104/GA106/GA107 -- e.g. the
+	# RTX 2050 / nv177) ship only their own gr/ blobs and share acr, sec2,
+	# nvdec and gsp firmware with GA102.  Upstream linux-firmware provides the
+	# shared pieces as symlinks, but our snapshot / firmware-list only carries
+	# the per-chip gr/ dirs, so nouveau's GSP-RM path (nouveau.config=NvGspRm=1)
+	# cannot load firmware and the dGPU falls back to the crashing falcon path.
+	# Recreate the ga10x -> ga102 symlinks for every Ampere chip whose gr/ is
+	# installed.  ga102 is the donor and is skipped; ga100 has no gr/ (and uses
+	# a different gsp) so the gr/ gate skips it too.  Extension-agnostic: works
+	# with compress-xz, compress-zstd or uncompressed installs.
+	if [[ -d nvidia/ga102 ]]; then
+		local _chip _cn _sub _f _bn
+		for _chip in nvidia/ga10*; do
+			_cn=${_chip##*/}
+			[[ ${_cn} == ga102 ]] && continue
+			[[ -d ${_chip}/gr ]] || continue
+			einfo "Adding NVIDIA ${_cn} -> ga102 firmware symlinks ..."
+			for _sub in acr sec2 nvdec gsp; do
+				[[ -d nvidia/ga102/${_sub} ]] || continue
+				mkdir -p "${_chip}/${_sub}" || die
+				for _f in nvidia/ga102/${_sub}/*; do
+					[[ -e ${_f} ]] || continue
+					_bn=${_f##*/}
+					[[ -e ${_chip}/${_sub}/${_bn} ]] && continue
+					ln -s "../../ga102/${_sub}/${_bn}" \
+						"${_chip}/${_sub}/${_bn}" || die
+				done
+			done
+		done
+	fi
+
 	# sanity check
 	if ! ( shopt -s failglob; : * ) 2>/dev/null; then
 		eerror "No files to install. Check your USE flag settings"
