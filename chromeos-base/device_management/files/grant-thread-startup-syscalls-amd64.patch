@@ -1,0 +1,19 @@
+diff --git a/device_management/seccomp/device_managementd-seccomp-amd64.policy b/device_management/seccomp/device_managementd-seccomp-amd64.policy
+--- a/device_management/seccomp/device_managementd-seccomp-amd64.policy
++++ b/device_management/seccomp/device_managementd-seccomp-amd64.policy
+@@ -86,3 +86,15 @@
+ tgkill: arg2 == SIGABRT
+ 
+ process_vm_readv: 1
++
++# Spawned-thread startup needs (missing from the stock amd64 policy, present
++# in the arm/arm64 ones): every new libchrome thread applies uclamp scheduler
++# hints through raw sched_getattr/sched_setattr (platform_thread_cros.cc,
++# kSchedUtilHints is default-enabled), and base::WriteFile uses creat(2) — a
++# real syscall on x86_64 only (aarch64 has no __NR_creat, glibc uses openat
++# there, which is why the arm policies never needed it). Without these,
++# minijail silently kills the libhwsec worker thread and the daemon hangs
++# before claiming org.chromium.DeviceManagement, breaking enrollment.
++creat: 1
++sched_getattr: 1
++sched_setattr: 1
