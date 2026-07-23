@@ -1,5 +1,16 @@
---- a/copy-firmware.sh	2025-03-19 12:33:44.006356623 -0400
-+++ b/copy-firmware.sh	2025-03-19 12:37:14.789934375 -0400
+Index: linux-firmware-20260622/copy-firmware.sh
+===================================================================
+--- linux-firmware-20260622.orig/copy-firmware.sh
++++ linux-firmware-20260622/copy-firmware.sh
+@@ -64,7 +64,7 @@ while test $# -gt 0; do
+             if test "$compext" = ".zst"; then
+                 err "cannot mix XZ and ZSTD compression"
+             fi
+-            compress="xz --compress --quiet --stdout --check=crc32"
++            compress="xz --compress -e -9 --quiet --stdout --check=crc32"
+             compext=".xz"
+             shift
+             ;;
 @@ -84,6 +84,16 @@ while test $# -gt 0; do
              exit 1
              ;;
