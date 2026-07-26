@@ -12,7 +12,7 @@ DIST termina_io_amd64_fydeos_144.16502.0.0.tar.xz 515716520 MD5 1e65af40d33fc29f
 DIST termina_io_arm_fydeos_144.16502.0.0.tar.xz 448689752 MD5 4f1a0acb631ab1e89240696d6fa14964
 DIST termina_com_amd64_fydeos_144.16502.0.0.tar.xz 639429620 MD5 c868db662b57221b2505f0025e91455e
 DIST termina_com_arm_fydeos_144.16502.0.0.tar.xz 532906560 MD5 93080deb1f649c7ad7674f472c857881
-DIST termina_io_arm_fydeos_150.16699.0.0.tar.xz 452957932 MD5 5cec5f9652fc2dfff30fd5e2ca3c029f
+DIST termina_io_arm_fydeos_150.16699.0.0.tar.xz 456676376 MD5 ee290344306898b71e8f0e2c893af8a6
 DIST termina_io_amd64_fydeos_150.16699.0.0.tar.xz 491471428 MD5 43e16da80b33ee99b105b943629810b7
 DIST termina_com_amd64_fydeos_150.16699.0.0.tar.xz 619497116 MD5 80073685003fa8fe84dc47273da2a2f2
 DIST termina_com_arm_fydeos_150.16699.0.0.tar.xz 574371648 MD5 7b8e11361246175a3030bc70f619b902
