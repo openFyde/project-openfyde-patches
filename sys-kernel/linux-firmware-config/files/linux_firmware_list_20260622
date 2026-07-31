@@ -1032,8 +1032,6 @@ nvidia/ad107
 nvidia/gh100/gsp/fmc-570.144.bin.xz
 nvidia/gh100/gsp/bootloader-570.144.bin.xz
 nvidia/gh100/gsp/gsp-570.144.bin.xz
-nvidia/tegra194/vic.bin.xz
-nvidia/tegra194/xusb.bin.xz
 nvidia/tu104/nvdec/scrubber.bin.xz
 nvidia/tu104/gsp
 nvidia/tu104/sec2/image.bin.xz
@@ -1235,9 +1233,6 @@ nvidia/tu117/gr/gpccs_inst.bin.xz
 nvidia/tu117/gr/fecs_bl.bin.xz
 nvidia/tu117/gr/sw_bundle_init.bin.xz
 nvidia/tu117/gr/fecs_data.bin.xz
-nvidia/tegra186/vic04_ucode.bin.xz
-nvidia/tegra186/vic.bin.xz
-nvidia/tegra186/xusb.bin.xz
 nvidia/tu102/nvdec/scrubber.bin.xz
 nvidia/tu102/gsp/bootloader-535.113.01.bin.xz
 nvidia/tu102/gsp/gen_bootloader-570.144.bin.xz
@@ -1359,12 +1354,6 @@ nvidia/gm206/gr/gpccs_inst.bin.xz
 nvidia/gm206/gr/fecs_bl.bin.xz
 nvidia/gm206/gr/sw_bundle_init.bin.xz
 nvidia/gm206/gr/fecs_data.bin.xz
-nvidia/tegra124/vic03_ucode.bin.xz
-nvidia/tegra124/vic.bin.xz
-nvidia/tegra124/xusb.bin.xz
-nvidia/tegra210/vic04_ucode.bin.xz
-nvidia/tegra210/vic.bin.xz
-nvidia/tegra210/xusb.bin.xz
 nvidia/tu116/nvdec/scrubber.bin.xz
 nvidia/tu116/gsp/bootloader-535.113.01.bin.xz
 nvidia/tu116/gsp/gen_bootloader-570.144.bin.xz
