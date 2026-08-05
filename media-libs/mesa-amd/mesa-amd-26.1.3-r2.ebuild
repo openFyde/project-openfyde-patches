@@ -37,6 +37,12 @@ LICENSE="MIT"
 SLOT="0"
 KEYWORDS="*"
 
+# FYDE-488: VCN encode emitted the coded-buffer segment list in packed-header
+# submission order, producing [slice][SPS][PPS] access units that Chromium's
+# MediaRecorder rejects (renderer CHECK crash while recording in the Camera
+# app). Emit header segments before the slice segment.
+PATCHES=( "${FILESDIR}"/015-vcn-enc-header-segment-order.patch )
+
 IUSE_VIDEO_CARDS="video_cards_intel video_cards_nouveau video_cards_radeonsi"
 IUSE="debug libglvnd +vaapi vulkan +zstd ${IUSE_VIDEO_CARDS}"
 

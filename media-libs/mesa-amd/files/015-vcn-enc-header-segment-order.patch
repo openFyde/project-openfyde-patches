@@ -1,0 +1,66 @@
+FYDEOS: vcn/enc: emit header segments before the slice segment
+
+radeon_vcn_enc_encode_headers built the coded-buffer segment list in the
+order the client submitted packed headers.  Chromium's VA-API H.264
+encoder submits the packed slice header before the packed SPS/PPS, so
+the downloaded bitstream came out as [slice][SPS][PPS] -- an invalid
+H.264 access unit (parameter sets after the slice that references
+them).  Chromium's MediaRecorder MP4 muxer rejects such a chunk
+(kInvalidSliceHeader) and a CHECK kills the renderer: recording video
+in the Camera app crashes with "Aw, Snap! SIGILL" on every AMD device
+(FYDE-488).
+
+The header bytes are already written at the front of the bitstream
+buffer; only the segment list order was wrong.  Emit all non-slice
+header segments first and append the single slice segment last.
+Relative order among non-slice headers is preserved, so a temporal-
+layer prefix NALU still immediately precedes the slice.
+
+--- a/src/gallium/drivers/radeonsi/radeon_vcn_enc.c
++++ b/src/gallium/drivers/radeonsi/radeon_vcn_enc.c
+@@ -1835,26 +1835,28 @@
+    struct rvcn_enc_output_unit_segment *slice_segment = NULL;
+ 
+    util_dynarray_foreach(headers, struct pipe_enc_raw_header, header) {
+-      if (header->is_slice) {
+-         if (slice_segment)
+-            continue;
+-         slice_segment = &data->segments[data->num_segments];
+-         slice_segment->is_slice = true;
+-      } else {
+-         unsigned size = 0;
+-         if (is_h264)
+-            size = radeon_vcn_enc_encode_h264_header(enc, header, ptr + offset);
+-         else if (is_hevc)
+-            size = radeon_vcn_enc_encode_hevc_header(enc, header, ptr + offset);
+-         else if (is_av1)
+-            size = radeon_vcn_enc_encode_av1_header(enc, header, ptr + offset);
+-         data->segments[data->num_segments].size = size;
+-         data->segments[data->num_segments].offset = offset;
+-         offset += size;
+-      }
++      if (header->is_slice)
++         continue;
++      unsigned size = 0;
++      if (is_h264)
++         size = radeon_vcn_enc_encode_h264_header(enc, header, ptr + offset);
++      else if (is_hevc)
++         size = radeon_vcn_enc_encode_hevc_header(enc, header, ptr + offset);
++      else if (is_av1)
++         size = radeon_vcn_enc_encode_av1_header(enc, header, ptr + offset);
++      data->segments[data->num_segments].size = size;
++      data->segments[data->num_segments].offset = offset;
++      offset += size;
+       data->num_segments++;
+    }
+ 
++   /* The slice segment goes last: parameter sets and other headers must
++    * precede the slice that references them in the output bitstream,
++    * regardless of the order the client submitted packed headers. */
++   slice_segment = &data->segments[data->num_segments];
++   slice_segment->is_slice = true;
++   data->num_segments++;
++
+    enc->bs_offset = align(offset, 16);
+    assert(enc->bs_offset < enc->bs_size);
+ 
