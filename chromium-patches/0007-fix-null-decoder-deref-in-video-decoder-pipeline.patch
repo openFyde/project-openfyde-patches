@@ -1,0 +1,49 @@
+Index: src/media/gpu/chromeos/video_decoder_pipeline.cc
+===================================================================
+--- src.orig/media/gpu/chromeos/video_decoder_pipeline.cc
++++ src/media/gpu/chromeos/video_decoder_pipeline.cc
+@@ -863,6 +863,23 @@ void VideoDecoderPipeline::ResetTask(bas
+   drop_transcrypted_buffers_ = true;
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+   need_apply_new_resolution = false;
++  // |decoder_| is null whenever this pipeline outlived a failed
++  // initialization, while |this| stays alive and reachable by the client:
++  //   * Initialize() rejects an invalid config, an encrypted config, or a
++  //     config that is not in the platform's supported list synchronously,
++  //     and never posts InitializeTask(), so |decoder_| is never created;
++  //   * OnInitializeDone() resets |decoder_| when the decoder's own
++  //     Initialize() failed and no fallback produced a replacement.
++  // Neither path calls OnError(), so |has_error_| is not a usable guard, and
++  // media::VideoDecoder does not forbid Reset() after a failed Initialize().
++  // Complete the reset locally instead of dereferencing null: OnResetDone()
++  // touches only null-checked members and always posts |reset_cb| back to the
++  // client sequence, so the client is not left waiting on a callback that
++  // never arrives.
++  if (!decoder_) {
++    OnResetDone(std::move(reset_cb));
++    return;
++  }
+   decoder_->Reset(base::BindOnce(&VideoDecoderPipeline::OnResetDone,
+                                  decoder_weak_this_, std::move(reset_cb)));
+ }
+@@ -914,13 +931,18 @@ void VideoDecoderPipeline::Decode(scoped
+ void VideoDecoderPipeline::DecodeTask(scoped_refptr<DecoderBuffer> buffer,
+                                       DecodeCB decode_cb) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(decoder_sequence_checker_);
+-  DCHECK(decoder_);
+   CHECK(buffer);
+   DVLOGF(4);
+   TRACE_EVENT1(
+       "media,gpu", "VideoDecoderPipeline::DecodeTask", "timestamp",
+       (buffer->end_of_stream() ? 0 : buffer->timestamp().InMicroseconds()));
+-  if (has_error_) {
++  // A null |decoder_| is reachable through the same failed-initialization
++  // windows described in ResetTask(), and GetMaxDecodeRequests() keeps
++  // returning its default, so a client can pipeline several Decode() calls
++  // into a pipeline that never got a decoder. |has_error_| is not set on
++  // those paths, so it has to be checked separately. The DCHECK that used to
++  // stand here was compiled out in release builds.
++  if (has_error_ || !decoder_) {
+     client_task_runner_->PostTask(
+         FROM_HERE,
+         base::BindOnce(std::move(decode_cb), DecoderStatus::Codes::kFailed));
