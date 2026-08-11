@@ -1,0 +1,84 @@
+From: Yang Tsao <yang@fydeos.io>
+Subject: [PATCH] Widen the tablet multitask menu hit region for non-browser windows
+
+In tablet mode the multitask menu ("snap window panel") is opened by
+dragging down from the top of a window, and on FydeOS that drag almost
+never lands: the target is 200x10 dip, pinned to the window's top edge.
+Ten dip is about 1.6mm of glass — these are DIP, so the display's scale
+factor buys pixels, not finger room — and the only visual affordance for
+it is the 48x4 dip cue at y=6, so what you can see is smaller still and
+sits in the bottom four dip of what you must hit.
+
+It was not always this small. Upstream crrev.com/c/7065652 cut it from
+200x100 for one specific reason:
+
+    In ChromeOS tablet mode, with WebUI tabstrip disabled (soon to be the
+    default), the multitask menu in the top center of a window makes it
+    hard to initiate drag of a tab located in that area.
+
+That conflict is real, and only a browser window has it — the tabs live
+in exactly that strip. Every other window pays for a clash it cannot
+have. ARC windows feel it worst, because they are frameless in tablet
+mode: with no caption there is no other affordance, so a window that has
+gone fullscreen has the menu as its only way back, and a target this
+small makes that a trap.
+
+So choose the height per window rather than globally: browser windows
+keep upstream's 10 dip and its tabstrip fix is untouched; everything
+else — ARC, Chrome apps, Crostini, system — gets the pre-crrev.com/c/7065652
+100 dip back.
+
+AppType::BROWSER is the discriminator rather than "does this window have
+a tabstrip", which is deliberately conservative: a browser window with
+the WebUI tabstrip enabled has no top tabs to clash with either and
+could take the taller region too, but asking that question from ash
+means reaching into browser state for a case that costs nothing to skip.
+
+---
+ .../tablet_mode_multitask_menu_controller.cc          | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git src.orig/ash/wm/tablet_mode/tablet_mode_multitask_menu_controller.cc src/ash/wm/tablet_mode/tablet_mode_multitask_menu_controller.cc
+index d20b458cc35ea..5fdb823b2dc6f 100644
+--- src.orig/ash/wm/tablet_mode/tablet_mode_multitask_menu_controller.cc
++++ src/ash/wm/tablet_mode/tablet_mode_multitask_menu_controller.cc
+@@ -14,6 +14,8 @@
+ #include "ash/wm/window_state.h"
+ #include "ash/wm/window_util.h"
+ #include "base/functional/bind.h"
++#include "chromeos/ui/base/app_types.h"
++#include "chromeos/ui/base/window_properties.h"
+ #include "ui/aura/client/capture_client.h"
+ #include "ui/aura/env.h"
+ #include "ui/events/event.h"
+@@ -31,6 +33,18 @@ namespace {
+ // window/tab dragging.
+ constexpr gfx::SizeF kHitRegionSize(200.f, 10.f);
+ 
++// FydeOS: the same region for a window that has no tabstrip to clash with.
++//
++// The 10dip height above came from crrev.com/c/7065652, whose problem was
++// specific: "with WebUI tabstrip disabled, the multitask menu in the top
++// center of a window makes it hard to initiate drag of a tab located in that
++// area". Only a browser window has tabs there. Every other window pays the
++// cost — a 10dip target is about 1.6mm of glass whatever the display's scale
++// factor, since these are DIP — for a conflict it cannot have, and on ARC
++// windows in particular the panel is close to undraggable. Restore the
++// pre-crrev.com/c/7065652 height for those.
++constexpr gfx::SizeF kHitRegionSizeNoTabstrip(200.f, 100.f);
++
+ // Returns true if `window` can show the menu and `screen_location` is in the
+ // menu hit bounds.
+ bool HitTestRect(aura::Window* window, const gfx::PointF& screen_location) {
+@@ -39,7 +53,10 @@ bool HitTestRect(aura::Window* window, const gfx::PointF& screen_location) {
+   }
+   const gfx::RectF window_bounds(window->GetBoundsInScreen());
+   gfx::RectF hit_region(window_bounds);
+-  hit_region.ClampToCenteredSize(kHitRegionSize);
++  hit_region.ClampToCenteredSize(
++      window->GetProperty(chromeos::kAppTypeKey) == chromeos::AppType::BROWSER
++          ? kHitRegionSize
++          : kHitRegionSizeNoTabstrip);
+   hit_region.set_y(window_bounds.y());
+   return hit_region.Contains(screen_location);
+ }
