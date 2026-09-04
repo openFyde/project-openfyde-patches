@@ -16,9 +16,20 @@ PIPE_ERROR_OUT_OF_MEMORY after completing its normal unwind, so the frame is
 dropped and rendering continues.  Genuine errors still abort() exactly as
 before.
 
-Setting SVGA_EXECBUF_TIMEOUT_MS to a small value is a convenient way to
-exercise the give-up path.
+Testing the give-up branch needs care.  Shrinking SVGA_EXECBUF_TIMEOUT_MS does
+NOT reach it: on a successful ioctl the loop breaks before the deadline is ever
+consulted, so a short timeout only shortens an -EBUSY storm already under way,
+it cannot start one.  SVGA_EXECBUF_FORCE_BUSY=N therefore makes the next N
+submissions report -EBUSY without calling the kernel, which reaches the branch
+deterministically:
 
+  SVGA_EXECBUF_FORCE_BUSY=3 SVGA_EXECBUF_TIMEOUT_MS=50
+
+should log three "gave up after 50 ms" lines, drop three frames, and leave the
+process alive.  Both knobs default to off.
+
+--- a/src/gallium/winsys/svga/drm/vmw_screen.h
++++ b/src/gallium/winsys/svga/drm/vmw_screen.h
 --- a/src/gallium/winsys/svga/drm/vmw_screen.h
 +++ b/src/gallium/winsys/svga/drm/vmw_screen.h
 @@ -174,7 +174,8 @@
@@ -42,7 +53,7 @@ exercise the give-up path.
  
  #include <errno.h>
  #include <unistd.h>
-@@ -36,6 +38,16 @@
+@@ -36,6 +38,19 @@
  #define VMW_MAX_DEFAULT_TEXTURE_SIZE   (128 * 1024 * 1024)
  #define VMW_FENCE_TIMEOUT_SECONDS 3600UL
  
@@ -52,14 +63,17 @@ exercise the give-up path.
 + * nothing evictable) or -ERESTART.  The retry loop used to be unbounded, which
 + * wedges the submitting process indefinitely -- fatal when that process is a
 + * compositor.  Override with SVGA_EXECBUF_TIMEOUT_MS for debugging; a small
-+ * value is a convenient way to exercise the give-up path.
++ * value shortens an -EBUSY storm that is already under way, but note it cannot
++ * start one: a successful ioctl leaves the retry loop before the deadline is
++ * ever consulted.  Use SVGA_EXECBUF_FORCE_BUSY to reach the give-up path
++ * deterministically.
 + */
 +#define VMW_EXECBUF_TIMEOUT_MS_DEFAULT 2000L
 +
  #define SVGA3D_FLAGS_64(upper32, lower32) (((uint64_t)upper32 << 32) | lower32)
  #define SVGA3D_FLAGS_UPPER_32(svga3d_flags) (svga3d_flags >> 32)
  #define SVGA3D_FLAGS_LOWER_32(svga3d_flags) \
-@@ -485,7 +497,19 @@
+@@ -485,7 +500,50 @@
                           &s_arg, sizeof(s_arg));
  }
  
@@ -76,11 +90,42 @@ exercise the give-up path.
 +   return timeout_ms;
 +}
 +
++/*
++ * Debug-only fault injection.  SVGA_EXECBUF_FORCE_BUSY=N makes the next N
++ * submissions report -EBUSY without ever reaching the kernel, so the give-up
++ * path below can be exercised on demand -- pair it with a short
++ * SVGA_EXECBUF_TIMEOUT_MS to keep each forced submission brief.  Without it the
++ * branch is only reachable when the device genuinely runs out of resources,
++ * which is exactly the condition nobody has been able to reproduce on demand.
++ *
++ * Defaults to 0, which leaves submission behaviour untouched.  The counter is
++ * deliberately not atomic: an exact count across threads does not matter for a
++ * debugging knob, and keeping it simple keeps it out of the way of the real
++ * submission path.
++ */
++static bool
++vmw_execbuf_force_busy(void)
++{
++   static int remaining = -1;
++
++   if (remaining < 0) {
++      /* Clamp: a negative setting must not latch injection on permanently. */
++      const long n = debug_get_num_option("SVGA_EXECBUF_FORCE_BUSY", 0);
++      remaining = n > 0 ? (int)n : 0;
++   }
++
++   if (remaining == 0)
++      return false;
++
++   remaining--;
++   return true;
++}
++
 +int
  vmw_ioctl_command(struct vmw_winsys_screen *vws, int32_t cid,
                    uint32_t throttle_us, void *commands, uint32_t size,
                    struct pipe_fence_handle **pfence, int32_t imported_fence_fd,
-@@ -546,14 +570,42 @@
+@@ -546,14 +604,44 @@
      */
     argsize = vws->ioctl.drm_execbuf_version > 1 ? sizeof(arg) :
                  offsetof(struct drm_vmw_execbuf_arg, context_handle);
@@ -92,10 +137,12 @@ exercise the give-up path.
 +   {
 +      const long timeout_ms = vmw_execbuf_timeout_ms();
 +      const int64_t deadline = os_time_get() + (int64_t)timeout_ms * 1000;
++      const bool force_busy = vmw_execbuf_force_busy();
 +
 +      for (;;) {
-+         ret = drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_EXECBUF, &arg,
-+                               argsize);
++         ret = force_busy ? -EBUSY
++                          : drmCommandWrite(vws->ioctl.drm_fd,
++                                            DRM_VMW_EXECBUF, &arg, argsize);
 +         if (ret != -ERESTART && ret != -EBUSY)
 +            break;
 +
@@ -130,7 +177,7 @@ exercise the give-up path.
     }
  
     if (rep.error) {
-@@ -584,6 +636,8 @@
+@@ -584,6 +672,8 @@
           }
        }
     }
