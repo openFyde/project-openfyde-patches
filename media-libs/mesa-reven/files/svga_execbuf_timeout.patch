@@ -1,0 +1,178 @@
+Bound the DRM_VMW_EXECBUF retry loop and stop abort()ing on -EBUSY.
+
+vmw_ioctl_command() retried DRM_VMW_EXECBUF forever while the kernel returned
+-EBUSY (vmw_resource_validate(): "Out of device device resources", i.e. device
+resources exhausted with nothing evictable) or -ERESTART.  There was no
+timeout, no retry cap and no exit path, so a submitting process could spin
+indefinitely; when that process is a compositor -- SurfaceFlinger on ARC, in
+the case that prompted this -- the whole session hangs with it.
+
+Simply breaking out of the loop is not enough: the code right after it calls
+abort() for any non-zero ret, which would only convert the hang into a fatal
+crash of the same critical process.  So bound the loop with a wall-clock
+deadline (SVGA_EXECBUF_TIMEOUT_MS, default 2000 ms) and, on timeout, return the
+errno to the caller instead of aborting.  vmw_swc_flush() turns that into
+PIPE_ERROR_OUT_OF_MEMORY after completing its normal unwind, so the frame is
+dropped and rendering continues.  Genuine errors still abort() exactly as
+before.
+
+Setting SVGA_EXECBUF_TIMEOUT_MS to a small value is a convenient way to
+exercise the give-up path.
+
+--- a/src/gallium/winsys/svga/drm/vmw_screen.h
++++ b/src/gallium/winsys/svga/drm/vmw_screen.h
+@@ -174,7 +174,8 @@
+ vmw_ioctl_surface_destroy(struct vmw_winsys_screen *vws,
+                           uint32 sid);
+ 
+-void
++/* Returns 0 on success, or a negative errno if the submission was dropped. */
++int
+ vmw_ioctl_command(struct vmw_winsys_screen *vws,
+                   int32_t cid,
+                   uint32_t throttle_us,
+--- a/src/gallium/winsys/svga/drm/vmw_screen_ioctl.c
++++ b/src/gallium/winsys/svga/drm/vmw_screen_ioctl.c
+@@ -29,6 +29,8 @@
+ #include "svga3d_reg.h"
+ 
+ #include "util/os_mman.h"
++#include "util/os_time.h"
++#include "util/u_debug.h"
+ 
+ #include <errno.h>
+ #include <unistd.h>
+@@ -36,6 +38,16 @@
+ #define VMW_MAX_DEFAULT_TEXTURE_SIZE   (128 * 1024 * 1024)
+ #define VMW_FENCE_TIMEOUT_SECONDS 3600UL
+ 
++/*
++ * Upper bound, in milliseconds, on how long vmw_ioctl_command() keeps retrying
++ * a submission the kernel rejects with -EBUSY (device resources exhausted with
++ * nothing evictable) or -ERESTART.  The retry loop used to be unbounded, which
++ * wedges the submitting process indefinitely -- fatal when that process is a
++ * compositor.  Override with SVGA_EXECBUF_TIMEOUT_MS for debugging; a small
++ * value is a convenient way to exercise the give-up path.
++ */
++#define VMW_EXECBUF_TIMEOUT_MS_DEFAULT 2000L
++
+ #define SVGA3D_FLAGS_64(upper32, lower32) (((uint64_t)upper32 << 32) | lower32)
+ #define SVGA3D_FLAGS_UPPER_32(svga3d_flags) (svga3d_flags >> 32)
+ #define SVGA3D_FLAGS_LOWER_32(svga3d_flags) \
+@@ -485,7 +497,19 @@
+                          &s_arg, sizeof(s_arg));
+ }
+ 
+-void
++static long
++vmw_execbuf_timeout_ms(void)
++{
++   static long timeout_ms = -1;
++
++   if (timeout_ms < 0)
++      timeout_ms = debug_get_num_option("SVGA_EXECBUF_TIMEOUT_MS",
++                                        VMW_EXECBUF_TIMEOUT_MS_DEFAULT);
++
++   return timeout_ms;
++}
++
++int
+ vmw_ioctl_command(struct vmw_winsys_screen *vws, int32_t cid,
+                   uint32_t throttle_us, void *commands, uint32_t size,
+                   struct pipe_fence_handle **pfence, int32_t imported_fence_fd,
+@@ -546,14 +570,42 @@
+     */
+    argsize = vws->ioctl.drm_execbuf_version > 1 ? sizeof(arg) :
+                 offsetof(struct drm_vmw_execbuf_arg, context_handle);
+-   do {
+-       ret = drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_EXECBUF, &arg, argsize);
+-       if (ret == -EBUSY)
+-          usleep(1000);
+-   } while (ret == -ERESTART || ret == -EBUSY);
++   {
++      const long timeout_ms = vmw_execbuf_timeout_ms();
++      const int64_t deadline = os_time_get() + (int64_t)timeout_ms * 1000;
++
++      for (;;) {
++         ret = drmCommandWrite(vws->ioctl.drm_fd, DRM_VMW_EXECBUF, &arg,
++                               argsize);
++         if (ret != -ERESTART && ret != -EBUSY)
++            break;
++
++         if (os_time_get() >= deadline) {
++            vmw_error("%s: gave up after %ld ms of %s.\n", __func__,
++                      timeout_ms, strerror(-ret));
++            break;
++         }
++
++         if (ret == -EBUSY)
++            usleep(1000);
++      }
++   }
+    if (ret) {
+-      vmw_error("%s error %s.\n", __func__, strerror(-ret));
+-      abort();
++      if (ret != -ERESTART && ret != -EBUSY) {
++         vmw_error("%s error %s.\n", __func__, strerror(-ret));
++         abort();
++      }
++
++      /*
++       * The retry loop above timed out.  Hand the failure back to the caller
++       * so it can drop this submission and carry on, instead of abort()ing:
++       * this winsys backs compositors (SurfaceFlinger among them) where a
++       * process-wide abort takes the whole session down.
++       */
++      if (pfence)
++         *pfence = NULL;
++
++      return ret;
+    }
+ 
+    if (rep.error) {
+@@ -584,6 +636,8 @@
+          }
+       }
+    }
++
++   return 0;
+ }
+ 
+ 
+--- a/src/gallium/winsys/svga/drm/vmw_context.c
++++ b/src/gallium/winsys/svga/drm/vmw_context.c
+@@ -225,15 +225,25 @@
+          }
+       }
+ 
+-      if (vswc->command.used || pfence != NULL)
+-         vmw_ioctl_command(vws,
+-                           vswc->base.cid,
+-                           0,
+-                           vswc->command.buffer,
+-                           vswc->command.used,
+-                           &fence,
+-                           vswc->base.imported_fence_fd,
+-                           vswc->base.hints);
++      if (vswc->command.used || pfence != NULL) {
++         if (vmw_ioctl_command(vws,
++                               vswc->base.cid,
++                               0,
++                               vswc->command.buffer,
++                               vswc->command.used,
++                               &fence,
++                               vswc->base.imported_fence_fd,
++                               vswc->base.hints) != 0) {
++            /*
++             * The kernel would not take the submission (see
++             * vmw_ioctl_command()).  Keep unwinding so the validate list and
++             * command buffer are still reset -- the frame is dropped -- but
++             * report the failure to the caller rather than pretending the
++             * commands were queued.
++             */
++            ret = PIPE_ERROR_OUT_OF_MEMORY;
++         }
++      }
+ 
+       pb_validate_fence(vswc->validate, fence);
+       mtx_lock(&vws->cs_mutex);

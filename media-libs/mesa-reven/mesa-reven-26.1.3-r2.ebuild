@@ -136,6 +136,10 @@ src_prepare() {
 	if use video_cards_vmware; then
 		eapply "${FILESDIR}"/angle_draw.patch
 		eapply "${FILESDIR}"/svga_format_v20.patch
+		# Bound the DRM_VMW_EXECBUF -EBUSY retry loop so a submission the
+		# kernel refuses drops the frame instead of hanging (or abort()ing)
+		# the submitting process. See FYDE-567.
+		eapply "${FILESDIR}"/svga_execbuf_timeout.patch
 	fi
 }
 
