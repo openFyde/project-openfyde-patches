@@ -1,0 +1,157 @@
+Index: diagnostics/cros_healthd/system/floss_callback_services.cc
+===================================================================
+--- diagnostics.orig/cros_healthd/system/floss_callback_services.cc
++++ diagnostics/cros_healthd/system/floss_callback_services.cc
+@@ -73,6 +73,9 @@ void BluetoothCallbackService::OnDeviceCleared(
+   event_hub_->OnDeviceRemoved(device);
+ }
+ 
++void BluetoothCallbackService::OnDeviceKeyMissing(
++    const brillo::VariantDictionary& device) {}
++
+ void BluetoothCallbackService::OnDevicePropertiesChanged(
+     const brillo::VariantDictionary& device,
+     const std::vector<uint32_t>& properties) {
+@@ -93,11 +96,22 @@ void BluetoothCallbackService::OnSspRequest(
+   event_hub_->OnDeviceSspRequest(device);
+ }
+ 
++void BluetoothCallbackService::OnPinRequest(
++    const brillo::VariantDictionary& device,
++    uint32_t cod,
++    bool min_16_digit) {}
++
++void BluetoothCallbackService::OnPinDisplay(
++    const brillo::VariantDictionary& device, const std::string& pincode) {}
++
+ void BluetoothCallbackService::OnSdpSearchComplete(
+     const brillo::VariantDictionary& device,
+     const std::vector<uint8_t>& searched_uuid,
+     const std::vector<brillo::VariantDictionary>& sdp_records) {}
+ 
++void BluetoothCallbackService::OnSdpRecordCreated(
++    const brillo::VariantDictionary& record, int32_t handle) {}
++
+ ManagerCallbackService::ManagerCallbackService(
+     FlossEventHub* event_hub,
+     const scoped_refptr<dbus::Bus>& bus,
+@@ -147,4 +161,7 @@ void BluetoothConnectionCallbackService::OnDeviceDisconnected(
+   event_hub_->OnDeviceConnectedChanged(device, /*connected=*/false);
+ }
+ 
++void BluetoothConnectionCallbackService::OnDeviceConnectionFailed(
++    const brillo::VariantDictionary& device, uint32_t status) {}
++
+ }  // namespace diagnostics
+Index: diagnostics/cros_healthd/system/floss_callback_services.h
+===================================================================
+--- diagnostics.orig/cros_healthd/system/floss_callback_services.h
++++ diagnostics/cros_healthd/system/floss_callback_services.h
+@@ -47,6 +47,7 @@ class BluetoothCallbackService
+   void OnDiscoveringChanged(bool discovering) override;
+   void OnDeviceFound(const brillo::VariantDictionary& device) override;
+   void OnDeviceCleared(const brillo::VariantDictionary& device) override;
++  void OnDeviceKeyMissing(const brillo::VariantDictionary& device) override;
+   void OnDevicePropertiesChanged(
+       const brillo::VariantDictionary& device,
+       const std::vector<uint32_t>& properties) override;
+@@ -57,10 +58,17 @@ class BluetoothCallbackService
+                     uint32_t cod,
+                     uint32_t bt_ssp_variant,
+                     uint32_t passkey) override;
++  void OnPinRequest(const brillo::VariantDictionary& device,
++                    uint32_t cod,
++                    bool min_16_digit) override;
++  void OnPinDisplay(const brillo::VariantDictionary& device,
++                    const std::string& pincode) override;
+   void OnSdpSearchComplete(
+       const brillo::VariantDictionary& device,
+       const std::vector<uint8_t>& searched_uuid,
+       const std::vector<brillo::VariantDictionary>& sdp_records) override;
++  void OnSdpRecordCreated(const brillo::VariantDictionary& record,
++                          int32_t handle) override;
+ 
+   // Unowned pointer. Used to send Bluetooth events.
+   FlossEventHub* const event_hub_;
+@@ -122,6 +130,8 @@ class BluetoothConnectionCallbackService
+   // org::chromium::bluetooth::BluetoothConnectionCallbackInterface overrides:
+   void OnDeviceConnected(const brillo::VariantDictionary& device) override;
+   void OnDeviceDisconnected(const brillo::VariantDictionary& device) override;
++  void OnDeviceConnectionFailed(const brillo::VariantDictionary& device,
++                                uint32_t status) override;
+ 
+   // Unowned pointer. Used to send Bluetooth events.
+   FlossEventHub* const event_hub_;
+Index: diagnostics/dbus_bindings/floss/org.chromium.bluetooth.BluetoothCallback.xml
+===================================================================
+--- diagnostics.orig/dbus_bindings/floss/org.chromium.bluetooth.BluetoothCallback.xml
++++ diagnostics/dbus_bindings/floss/org.chromium.bluetooth.BluetoothCallback.xml
+@@ -37,6 +37,14 @@
+       <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
+       <arg name="device" direction="in" type="a{sv}"/>
+     </method>
++    <method name="OnDeviceKeyMissing">
++      <tp:docstring>
++        Reported when the peer device no longer has the link key, so the
++        existing bond is stale and re-pairing is required.
++      </tp:docstring>
++      <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
++      <arg name="device" direction="in" type="a{sv}"/>
++    </method>
+     <method name="OnDevicePropertiesChanged">
+       <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
+       <arg name="device" direction="in" type="a{sv}"/>
+@@ -59,11 +67,34 @@
+       <arg name="bt_ssp_variant" direction="in" type="u"/>
+       <arg name="passkey" direction="in" type="u"/>
+     </method>
++    <method name="OnPinRequest">
++      <tp:docstring>
++        Legacy pairing request event, which asks for a PIN code to be entered.
++      </tp:docstring>
++      <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
++      <arg name="device" direction="in" type="a{sv}"/>
++      <arg name="cod" direction="in" type="u"/>
++      <arg name="min_16_digit" direction="in" type="b"/>
++    </method>
++    <method name="OnPinDisplay">
++      <tp:docstring>
++        Legacy pairing event, which asks for a PIN code to be displayed so it
++        can be entered on the peer device.
++      </tp:docstring>
++      <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
++      <arg name="device" direction="in" type="a{sv}"/>
++      <arg name="pincode" direction="in" type="s"/>
++    </method>
+     <method name="OnSdpSearchComplete">
+       <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
+       <arg name="device" direction="in" type="a{sv}"/>
+       <arg name="searched_uuid" direction="in" type="ay"/>
+       <arg name="sdp_records" direction="in" type="aa{sv}"/>
+     </method>
++    <method name="OnSdpRecordCreated">
++      <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
++      <arg name="record" direction="in" type="a{sv}"/>
++      <arg name="handle" direction="in" type="i"/>
++    </method>
+   </interface>
+ </node>
+Index: diagnostics/dbus_bindings/floss/org.chromium.bluetooth.BluetoothConnectionCallback.xml
+===================================================================
+--- diagnostics.orig/dbus_bindings/floss/org.chromium.bluetooth.BluetoothConnectionCallback.xml
++++ diagnostics/dbus_bindings/floss/org.chromium.bluetooth.BluetoothConnectionCallback.xml
+@@ -17,5 +17,14 @@
+       <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
+       <arg name="device" direction="in" type="a{sv}"/>
+     </method>
++    <method name="OnDeviceConnectionFailed">
++      <tp:docstring>
++        Reported when a connection attempt to the device fails, carrying the
++        BtStatus that caused it.
++      </tp:docstring>
++      <annotation name="org.chromium.DBus.Method.Kind" value="simple" />
++      <arg name="device" direction="in" type="a{sv}"/>
++      <arg name="status" direction="in" type="u"/>
++    </method>
+   </interface>
+ </node>
