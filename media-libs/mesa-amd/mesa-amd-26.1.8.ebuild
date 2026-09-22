@@ -9,11 +9,11 @@
 # Mesa package; see media-libs/mesa-iris for the archive-tarball variant.
 EAPI=7
 
-CROS_WORKON_COMMIT="6984e91b5fe1d1c204e54954a4282fcdc0c44b78"
-CROS_WORKON_TREE="4410d8c151d9b163f8929bf66d675ff72415e807"
+CROS_WORKON_COMMIT="0fadfea4f394211946f308458f614839ef253ee8"
+CROS_WORKON_TREE="37cab8cb62626d8c33d536e6a74ba7cf9bea602d"
 CROS_WORKON_PROJECT="chromiumos/third_party/mesa"
 CROS_WORKON_LOCALNAME="mesa-amd"
-CROS_WORKON_EGIT_BRANCH="upstream/26.1.3"
+CROS_WORKON_EGIT_BRANCH="upstream/26.1"
 
 inherit flag-o-matic meson cros-workon
 
@@ -41,7 +41,13 @@ KEYWORDS="*"
 # submission order, producing [slice][SPS][PPS] access units that Chromium's
 # MediaRecorder rejects (renderer CHECK crash while recording in the Camera
 # app). Emit header segments before the slice segment.
-PATCHES=( "${FILESDIR}"/015-vcn-enc-header-segment-order.patch )
+# 016: zink's begin_rendering() recurses without bound when an attachment
+# shadow is populated from inside a u_blitter blit (mesa#14269, still open
+# upstream). Same patch as the Notialis guest Mesa and fydroid's mesa 021.
+PATCHES=(
+	"${FILESDIR}"/015-vcn-enc-header-segment-order.patch
+	"${FILESDIR}"/016-zink-do-not-shadow-attachments-while-blitting.patch
+)
 
 IUSE_VIDEO_CARDS="video_cards_intel video_cards_nouveau video_cards_radeonsi"
 IUSE="debug libglvnd +vaapi vulkan +zstd ${IUSE_VIDEO_CARDS}"

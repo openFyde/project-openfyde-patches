@@ -8,6 +8,8 @@
 # zink is always built. Structure ported from Gentoo's media-libs/mesa-26.1.3
 # (EAPI 7, surfaceless), with the openfyde megadriver/minigbm install fixups.
 # It intentionally shadows the older chromiumos-overlay media-libs/mesa-iris.
+# Kept at the same release as the Notialis guest's cros-mesa (project-notialis
+# scripts/packages/cros-mesa), which builds from this same tarball.
 EAPI=7
 
 PYTHON_COMPAT=( python3_{8..11} )
@@ -88,6 +90,11 @@ BDEPEND="
 "
 
 S="${WORKDIR}/${MY_P}"
+
+# zink's begin_rendering() recurses without bound when an attachment shadow is
+# populated from inside a u_blitter blit (mesa#14269, still open upstream).
+# Same patch as the Notialis guest Mesa and fydroid's mesa 021.
+PATCHES=( "${FILESDIR}"/zink-do-not-shadow-attachments-while-blitting.patch )
 
 # Join the arguments with commas (for meson's *-drivers / video-codecs lists).
 _mesa_commas() { local IFS=','; echo "$*"; }

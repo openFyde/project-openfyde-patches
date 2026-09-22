@@ -1,7 +1,7 @@
 # Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-# openfyde "reven"/slim Mesa, bumped to 26.1.3 so it ships the DRI driver
+# openfyde "reven"/slim Mesa, bumped to 26.1 so it ships the DRI driver
 # interface (driCreateNewScreen3()/dri_*(), mesa_interface.h) that the Mesa 25+
 # minigbm DRI loader (media-libs/minigbm patch 002) links against. Modelled on
 # media-libs/mesa-amd; keeps the broad reven gallium driver set.
@@ -12,11 +12,11 @@
 # zink is always built (minigbm's KOPPER/zink loader path dlopens it).
 EAPI=7
 
-CROS_WORKON_COMMIT="6984e91b5fe1d1c204e54954a4282fcdc0c44b78"
-CROS_WORKON_TREE="4410d8c151d9b163f8929bf66d675ff72415e807"
+CROS_WORKON_COMMIT="0fadfea4f394211946f308458f614839ef253ee8"
+CROS_WORKON_TREE="37cab8cb62626d8c33d536e6a74ba7cf9bea602d"
 CROS_WORKON_PROJECT="chromiumos/third_party/mesa"
 CROS_WORKON_LOCALNAME="mesa-amd"
-CROS_WORKON_EGIT_BRANCH="upstream/26.1.3"
+CROS_WORKON_EGIT_BRANCH="upstream/26.1"
 
 inherit flag-o-matic meson cros-workon
 
@@ -129,6 +129,13 @@ _mesa_needs_llvm() {
 
 src_prepare() {
 	default
+
+	# zink's begin_rendering() recurses without bound when an attachment shadow
+	# is populated from inside a u_blitter blit (mesa#14269, still open
+	# upstream). Same patch as the Notialis guest Mesa and fydroid's mesa 021.
+	# Only matters when zink is built, but it is a source patch and harmless
+	# otherwise.
+	eapply "${FILESDIR}"/zink_no_shadow_while_blitting.patch
 
 	# VMware/SVGA-only fixes (merged from the former project-vmware mesa-reven):
 	# force the draw-framebuffer target for ANGLE, and map R8G8B8A8_UNORM as an

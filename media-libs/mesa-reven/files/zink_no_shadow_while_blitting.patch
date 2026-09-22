@@ -1,0 +1,54 @@
+From: fydroid's mesa patch 021, rebased onto 26.1.8
+Subject: [PATCH] zink: do not populate an attachment shadow while blitting
+
+`begin_rendering()` populates a transient attachment and then calls itself.
+The recursion terminates only if the second call finds the condition false --
+and when the populate is itself driven from inside a u_blitter blit, it does
+not, so the two keep calling each other until the rendering thread walks off
+its stack. The result is a SIGSEGV with SEGV_ACCERR on the guard page,
+preceded by
+
+    u_blitter:559: Caught recursion. This is a driver bug.
+
+which is the only part of it that names a cause. `!ctx->blitting` is the
+termination condition that was missing.
+
+Upstream issue 14269 (Firefox, zink, NVIDIA) is still open, and the guard is
+unchanged in 26.1.3 and in 26.1.8 -- so this is carried, not waited for. If it
+lands upstream in a different shape, drop this and take that instead.
+
+Two independent things arm it, and only one of them is MSAA (dc, who found it
+and fixed it on the fydroid side, and who read `zink_set_framebuffer_state` to
+establish this):
+
+  * `ctx->fb_state.cbufs[i].nr_samples` non-zero sets `transient_msrtss` --
+    MSRTT emulation, which is WebGL with `antialias: true` and some canvas
+    paths.
+  * `framebuffer_surface_needs_mutable()` on a resource with an
+    `immutable_handle` sets a transient attachment with `transient_msrtss`
+    left false, which takes the first branch of the guard. That is format-view
+    shadowing on an image that cannot be recreated mutable -- an imported or
+    WSI-backed image rendered through a different format view, i.e. sRGB
+    against linear on a dma-buf. That is ordinary browser compositing, and it
+    is the one that fired for fydroid: WebView into gralloc-imported buffers,
+    on first launch, every time.
+
+So the path is entered readily; what makes the crash intermittent is that the
+populate also has to land while a blit is in flight. That is content- and
+timing-dependent, which is why it did not reproduce in the Notialis Firefox
+runs and why those runs do not rule it out. Carried on that basis: the guard
+is inert unless the recursion would actually be entered, so it costs nothing
+when it is not needed, and the failure it prevents is a hard crash with no
+useful signal unless you already know the u_blitter line is the tell.
+
+--- a/src/gallium/drivers/zink/zink_context.c
++++ b/src/gallium/drivers/zink/zink_context.c
+@@ -3208,7 +3208,7 @@
+    }
+    attachment_shadow_mask &= ctx->transient_attachments;
+    /* both msrtss emulation and format view shadowing use this path to populate the transient image */
+-   if (((!ctx->transient_msrtss && ctx->rp_draw) || (ctx->transient_msrtss && !has_msrtss)) && attachment_shadow_mask && check_attachment_shadow) {
++   if (((!ctx->transient_msrtss && ctx->rp_draw) || (ctx->transient_msrtss && !has_msrtss)) && attachment_shadow_mask && check_attachment_shadow && !ctx->blitting) {
+       zink_render_attachment_shadow(ctx, attachment_shadow_mask);
+       return begin_rendering(ctx, false);
+    }
