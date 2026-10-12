@@ -7,8 +7,8 @@ author          "chromium-os-dev@chromium.org"
 
 oom score -100
 
-# Runs before cryptohomed so it can consume install attributes.
-start on starting cryptohomed
+# Runs before device_managementd, which consumes the cache in InstallAttributes::Init().
+start on starting device_managementd
 
 env LOCKBOX_CACHE_DIR=/run/lockbox
 env LOCKBOX_NVRAM_FILE=/tmp/lockbox.nvram
