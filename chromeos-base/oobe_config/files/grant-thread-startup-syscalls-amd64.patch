@@ -1,0 +1,11 @@
+--- a/oobe_config/seccomp_filters/rollback_cleanup-seccomp-amd64.policy
++++ b/oobe_config/seccomp_filters/rollback_cleanup-seccomp-amd64.policy
+@@ -90,3 +90,8 @@
+ 
+ # libchrome update
+ unlinkat: 1
++
++# libchrome thread startup with CONFIG_PROC_LATSENSE (amd64)
++creat: 1
++sched_getattr: 1
++sched_setattr: 1

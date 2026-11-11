@@ -11,5 +11,7 @@ cros_pre_src_prepare_openfyde_patches() {
 
   if ! use amd64; then
     eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/remove_seccomp_policy_for_arm.patch
+  else
+    eapply -p2 ${OPENFYDE_PATCHES_BASHRC_FILESDIR}/grant-thread-startup-syscalls-amd64.patch
   fi
 }
