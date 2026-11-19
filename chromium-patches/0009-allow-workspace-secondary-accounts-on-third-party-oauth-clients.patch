@@ -1,0 +1,110 @@
+From: Yang Tsao <yang@fydeos.io>
+Subject: [PATCH] Allow Workspace secondary accounts when the policy endpoint
+ refuses a third-party OAuth client
+
+Adding a Google Workspace account as a secondary account fails on FydeOS
+with "This account can't be added". Before upserting a secondary account
+SigninHelper asks the SecureConnect API for the account's
+SecondaryGoogleAccountUsage policy, and treats every non-success status
+except kUnsupportedAccountTypeError (consumer account, no hosted domain)
+as "blocked". That endpoint answers 403 to access tokens minted for a
+non-Google OAuth client, so with our own GOOGLE_DEFAULT_CLIENT_ID the
+policy can never be read and every Workspace account is refused:
+
+    SecondaryGoogleAccountUsage request failed with HTTP code: 403
+
+On HTTP 403 for SecondaryGoogleAccountUsage, report
+kUnsupportedAccountTypeError instead of kHttpError. SigninHelper then
+takes the consumer path: the account is upserted, and the follow-up
+SecondaryAccountAllowedInArcPolicy fetch -- which would hit the same 403
+and block again -- is skipped, so the user's own "use with Android apps"
+choice stands. Faking kSuccess with "all" instead would not be enough:
+the ARC fetch that follows it blocks on any failure too.
+
+Other HTTP errors (5xx etc.) and network errors still block, as
+upstream. The cost: on our builds a Workspace admin's
+"primary_account_signin" restriction is not enforced for secondary
+accounts -- but it cannot be read at all with our client ID.
+
+The missing id_token on the refresh-token exchange
+("Missing ID token on refresh token fetch response.",
+gaia_auth_fetcher.cc) needs no change: ExtractOAuth2TokenPairResponse
+only logs it and still returns a ClientOAuthResult, and
+AccountManager::UpsertAccount stores only the refresh token.
+
+---
+ .../ash/user_cloud_signin_restriction_policy_fetcher.cc   | 19 +++++++++++++++
+ ...user_cloud_signin_restriction_policy_fetcher_unittest.cc | 25 ++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+
+diff -ru src.orig/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher.cc src/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher.cc
+--- src.orig/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher.cc	2026-11-19 15:18:43.328963789 +0800
++++ src/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher.cc	2026-11-19 15:18:56.755507697 +0800
+@@ -16,6 +16,7 @@
+ #include "google_apis/gaia/gaia_urls.h"
+ #include "google_apis/gaia/google_service_auth_error.h"
+ #include "net/base/load_flags.h"
++#include "net/http/http_status_code.h"
+ #include "services/network/public/cpp/resource_request.h"
+ #include "services/network/public/cpp/simple_url_loader.h"
+ #include "services/network/public/mojom/url_response_head.mojom.h"
+@@ -276,6 +277,24 @@
+     response_code = url_loader->ResponseInfo()->headers->response_code();
+   }
+ 
++  // FydeOS: the SecureConnect endpoint answers 403 to every access token
++  // minted for a non-Google OAuth client (a third-party build's
++  // GOOGLE_DEFAULT_CLIENT_ID), so on such a build the policy can never be
++  // read and every Workspace account would be refused as a secondary account.
++  // Treat that 403 as "no restriction known" and let the caller handle the
++  // account like a consumer one: it is added, and the follow-up
++  // SecondaryAccountAllowedInArcPolicy fetch (same endpoint family, same 403)
++  // is skipped, so the user's own "use with Android apps" choice stands.
++  // Other HTTP errors (5xx, etc.) still block, as upstream.
++  if (!IsFetchingArcPolicy() && response_code == net::HTTP_FORBIDDEN) {
++    LOG(WARNING) << policy_name
++                 << " request was refused (HTTP 403); treating the account "
++                    "as unrestricted";
++    FinalizeResult(Status::kUnsupportedAccountTypeError,
++                   /*policy=*/std::nullopt);
++    return;
++  }
++
+   // Check for network or HTTP errors.
+   if (url_loader->NetError() != net::OK || !response_body) {
+     if (response_code) {
+diff -ru src.orig/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher_unittest.cc src/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher_unittest.cc
+--- src.orig/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher_unittest.cc	2026-11-19 15:18:43.344964438 +0800
++++ src/chrome/browser/ui/webui/signin/ash/user_cloud_signin_restriction_policy_fetcher_unittest.cc	2026-11-19 15:18:56.755507697 +0800
+@@ -332,6 +332,31 @@
+   EXPECT_EQ(hosted_domain_, kFakeEnterpriseDomain);
+ }
+ 
++// FydeOS: a 403 from the policy endpoint (what a non-Google OAuth client
++// gets) does not block the account; it is reported like a consumer account.
++TEST_F(UserCloudSigninRestrictionPolicyFetcherTest,
++       FetchingPolicyValueTreatsHTTPForbiddenAsUnrestricted) {
++  url_loader_factory_.AddResponse(
++      kSecureConnectApiGetSecondaryGoogleAccountUsageUrl, std::string(),
++      net::HTTP_FORBIDDEN);
++  url_loader_factory_.AddResponse(oauth_user_info_url(), kUserInfoResponse);
++
++  UserCloudSigninRestrictionPolicyFetcher restriction_fetcher(
++      kFakeEnterpriseAccount, GetSharedURLLoaderFactory());
++
++  std::unique_ptr<OAuth2AccessTokenFetcher> access_token_fetcher =
++      std::make_unique<MockAccessTokenFetcher>(
++          /*consumer=*/&restriction_fetcher,
++          /*error=*/GoogleServiceAuthError::AuthErrorNone());
++
++  GetSecondaryGoogleAccountUsageBlocking(&restriction_fetcher,
++                                         std::move(access_token_fetcher));
++
++  EXPECT_FALSE(policy_result_);
++  EXPECT_EQ(status_, UserCloudSigninRestrictionPolicyFetcher::Status::
++                         kUnsupportedAccountTypeError);
++}
++
+ TEST_F(UserCloudSigninRestrictionPolicyFetcherTest,
+        FetchingPolicyValueFailsForHTTPErrors) {
+   url_loader_factory_.AddResponse(
