@@ -5,4 +5,5 @@ cros_pre_src_prepare_private_fydeos_patches() {
     return
   fi
   eapply -p2 "${OPENFYDE_PATCHES_BASHRC_FILESDIR}"/dual-boot-dbus-constants.patch
+  eapply -p2 "${OPENFYDE_PATCHES_BASHRC_FILESDIR}"/fydeos-vnc-mojo-method.patch
 }

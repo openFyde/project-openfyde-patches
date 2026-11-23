@@ -1,0 +1,13 @@
+diff --git a/system_api/dbus/service_constants.h b/system_api/dbus/service_constants.h
+index 792a1bfee7..9301e2bce6 100644
+--- a/system_api/dbus/service_constants.h
++++ b/system_api/dbus/service_constants.h
+@@ -535,6 +535,8 @@ constexpr char kMojoConnectionServiceInterface[] =
+ // Methods
+ constexpr char kBootstrapMojoConnectionForRollbackNetworkConfigMethod[] =
+     "BootstrapMojoConnectionForRollbackNetworkConfigService";
++constexpr char kBootstrapMojoConnectionForFydeosVncMethod[] =
++    "BootstrapMojoConnectionForFydeosVnc";
+ }  // namespace mojo_connection_service
+
+ namespace virtual_file_provider {
